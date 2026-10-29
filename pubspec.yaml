@@ -17,12 +17,13 @@ dependencies:
   go_router: ^14.2.0
 
   # Firebase
-  firebase_core: ^3.6.0
-  firebase_auth: ^5.3.0
-  cloud_firestore: ^5.4.0
-  firebase_messaging: ^15.1.0
-  firebase_app_check: ^0.4.0
-  firebase_crashlytics: ^4.1.0
+  # Firebase (versions resolved by flutter pub add; recorded in pubspec.lock)
+  firebase_core: ^5.1.0
+  firebase_auth: ^7.0.1
+  cloud_firestore: ^7.1.0
+  firebase_messaging: ^17.0.1
+  firebase_app_check: ^0.5.1
+  firebase_crashlytics: ^6.0.1
 
   # Local persistence (offline outbox)
   drift: ^2.19.0
@@ -35,7 +36,7 @@ dependencies:
   json_annotation: ^4.8.1
 
   # Localization
-  intl: ^0.18.1
+  intl: ^0.20.3
   flutter_localizations:
     sdk: flutter
 
@@ -50,31 +51,14 @@ dev_dependencies:
     sdk: flutter
   integration_test:
     sdk: flutter
-  freezed: ^2.4.7
   build_runner: ^2.4.9
   json_serializable: ^6.7.1
   mockito: ^5.4.4
   very_good_analysis: ^5.1.0
-  firebase_emulator: any  # placeholder; Firebase Emulator Suite installed separately
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/images/
-    - assets/icons/
-    - assets/fonts/
-
-  fonts:
-    - family: PlexSansArabic
-      fonts:
-        - asset: assets/fonts/IBMPlexSansArabic-Regular.ttf
-          weight: 400
-        - asset: assets/fonts/IBMPlexSansArabic-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/IBMPlexSansArabic-SemiBold.ttf
-          weight: 600
-        - asset: assets/fonts/IBMPlexSansArabic-Bold.ttf
-          weight: 700
+  assets: []
 
 flutter_intl:
   enabled: true
