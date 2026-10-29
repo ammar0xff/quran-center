@@ -34,6 +34,23 @@ class FakeFirestoreDataSource implements FirestoreDataSource {
     _docs[path] = {..._docs[path]!, ...data};
   }
 
+  @override
+  Future<void> commitBatch(List<BatchOp> ops) async {
+    // Validate everything first so a failing op leaves no partial writes.
+    for (final op in ops) {
+      if (op.isUpdate && !_docs.containsKey(op.path)) {
+        throw StateError('Document not found: ${op.path}');
+      }
+    }
+    for (final op in ops) {
+      if (op.isUpdate) {
+        _docs[op.path] = {..._docs[op.path]!, ...op.data};
+      } else {
+        _docs[op.path] = Map<String, dynamic>.from(op.data);
+      }
+    }
+  }
+
   List<Map<String, dynamic>> _docsInCollection(String collection) {
     final prefix = '$collection/';
     return _docs.entries

@@ -14,6 +14,18 @@ class QueryFilter {
 /// Type of query filter.
 enum QueryFilterType { equal, arrayContains }
 
+/// One write inside an atomic batch.
+class BatchOp {
+  const BatchOp.set(this.path, this.data) : isUpdate = false;
+  const BatchOp.update(this.path, this.data) : isUpdate = true;
+
+  final String path;
+  final Map<String, dynamic> data;
+
+  /// true = update an existing document, false = create/overwrite.
+  final bool isUpdate;
+}
+
 /// Abstract Firestore data source.
 ///
 /// Keeps repository implementations free of direct Firebase SDK calls so they
@@ -27,6 +39,9 @@ abstract class FirestoreDataSource {
 
   /// Update fields on an existing document.
   Future<void> updateDoc(String path, Map<String, dynamic> data);
+
+  /// Applies all [ops] atomically: either every write lands or none do.
+  Future<void> commitBatch(List<BatchOp> ops);
 
   /// Query a collection (one-page fetch).
   Future<List<Map<String, dynamic>>> query(
@@ -68,6 +83,20 @@ class FirebaseFirestoreDataSource implements FirestoreDataSource {
   @override
   Future<void> updateDoc(String path, Map<String, dynamic> data) async {
     await _firestore.doc(path).update(data);
+  }
+
+  @override
+  Future<void> commitBatch(List<BatchOp> ops) async {
+    final batch = _firestore.batch();
+    for (final op in ops) {
+      final ref = _firestore.doc(op.path);
+      if (op.isUpdate) {
+        batch.update(ref, op.data);
+      } else {
+        batch.set(ref, op.data);
+      }
+    }
+    await batch.commit();
   }
 
   Query<Map<String, dynamic>> _applyFilters(
