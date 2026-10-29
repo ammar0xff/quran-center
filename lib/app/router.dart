@@ -11,6 +11,7 @@ import 'package:quran_center/features/director/students/director_student_profile
 import 'package:quran_center/features/director/students/student_management_list_screen.dart';
 import 'package:quran_center/features/director/circles/circle_management_list_screen.dart';
 import 'package:quran_center/features/director/enrollments/enrollment_assignment_screen.dart';
+import 'package:quran_center/features/director/schedules/schedule_management_screen.dart';
 import 'package:quran_center/features/director/teachers/teacher_management_list_screen.dart';
 
 abstract class AppRoute {
@@ -84,6 +85,10 @@ final router = GoRouter(
     GoRoute(
       path: '/director/enrollments/assign',
       builder: (_, __) => const EnrollmentAssignmentScreen(),
+    ),
+    GoRoute(
+      path: '/director/schedules',
+      builder: (_, __) => const ScheduleManagementScreen(),
     ),
   ],
 );

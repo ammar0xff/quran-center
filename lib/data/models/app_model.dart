@@ -31,3 +31,12 @@ abstract class AppModel {
   static int? encodeDateTime(DateTime? dateTime) =>
       dateTime?.millisecondsSinceEpoch;
 }
+
+/// Date comparison helpers used across the domain (timezone-aware at the
+/// repository/service layer where configured).
+extension DateTimeCompare on DateTime {
+  /// True if [this] and [other] represent the same calendar date
+  /// (year/month/day), ignoring time components.
+  bool isSameDate(DateTime other) =>
+      year == other.year && month == other.month && day == other.day;
+}

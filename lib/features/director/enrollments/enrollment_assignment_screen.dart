@@ -5,9 +5,6 @@ import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/data/models/enrollment.dart';
 import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/data/providers/repositories.dart';
-import 'package:quran_center/data/repositories/enrollment_repository.dart';
-import 'package:quran_center/data/repositories/student_repository.dart';
-import 'package:quran_center/data/repositories/circle_repository.dart';
 import 'package:quran_center/design_system/components/custom_bottom_nav.dart';
 
 /// Director enrollment & assignment screen.
