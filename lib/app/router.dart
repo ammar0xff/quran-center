@@ -9,6 +9,7 @@ import 'package:quran_center/features/director/dashboard/director_dashboard_scre
 import 'package:quran_center/features/director/students/add_student_screen.dart';
 import 'package:quran_center/features/director/students/director_student_profile_screen.dart';
 import 'package:quran_center/features/director/students/student_management_list_screen.dart';
+import 'package:quran_center/features/director/teachers/teacher_management_list_screen.dart';
 
 abstract class AppRoute {
   static const splash = '/';
@@ -69,6 +70,10 @@ final router = GoRouter(
     GoRoute(
       path: '/director/students/:id',
       builder: (_, state) => DirectorStudentProfileScreen(studentId: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/director/teachers',
+      builder: (_, __) => const TeacherManagementListScreen(),
     ),
   ],
 );
