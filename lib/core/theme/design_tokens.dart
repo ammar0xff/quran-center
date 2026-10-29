@@ -18,6 +18,7 @@ class DesignTokens {
 
   // ---- Spacing (multiples of 4) ----
   static const double space4 = 4.0;
+  static const double space6 = 6.0;
   static const double space8 = 8.0;
   static const double space12 = 12.0;
   static const double space16 = 16.0;
