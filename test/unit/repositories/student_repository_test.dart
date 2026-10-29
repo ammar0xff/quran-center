@@ -1,4 +1,4 @@
-import '../datasources/fake_firestore_datasource.dart';
+import 'package:quran_center/data/datasources/fake_firestore_datasource.dart';
 import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/data/models/student.dart';
 import 'package:quran_center/data/repositories/impl/student_repository_impl.dart';

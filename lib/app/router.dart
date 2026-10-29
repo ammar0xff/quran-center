@@ -6,6 +6,7 @@ import 'package:quran_center/features/authentication/screens/forgot_password_scr
 import 'package:quran_center/features/authentication/screens/login_screen.dart';
 import 'package:quran_center/features/authentication/screens/splash_screen.dart';
 import 'package:quran_center/features/director/dashboard/director_dashboard_screen.dart';
+import 'package:quran_center/features/director/students/student_management_list_screen.dart';
 
 abstract class AppRoute {
   static const splash = '/';
@@ -54,6 +55,10 @@ final router = GoRouter(
     GoRoute(
       path: AppRoute.directorDashboard,
       builder: (_, __) => const DirectorDashboardScreen(),
+    ),
+    GoRoute(
+      path: '/director/students',
+      builder: (_, __) => const StudentManagementListScreen(),
     ),
   ],
 );
