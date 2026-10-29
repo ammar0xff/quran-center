@@ -13,6 +13,7 @@ import 'package:quran_center/data/repositories/impl/schedule_repository_impl.dar
 import 'package:quran_center/data/repositories/impl/student_repository_impl.dart';
 import 'package:quran_center/data/repositories/impl/teacher_repository_impl.dart';
 import 'package:quran_center/data/repositories/schedule_repository.dart';
+import 'package:quran_center/data/services/account_access_service.dart';
 import 'package:quran_center/data/repositories/student_repository.dart';
 import 'package:quran_center/data/repositories/teacher_repository.dart';
 
@@ -50,6 +51,13 @@ final attendanceRepositoryProvider = Provider<AttendanceRepository>(
 
 final auditRepositoryProvider = Provider<AuditRepository>(
   (ref) => AuditRepositoryImpl(ref.watch(firestoreDataSourceProvider)),
+);
+
+/// Backend-backed digital-access operations. Intentionally has no in-memory
+/// default: fabricating logins locally would be a fake credential flow.
+/// Without a configured Firebase project the calls fail with a clear message.
+final accountAccessServiceProvider = Provider<AccountAccessService>(
+  (ref) => CloudFunctionsAccountAccessService(),
 );
 
 /// The authenticated user performing an audited action.

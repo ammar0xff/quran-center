@@ -45,6 +45,7 @@ dependencies:
   uuid: ^4.3.3
   connectivity_plus: ^6.0.5
   shared_preferences: ^2.2.2
+  cloud_functions: ^7.0.1
 
 dev_dependencies:
   flutter_test:

@@ -7,6 +7,7 @@ import 'package:quran_center/data/models/student.dart';
 import 'package:quran_center/data/providers/repositories.dart';
 import 'package:quran_center/design_system/components/custom_bottom_nav.dart';
 import 'package:quran_center/design_system/components/section_header.dart';
+import 'package:quran_center/features/director/students/account_access_tab.dart';
 
 /// Director student profile — full educational + administrative view with tabs.
 ///
@@ -64,7 +65,10 @@ class DirectorStudentProfileScreen extends ConsumerWidget {
                         _buildPlansTab(),
                         _buildAttendanceTab(),
                         _buildEnrollmentTab(),
-                        _buildAccountAccessTab(student),
+                        AccountAccessTab(
+                          student: student,
+                          onChanged: () => ref.invalidate(studentProvider(studentId)),
+                        ),
                         _buildAuditTab(),
                       ],
                     ),
@@ -232,64 +236,6 @@ class DirectorStudentProfileScreen extends ConsumerWidget {
   Widget _buildEnrollmentTab() => _buildEmptyList('لا يوجد سجل تسجيل بعد', '');
   Widget _buildAuditTab() => _buildEmptyList('لا توجد سجلات تدقيق بعد', '');
 
-  Widget _buildAccountAccessTab(Student student) {
-    return ListView(
-      padding: const EdgeInsets.all(DesignTokens.space20),
-      children: [
-        SectionHeader(title: 'إدارة الدخول الرقمي', onSeeAll: () {}),
-        const SizedBox(height: DesignTokens.space16),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(DesignTokens.space20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'الحالة الحالية',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: DesignTokens.mainText,
-                  ),
-                ),
-                const SizedBox(height: DesignTokens.space12),
-                ListTile(
-                  title: const Text('نوع الوصول'),
-                  trailing: Text(_accountModeLabel(student.accountMode)),
-                ),
-                ListTile(
-                  title: const Text('الحساب المرتبط'),
-                  trailing: Text(student.authUserId ?? 'غير مرتبط'),
-                ),
-                const SizedBox(height: DesignTokens.space20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: student.accountMode == AccountMode.none
-                            ? () {}
-                            : null,
-                        child: const Text('تفعيل دخول الطالب'),
-                      ),
-                    ),
-                    const SizedBox(width: DesignTokens.space16),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: student.accountMode == AccountMode.loginEnabled
-                            ? () {}
-                            : null,
-                        child: const Text('تعليق الدخول'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildEmptyList(String message, String hint) {
     return Center(

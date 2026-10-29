@@ -1,49 +1,178 @@
 rules_version = '2';
+
+// Authorization model
+// -------------------
+// * users/{uid} is the authoritative account record. It is written ONLY by
+//   trusted backend code (Admin SDK / Cloud Functions), never by clients, so a
+//   user cannot grant themselves a role or re-activate themselves.
+// * Role and status are read from users/{uid} (not from client data), so a
+//   suspension takes effect immediately even if an ID token is still valid.
+// * Teacher document ids equal the teacher's auth uid (set at provisioning).
+// * Anything not matched below is denied (default deny).
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper: check user is active member of center
-    function isActiveCenterMember(centerId) {
-      return request.auth != null
-        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.centerId == centerId
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active';
+
+    // ---------- helpers ----------
+    function signedIn() {
+      return request.auth != null;
     }
 
-    function isDirector(centerId) {
-      return isActiveCenterMember(centerId)
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'director';
+    function profile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    function isTeacher(centerId) {
-      return isActiveCenterMember(centerId)
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
+    function hasProfile() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
-    function isStudent(centerId) {
-      return isActiveCenterMember(centerId)
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'student';
+    // Active member of [centerId].
+    function isActiveMember(centerId) {
+      return hasProfile()
+        && profile().status == 'active'
+        && profile().centerId == centerId;
     }
 
-    // Students may read their own profile only
+    function hasRole(centerId, role) {
+      return isActiveMember(centerId) && profile().role == role;
+    }
+
+    function isDirector(centerId) { return hasRole(centerId, 'director'); }
+    function isTeacher(centerId)  { return hasRole(centerId, 'teacher'); }
+
+    // The student profile this (student-role) account is linked to.
+    function ownsStudent(centerId, studentId) {
+      return hasRole(centerId, 'student') && profile().studentId == studentId;
+    }
+
+    // Keys that changed between the stored doc and the incoming write.
+    function changed(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasAny(keys);
+    }
+
+    function unchanged(keys) {
+      return !changed(keys);
+    }
+
+    // ---------- users (backend-written only) ----------
+    match /users/{uid} {
+      // A user may always read their own profile so the app can show
+      // pending / suspended screens. Directors read profiles in their center.
+      allow read: if signedIn()
+        && (request.auth.uid == uid || isDirector(resource.data.centerId));
+      allow write: if false;
+    }
+
+    match /centers/{centerId} {
+      allow read: if isActiveMember(centerId);
+      allow write: if false;
+    }
+
+    // ---------- students ----------
     match /students/{studentId} {
-      allow read: if request.auth != null
-        && (resource.data.authUserId == request.auth.uid || isDirector(resource.data.centerId));
-      allow create: if isDirector(resource.data.centerId);
-      allow update: if isDirector(resource.data.centerId);
-      allow delete: if false; // preserve history; archive instead
+      allow read: if isDirector(resource.data.centerId)
+        || (isTeacher(resource.data.centerId)
+            && request.auth.uid in resource.data.assignedTeacherIds)
+        || ownsStudent(resource.data.centerId, studentId);
+
+      // New profiles are always accountless; logins are attached later by the
+      // enableStudentAccess Cloud Function.
+      allow create: if isDirector(request.resource.data.centerId)
+        && request.resource.data.accountMode == 'none'
+        && (!('authUserId' in request.resource.data)
+            || request.resource.data.authUserId == null);
+
+      // Directors edit profiles but can never touch the account link/mode or
+      // move a student to another center.
+      allow update: if isDirector(resource.data.centerId)
+        && unchanged(['centerId', 'authUserId', 'accountMode']);
+
+      allow delete: if false; // archive instead; history is preserved
     }
 
-    // Attendance: one record per student per session; teachers record, directors correct
-    match /attendance/{attendanceId} {
-      allow read: if isActiveCenterMember(resource.data.centerId);
-      allow create: if isTeacher(resource.data.centerId)
-        && request.resource.data.recordedBy == request.auth.uid;
+    // ---------- teachers ----------
+    match /teachers/{teacherId} {
+      allow read: if isDirector(resource.data.centerId)
+        || (isTeacher(resource.data.centerId) && request.auth.uid == teacherId);
+      allow create: if isDirector(request.resource.data.centerId);
       allow update: if isDirector(resource.data.centerId)
-        || (isTeacher(resource.data.centerId) && request.resource.data.recordedBy == request.auth.uid);
+        && unchanged(['centerId', 'userId']);
       allow delete: if false;
     }
 
-    // Default: deny
+    // ---------- circles ----------
+    match /circles/{circleId} {
+      allow read: if isDirector(resource.data.centerId)
+        || (isTeacher(resource.data.centerId)
+            && resource.data.assignedTeacherId == request.auth.uid);
+      allow create: if isDirector(request.resource.data.centerId);
+      allow update: if isDirector(resource.data.centerId) && unchanged(['centerId']);
+      allow delete: if false;
+    }
+
+    // ---------- enrollments ----------
+    match /enrollments/{enrollmentId} {
+      allow read: if isDirector(resource.data.centerId)
+        || (isTeacher(resource.data.centerId)
+            && resource.data.teacherId == request.auth.uid)
+        || ownsStudent(resource.data.centerId, resource.data.studentId);
+      allow create: if isDirector(request.resource.data.centerId);
+      allow update: if isDirector(resource.data.centerId)
+        && unchanged(['centerId', 'studentId']);
+      allow delete: if false;
+    }
+
+    // ---------- schedules ----------
+    match /schedules/{scheduleId} {
+      allow read: if isDirector(resource.data.centerId)
+        || (isTeacher(resource.data.centerId)
+            && resource.data.teacherId == request.auth.uid);
+      allow create: if isDirector(request.resource.data.centerId);
+      allow update: if isDirector(resource.data.centerId) && unchanged(['centerId']);
+      allow delete: if false;
+    }
+
+    // ---------- attendance ----------
+    // Document id is "<sessionId>_<studentId>": one record per student per
+    // session, and retries cannot create duplicates.
+    match /attendance/{attendanceId} {
+      allow read: if isDirector(resource.data.centerId)
+        || (isTeacher(resource.data.centerId)
+            && resource.data.recordedBy == request.auth.uid)
+        || ownsStudent(resource.data.centerId, resource.data.studentId);
+
+      // A teacher records attendance only for a student assigned to them, as
+      // themselves, with no correction metadata.
+      allow create: if isTeacher(request.resource.data.centerId)
+        && request.resource.data.recordedBy == request.auth.uid
+        && attendanceId == request.resource.data.sessionId + '_' + request.resource.data.studentId
+        && request.resource.data.status in ['present', 'absent', 'late', 'excused']
+        && !('correctionMetadata' in request.resource.data)
+        && request.auth.uid in get(/databases/$(database)/documents/students/$(request.resource.data.studentId)).data.assignedTeacherIds
+        && get(/databases/$(database)/documents/students/$(request.resource.data.studentId)).data.centerId == request.resource.data.centerId;
+
+      // Only a director may change a recorded value, and only as an explicit,
+      // attributed correction. Teachers and students cannot alter records.
+      allow update: if isDirector(resource.data.centerId)
+        && unchanged(['centerId', 'sessionId', 'studentId', 'recordedBy'])
+        && request.resource.data.status in ['present', 'absent', 'late', 'excused']
+        && request.resource.data.correctionMetadata.correctedBy == request.auth.uid;
+
+      allow delete: if false;
+    }
+
+    // ---------- audit trail (append-only) ----------
+    match /audit_logs/{auditId} {
+      allow read: if isDirector(resource.data.centerId);
+      allow create: if isDirector(request.resource.data.centerId)
+        && request.resource.data.actorUserId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // memorization_records, learning_plans, learning_tasks, notifications,
+    // announcements, ... are intentionally NOT opened yet. They fall through
+    // to default deny until their feature (and, for memorization records, the
+    // private-note split) is implemented and tested.
     match /{document=**} {
       allow read, write: if false;
     }

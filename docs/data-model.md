@@ -248,3 +248,18 @@ All documents include: stable ID, `centerId` where applicable, `createdAt`, `upd
 - notifications: recipientUserId + createdAt
 - notifications: recipientUserId + read
 - audit_logs: centerId + createdAt
+---
+
+## Conventions added during implementation
+
+* **`teachers/{teacherId}`: the document id equals the teacher's Firebase Auth
+  uid.** (`userId` is kept for readability.) Security Rules depend on it.
+* **`attendance/{sessionId}_{studentId}`** is the deterministic id.
+* **`students.authUserId`, `students.accountMode`** are written only by Cloud
+  Functions after creation; clients create students with `accountMode: none`.
+* `users/{uid}.studentId` links a student-role account to its student profile.
+* **Attendance rate** = (present + late) / (present + late + absent). Excused
+  and missing records are excluded from the denominator; a missing record is
+  never counted as an absence.
+* **Needs change before Phase 5:** split `privateTeacherNote` out of
+  `memorization_records` (see security.md, known gap 1).

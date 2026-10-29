@@ -44,3 +44,20 @@ Route guards prevent unauthorized routes; role shells load correct destinations.
 
 ## Rule
 Run tests matching each change; report actual pass/fail; never claim unexecuted tests passed.
+---
+
+# Running the suites
+
+| Suite | Command (from repo root) | What it covers |
+|---|---|---|
+| Flutter unit + widget | `flutter test` | models, repositories (in-memory datasource), domain rules, screens |
+| Static analysis | `flutter analyze` | |
+| Cloud Functions | `cd firebase/functions && npm install && npm test` | type-check (strict) + access state-machine tests |
+| Security Rules | `cd firebase/rules-tests && npm install && npm test` | 39 tests against the Firestore emulator (needs Java 11+; downloads the emulator on first run) |
+
+Notes
+* The Firestore emulator is configured on port 8189 (`firebase/firebase.json`).
+* Repository tests use `FakeFirestoreDataSource`. It models documents and
+  equality / array-contains queries and atomic batches, but it does **not**
+  enforce Security Rules or composite-index requirements; the rules suite and
+  (still to do) integration tests against the emulator cover those.

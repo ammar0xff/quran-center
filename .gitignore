@@ -38,3 +38,10 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Cloud Functions build output
+firebase/functions/node_modules/
+firebase/functions/lib/
+
+# Node dependencies anywhere in the repo
+**/node_modules/
