@@ -1,0 +1,82 @@
+name: quran_center
+description: Premium Quran Memorization Center Management System (Arabic-first, Flutter + Firebase).
+publish_to: 'none'
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management & dependency injection
+  flutter_riverpod: ^2.5.1
+
+  # Navigation
+  go_router: ^14.2.0
+
+  # Firebase
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.0
+  cloud_firestore: ^5.4.0
+  firebase_messaging: ^15.1.0
+  firebase_app_check: ^0.4.0
+  firebase_crashlytics: ^4.1.0
+
+  # Local persistence (offline outbox)
+  drift: ^2.19.0
+  sqlite3_flutter_libs: ^0.5.19
+  path: ^1.9.0
+  path_provider: ^2.1.2
+
+  # Models
+  freezed: ^2.4.7
+  json_annotation: ^4.8.1
+
+  # Localization
+  intl: ^0.18.1
+  flutter_localizations:
+    sdk: flutter
+
+  # Utilities
+  equatable: ^2.0.5
+  uuid: ^4.3.3
+  connectivity_plus: ^6.0.5
+  shared_preferences: ^2.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  freezed: ^2.4.7
+  build_runner: ^2.4.9
+  json_serializable: ^6.7.1
+  mockito: ^5.4.4
+  very_good_analysis: ^5.1.0
+  firebase_emulator: any  # placeholder; Firebase Emulator Suite installed separately
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/fonts/
+
+  fonts:
+    - family: PlexSansArabic
+      fonts:
+        - asset: assets/fonts/IBMPlexSansArabic-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/IBMPlexSansArabic-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/IBMPlexSansArabic-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/IBMPlexSansArabic-Bold.ttf
+          weight: 700
+
+flutter_intl:
+  enabled: true
+  main_locale: ar
+  class_name: S

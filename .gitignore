@@ -1,0 +1,40 @@
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+pubspec.lock
+*.imod
+.idea/
+*.local
+
+# Flutter/Dart
+build/
+.android/tool
+.ios/Flutter/App.framework
+.ios/Flutter/Flutter.podfile
+ios/Flutter/App.framework
+ios/Flutter/Flutter.podfile
+ios/Flutter/Generated.xcconfig
+ios/Flutter/app.flx
+ios/Flutter/app.xcconfig
+ios/Flutter/app.zip
+ios/.symlinks
+
+# Firebase
+firebase-debug.log
+serviceAccountKey.json
+google-services.json  # not committed; provided per environment
+GoogleService-Info.plist
+
+# Environment / secrets
+.env
+*.env
+*.key
+*.pem
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
