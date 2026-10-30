@@ -54,6 +54,36 @@ service cloud.firestore {
       return !changed(keys);
     }
 
+    // The session's teacher moves it scheduled -> inProgress (not before its
+    // date) or inProgress -> completed. Nothing else on the session changes.
+    function teacherMaySetSessionStatus() {
+      return isTeacher(resource.data.centerId)
+        && resource.data.teacherId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status', 'updatedAt', 'startedAt', 'completedAt'])
+        && ((resource.data.status == 'scheduled'
+             && request.resource.data.status == 'inProgress'
+             && resource.data.date <= request.time)
+            || (resource.data.status == 'inProgress'
+             && request.resource.data.status == 'completed'));
+    }
+
+    // While the session is still in progress, the teacher who recorded a
+    // value may fix their own entry. Once it is completed, only a director's
+    // audited correction can change it.
+    function teacherMayFixOwnRecord() {
+      return isTeacher(resource.data.centerId)
+        && resource.data.recordedBy == request.auth.uid
+        && sessionDoc(resource.data.sessionId).status == 'inProgress'
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status', 'note', 'updatedAt'])
+        && request.resource.data.status in ['present', 'absent', 'late', 'excused'];
+    }
+
+    function sessionDoc(sessionId) {
+      return get(/databases/$(database)/documents/schedules/$(sessionId)).data;
+    }
+
     // ---------- users (backend-written only) ----------
     match /users/{uid} {
       // A user may always read their own profile so the app can show
@@ -132,7 +162,8 @@ service cloud.firestore {
         || (isTeacher(resource.data.centerId)
             && resource.data.teacherId == request.auth.uid);
       allow create: if isDirector(request.resource.data.centerId);
-      allow update: if isDirector(resource.data.centerId) && unchanged(['centerId']);
+      allow update: if (isDirector(resource.data.centerId) && unchanged(['centerId']))
+        || teacherMaySetSessionStatus();
       allow delete: if false;
     }
 
@@ -152,15 +183,19 @@ service cloud.firestore {
         && attendanceId == request.resource.data.sessionId + '_' + request.resource.data.studentId
         && request.resource.data.status in ['present', 'absent', 'late', 'excused']
         && !('correctionMetadata' in request.resource.data)
+        && sessionDoc(request.resource.data.sessionId).teacherId == request.auth.uid
+        && sessionDoc(request.resource.data.sessionId).centerId == request.resource.data.centerId
+        && sessionDoc(request.resource.data.sessionId).status == 'inProgress'
         && request.auth.uid in get(/databases/$(database)/documents/students/$(request.resource.data.studentId)).data.assignedTeacherIds
         && get(/databases/$(database)/documents/students/$(request.resource.data.studentId)).data.centerId == request.resource.data.centerId;
 
       // Only a director may change a recorded value, and only as an explicit,
       // attributed correction. Teachers and students cannot alter records.
-      allow update: if isDirector(resource.data.centerId)
+      allow update: if (isDirector(resource.data.centerId)
         && unchanged(['centerId', 'sessionId', 'studentId', 'recordedBy'])
         && request.resource.data.status in ['present', 'absent', 'late', 'excused']
-        && request.resource.data.correctionMetadata.correctedBy == request.auth.uid;
+        && request.resource.data.correctionMetadata.correctedBy == request.auth.uid)
+        || teacherMayFixOwnRecord();
 
       allow delete: if false;
     }

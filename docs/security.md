@@ -47,7 +47,7 @@ Authorization enforced by the backend (Firestore Security Rules + Cloud Function
 ## Enforced and tested
 
 Firestore Security Rules (`firebase/firestore.rules`) are tested against the
-real Firestore emulator (`firebase/rules-tests`, 61 tests) and cover:
+real Firestore emulator (`firebase/rules-tests`, 68 tests) and cover:
 users, centers, students, teachers, circles, enrollments, schedules,
 attendance and audit_logs, including the enrollment-assignment batch and the
 rule that director list queries must filter by `centerId`. Everything else is **default deny**.
@@ -63,6 +63,13 @@ rule that director list queries must filter by `centerId`. Everything else is **
 | Accountless student records stay protected | students tests |
 | Account linking cannot be forged from a client | students tests (`authUserId`, `accountMode` immutable to clients) |
 | Guessing a document id grants nothing | students tests |
+
+Teaching sessions (Phase 5):
+* The session's own teacher may move it `scheduled -> inProgress` (not before
+  its date) and `inProgress -> completed`, changing nothing else.
+* Attendance can be created only for the teacher's own session that is in
+  progress; the teacher may fix their own entry (status/note only) until the
+  session completes. After that only a director's audited correction works.
 
 Key design points:
 * `users/{uid}` is written only by the Admin SDK. Role and status are read from
@@ -113,6 +120,11 @@ Key design points:
    directors taking the last seat simultaneously could both succeed.
 10. **Student creation** is not written to the audit log (archive, reinstate,
    edit, assign/transfer and access changes are).
-11. Teachers/students cannot yet read what they need for several planned
+11. **Session start date** is checked by the rules (`date <= request.time`);
+    the "same day only" restriction is enforced by the app, not the rules.
+12. If a circle's teacher changes mid-session, the new teacher cannot read the
+    previous teacher's attendance rows for that session and so cannot overwrite
+    them (the write is denied). The director can correct them.
+13. Teachers/students cannot yet read what they need for several planned
    screens (e.g. a student reading their circle/schedule). Add rules together
    with those features, each with tests.

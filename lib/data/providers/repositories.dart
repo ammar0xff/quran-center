@@ -15,6 +15,8 @@ import 'package:quran_center/data/repositories/impl/user_repository_impl.dart';
 import 'package:quran_center/data/repositories/schedule_repository.dart';
 import 'package:quran_center/data/services/circle_service.dart';
 import 'package:quran_center/data/services/enrollment_service.dart';
+import 'package:quran_center/data/services/teacher_session_service.dart';
+import 'package:quran_center/data/services/teacher_workspace.dart';
 import 'package:quran_center/data/repositories/user_repository.dart';
 import 'package:quran_center/data/services/account_access_service.dart';
 import 'package:quran_center/data/repositories/student_repository.dart';
@@ -38,6 +40,14 @@ final teacherRepositoryProvider = Provider<TeacherRepository>(
 
 final circleRepositoryProvider = Provider<CircleRepository>(
   (ref) => CircleRepositoryImpl(ref.watch(firestoreDataSourceProvider)),
+);
+
+final teacherSessionServiceProvider = Provider<TeacherSessionService>(
+  (ref) => TeacherSessionService(ref.watch(firestoreDataSourceProvider)),
+);
+
+final teacherWorkspaceProvider = Provider<TeacherWorkspace>(
+  (ref) => TeacherWorkspace(ref.watch(firestoreDataSourceProvider)),
 );
 
 final circleServiceProvider = Provider<CircleService>(

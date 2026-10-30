@@ -56,6 +56,12 @@ async function seed() {
     await setDoc(doc(db, "students/sx"), student({ centerId: C2, assignedTeacherIds: ["tA"] }));
     await setDoc(doc(db, "attendance/sess1_s1"), att());
     await setDoc(doc(db, "attendance/sess1_s2"), att({ studentId: "s2", recordedBy: "tB" }));
+    const sess = (over) => ({ centerId: C1, circleId: "circle1", teacherId: "tA", date: new Date("2026-01-05"), status: "inProgress", ...over });
+    await setDoc(doc(db, "schedules/sess1"), sess({ status: "completed" }));
+    await setDoc(doc(db, "schedules/sess9"), sess());
+    await setDoc(doc(db, "schedules/sessB"), sess({ teacherId: "tB" }));
+    await setDoc(doc(db, "schedules/sessSched"), sess({ status: "scheduled" }));
+    await setDoc(doc(db, "schedules/sessFuture"), sess({ status: "scheduled", date: new Date("2999-01-01") }));
     await setDoc(doc(db, "circles/circle1"), { centerId: C1, name: "A", assignedTeacherId: "tA" });
     await setDoc(doc(db, "circles/circle2"), { centerId: C1, name: "B", assignedTeacherId: "tB" });
     await setDoc(doc(db, "memorization_records/m1"), { centerId: C1, studentId: "s1", teacherId: "tA", privateTeacherNote: "secret" });
@@ -283,9 +289,27 @@ describe("attendance", () => {
   it("a student cannot create attendance", async () => {
     await assertFails(setDoc(doc(as("uS1"), "attendance/sess9_s1"), att({ sessionId: "sess9", recordedBy: "uS1" })));
   });
-  it("neither teacher nor student can change an existing record", async () => {
+  it("once the session is completed, neither teacher nor student can change a record", async () => {
     await assertFails(updateDoc(doc(as("tA"), "attendance/sess1_s1"), { status: "absent" }));
     await assertFails(updateDoc(doc(as("uS1"), "attendance/sess1_s1"), { status: "present" }));
+  });
+  it("attendance can only be recorded for the teacher's own session that is in progress", async () => {
+    const rec = (session) => att({ sessionId: session, studentId: "s3" });
+    await assertFails(setDoc(doc(as("tA"), "attendance/sessB_s3"), rec("sessB")));        // someone else's session
+    await assertFails(setDoc(doc(as("tA"), "attendance/sess1_s3"), rec("sess1")));        // completed
+    await assertFails(setDoc(doc(as("tA"), "attendance/sessSched_s3"), rec("sessSched"))); // not started
+    await assertFails(setDoc(doc(as("tA"), "attendance/ghost_s3"), rec("ghost")));        // no such session
+    await assertSucceeds(setDoc(doc(as("tA"), "attendance/sess9_s3"), rec("sess9")));
+  });
+  it("a teacher may fix their own entry only while the session is in progress, and only status/note", async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "attendance/sess9_s3"), att({ sessionId: "sess9", studentId: "s3" }));
+    });
+    await assertSucceeds(updateDoc(doc(as("tA"), "attendance/sess9_s3"), { status: "late", note: "تأخر" }));
+    await assertFails(updateDoc(doc(as("tA"), "attendance/sess9_s3"), { status: "bogus" }));
+    await assertFails(updateDoc(doc(as("tA"), "attendance/sess9_s3"), { studentId: "s1" }));
+    await assertFails(updateDoc(doc(as("tA"), "attendance/sess9_s3"), { status: "absent", correctionMetadata: { correctedBy: "tA" } }));
+    await assertFails(updateDoc(doc(as("tB"), "attendance/sess9_s3"), { status: "absent" })); // not the recorder
   });
   it("a director can correct, attributed to themselves", async () => {
     await assertSucceeds(updateDoc(doc(as("dir1"), "attendance/sess1_s1"), {
@@ -359,6 +383,32 @@ describe("circles", () => {
     await assertFails(getDoc(doc(as("uS1"), "circles/circle1")));
     await assertSucceeds(setDoc(doc(as("dir1"), "circles/new"), { centerId: C1, name: "N" }));
     await assertFails(setDoc(doc(as("tA"), "circles/new2"), { centerId: C1, name: "N" }));
+  });
+});
+
+describe("session lifecycle (teacher)", () => {
+  it("the session's teacher can start it, and later complete it", async () => {
+    await assertSucceeds(updateDoc(doc(as("tA"), "schedules/sessSched"), { status: "inProgress", startedAt: new Date() }));
+    await assertSucceeds(updateDoc(doc(as("tA"), "schedules/sessSched"), { status: "completed", completedAt: new Date() }));
+  });
+  it("a session cannot be started before its date", async () => {
+    await assertFails(updateDoc(doc(as("tA"), "schedules/sessFuture"), { status: "inProgress" }));
+  });
+  it("only valid transitions: no skipping, reopening, cancelling or reassigning", async () => {
+    await assertFails(updateDoc(doc(as("tA"), "schedules/sessSched"), { status: "completed" }));   // skip
+    await assertFails(updateDoc(doc(as("tA"), "schedules/sess1"), { status: "inProgress" }));       // reopen
+    await assertFails(updateDoc(doc(as("tA"), "schedules/sessSched"), { status: "cancelled" }));
+    await assertFails(updateDoc(doc(as("tA"), "schedules/sessSched"), { status: "inProgress", teacherId: "tA", circleId: "circle2" }));
+    await assertFails(updateDoc(doc(as("tA"), "schedules/sessSched"), { status: "inProgress", date: new Date("2026-02-01") }));
+  });
+  it("another teacher, a student or a suspended teacher cannot change it", async () => {
+    await assertFails(updateDoc(doc(as("tB"), "schedules/sessSched"), { status: "inProgress" }));
+    await assertFails(updateDoc(doc(as("uS1"), "schedules/sessSched"), { status: "inProgress" }));
+    await assertFails(updateDoc(doc(as("tSusp"), "schedules/sessSched"), { status: "inProgress" }));
+  });
+  it("a teacher reads only their own sessions", async () => {
+    await assertSucceeds(getDoc(doc(as("tA"), "schedules/sess9")));
+    await assertFails(getDoc(doc(as("tA"), "schedules/sessB")));
   });
 });
 

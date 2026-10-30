@@ -51,6 +51,7 @@ Future<void> _seed(FakeFirestoreDataSource store) async {
 }
 
 const _welcome = 'أهلاً بك، مديرة الدار';
+const _teacherWelcome = 'أهلاً بك، مستخدم tea-1';
 
 void main() {
   setUpAll(() async {
@@ -90,10 +91,10 @@ void main() {
   testWidgets('a teacher lands in the teacher area, never the director one', (tester) async {
     final app = await bootApp(tester, accounts: _accounts, seed: _seed);
     await app.signIn('tea@x.com', 'pw-tea');
-    expect(find.text('واجهة المعلم'), findsOneWidget);
+    expect(find.text(_teacherWelcome), findsOneWidget);
 
     await app.go('/director/students');
-    expect(find.text('واجهة المعلم'), findsOneWidget);
+    expect(find.text(_teacherWelcome), findsOneWidget);
     expect(find.text('إدارة الطلاب'), findsNothing);
 
     await app.go('/director/attendance');
@@ -142,16 +143,18 @@ void main() {
       (tester) async {
     final app = await bootApp(tester, accounts: _accounts, seed: _seed);
     await app.signIn('tea@x.com', 'pw-tea');
-    expect(find.text('واجهة المعلم'), findsOneWidget);
+    expect(find.text(_teacherWelcome), findsOneWidget);
 
+    await tester.tap(find.text('المزيد'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('تسجيل الخروج'));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(FilledButton, 'تسجيل الدخول'), findsOneWidget);
-    expect(find.text('واجهة المعلم'), findsNothing);
+    expect(find.text(_teacherWelcome), findsNothing);
 
     await app.signIn('dir@x.com', 'pw-dir');
     expect(find.text(_welcome), findsOneWidget);
-    expect(find.text('واجهة المعلم'), findsNothing);
+    expect(find.text(_teacherWelcome), findsNothing);
   });
 
   testWidgets("each director sees only their own center's students", (tester) async {

@@ -24,6 +24,10 @@ import 'package:quran_center/features/director/students/student_management_list_
 import 'package:quran_center/features/director/teachers/add_teacher_screen.dart';
 import 'package:quran_center/features/director/teachers/teacher_management_list_screen.dart';
 import 'package:quran_center/features/shared/role_home_placeholder.dart';
+import 'package:quran_center/features/teacher/circles/teacher_circles_screen.dart';
+import 'package:quran_center/features/teacher/home/teacher_home_screen.dart';
+import 'package:quran_center/features/teacher/more/teacher_more_screen.dart';
+import 'package:quran_center/features/teacher/sessions/teacher_session_screen.dart';
 
 /// The application router.
 ///
@@ -121,14 +125,26 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const DirectorMoreScreen(),
       ),
 
-      // Teacher and student areas: not built yet (Phases 5 and 6).
+      // Teacher area
       GoRoute(
         path: Routes.teacherHome,
-        builder: (_, __) => const RoleHomePlaceholder(
-          title: 'واجهة المعلم',
-          message: 'واجهة المعلم قيد التطوير ولم تتوفر بعد.',
-        ),
+        builder: (_, __) => const TeacherHomeScreen(),
       ),
+      GoRoute(
+        path: '/teacher/circles',
+        builder: (_, __) => const TeacherCirclesScreen(),
+      ),
+      GoRoute(
+        path: '/teacher/more',
+        builder: (_, __) => const TeacherMoreScreen(),
+      ),
+      GoRoute(
+        path: '/teacher/sessions/:id',
+        builder: (_, state) =>
+            TeacherSessionScreen(sessionId: state.pathParameters['id']!),
+      ),
+
+      // Student area: not built yet (Phase 6).
       GoRoute(
         path: Routes.studentHome,
         builder: (_, __) => const RoleHomePlaceholder(
