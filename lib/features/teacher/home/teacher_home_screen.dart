@@ -10,6 +10,7 @@ import 'package:quran_center/design_system/components/kpi_card.dart';
 import 'package:quran_center/features/director/circles/circle_detail_data.dart'
     show circleModeLabel;
 import 'package:quran_center/features/teacher/home/teacher_home_data.dart';
+import 'package:quran_center/features/shared/notifications/notifications_screen.dart';
 import 'package:quran_center/features/teacher/widgets/sync_status_bar.dart';
 import 'package:quran_center/features/teacher/widgets/teacher_bottom_nav.dart';
 
@@ -34,11 +35,16 @@ class TeacherHomeScreen extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: DesignTokens.space20),
               children: [
                 const SizedBox(height: DesignTokens.space16),
-                Text('أهلاً بك، $name',
-                    style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: DesignTokens.mainText)),
+                Row(children: [
+                  Expanded(
+                    child: Text('أهلاً بك، $name',
+                        style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: DesignTokens.mainText)),
+                  ),
+                  const NotificationBell(route: '/teacher/notifications'),
+                ]),
                 const SizedBox(height: DesignTokens.space4),
                 Text(DateFormat.yMMMMEEEEd('ar').format(DateTime.now()),
                     style: const TextStyle(

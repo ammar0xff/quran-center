@@ -399,7 +399,52 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // notifications,
+    // ---------- notifications & announcements ----------
+    // A notification is addressed to ONE user and only that user can read it.
+    // Titles/messages never carry sensitive student detail. It is created by a
+    // director (announcements, alerts) or, for task events only, by the student's
+    // own teacher, and always for a real login of the same center.
+    function userInCenter(uid, centerId) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.centerId == centerId
+        && get(/databases/$(database)/documents/users/$(uid)).data.status == 'active';
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isActiveMember(resource.data.centerId)
+        && resource.data.recipientUserId == request.auth.uid;
+
+      allow create: if request.resource.data.read == false
+        && (
+          (isDirector(request.resource.data.centerId)
+            && request.resource.data.type in ['center_announcement', 'admin_alert', 'schedule_change']
+            && userInCenter(request.resource.data.recipientUserId, request.resource.data.centerId))
+          || (isTeacher(request.resource.data.centerId)
+            && request.resource.data.type in ['new_assignment', 'teacher_feedback']
+            && request.resource.data.relatedEntityType == 'student'
+            && request.auth.uid in studentOf(request.resource.data.relatedEntityId).assignedTeacherIds
+            && studentOf(request.resource.data.relatedEntityId).authUserId == request.resource.data.recipientUserId
+            && studentOf(request.resource.data.relatedEntityId).centerId == request.resource.data.centerId)
+        );
+
+      // The recipient may only mark it read.
+      allow update: if isActiveMember(resource.data.centerId)
+        && resource.data.recipientUserId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'readAt'])
+        && request.resource.data.read == true;
+
+      allow delete: if false;
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if isDirector(resource.data.centerId);
+      allow create: if isDirector(request.resource.data.centerId)
+        && request.resource.data.authorId == request.auth.uid;
+      allow update: if isDirector(resource.data.centerId)
+        && unchanged(['centerId', 'authorId']);
+      allow delete: if false;
+    }
+
+    // announcements aside,
     // announcements, ... are intentionally NOT opened yet. They fall through
     // to default deny until their feature is implemented and tested.
     match /{document=**} {

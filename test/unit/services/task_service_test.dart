@@ -105,6 +105,44 @@ void main() {
     });
   });
 
+  group('notifying the student', () {
+    setUp(() async {
+      await store.setDoc('students/s1', {
+        'centerId': 'c1', 'fullName': 'طالب', 'accountMode': 'loginEnabled', 'authUserId': 'u-s1',
+        'enrollmentStatus': 'active', 'assignedTeacherIds': ['t1'], 'educationalLevel': 'x',
+        'createdAt': 1700000000000, 'updatedAt': 1700000000000,
+      });
+    });
+
+    test('a student with a login is told about a new task, in generic words', () async {
+      await assign();
+      final n = (await store.query('notifications', where: [])).single;
+      expect(n['recipientUserId'], 'u-s1');
+      expect(n['type'], 'new_assignment');
+      expect(n['read'], false);
+      expect(n['centerId'], 'c1');
+      // No surah, no instructions, no names: nothing sensitive in a notification.
+      expect('${n['title']} ${n['message']}', isNot(contains('راجع جيدًا')));
+      expect('${n['title']} ${n['message']}', isNot(contains('112')));
+    });
+
+    test('verification tells the student the outcome without the teacher\'s feedback text', () async {
+      await assign();
+      await svc.verify(centerId: 'c1', teacherId: 't1', taskId: 'task1', result: 'passed', feedback: 'سر المعلم');
+      final all = await store.query('notifications', where: []);
+      expect(all, hasLength(2));
+      final done = all.singleWhere((n) => n['type'] == 'teacher_feedback');
+      expect(done['recipientUserId'], 'u-s1');
+      expect('${done['title']} ${done['message']}', isNot(contains('سر المعلم')));
+    });
+
+    test('an accountless student has nobody to notify', () async {
+      await store.updateDoc('students/s1', {'authUserId': null, 'accountMode': 'none'});
+      await assign();
+      expect(await store.query('notifications', where: []), isEmpty);
+    });
+  });
+
   group('verify', () {
     setUp(() async => assign());
 

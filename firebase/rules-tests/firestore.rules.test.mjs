@@ -52,6 +52,11 @@ const task = (over = {}) => ({
   teacherInstructions: "راجع", status: "upcoming", ...over,
 });
 
+const notif = (over = {}) => ({
+  recipientUserId: "uS1", centerId: C1, type: "center_announcement", title: "إعلان", message: "نص",
+  read: false, createdAt: new Date(), ...over,
+});
+
 const rec = (over = {}) => ({
   centerId: C1, studentId: "s1", teacherId: "tA", sessionId: "sess9", circleId: "circle1",
   assessmentType: "newMemorization", surah: 2, startAyah: 1, endAyah: 5,
@@ -749,9 +754,70 @@ describe("learning plans and tasks", () => {
   });
 });
 
+describe("notifications and announcements", () => {
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "notifications/n1"), notif());
+      await setDoc(doc(ctx.firestore(), "notifications/nT"), notif({ recipientUserId: "tA" }));
+    });
+  });
+  it("only the recipient reads a notification", async () => {
+    await assertSucceeds(getDoc(doc(as("uS1"), "notifications/n1")));
+    await assertFails(getDoc(doc(as("uS2"), "notifications/n1")));
+    await assertFails(getDoc(doc(as("tA"), "notifications/n1")));
+    await assertFails(getDoc(doc(as("dir1"), "notifications/n1")));   // not even the director
+    await assertFails(getDoc(doc(as("dir2"), "notifications/n1")));
+  });
+  it("the inbox query works when scoped to the recipient", async () => {
+    const db = as("uS1");
+    await assertSucceeds(getDocs(query(collection(db, "notifications"), where("centerId", "==", C1), where("recipientUserId", "==", "uS1"))));
+    await assertFails(getDocs(query(collection(db, "notifications"), where("centerId", "==", C1))));
+  });
+  it("a director can notify a user of the same center, only with director-type messages", async () => {
+    await assertSucceeds(setDoc(doc(as("dir1"), "notifications/a1"), notif()));
+    await assertFails(setDoc(doc(as("dir1"), "notifications/a2"), notif({ type: "new_assignment" })));
+    await assertFails(setDoc(doc(as("dir1"), "notifications/a3"), notif({ read: true })));
+  });
+  it("a director cannot notify a user of another center, a suspended user or a ghost", async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "users/other"), { role: "teacher", centerId: C2, status: "active" });
+    });
+    await assertFails(setDoc(doc(as("dir1"), "notifications/b1"), notif({ recipientUserId: "other" })));
+    await assertFails(setDoc(doc(as("dir1"), "notifications/b2"), notif({ recipientUserId: "tSusp" })));
+    await assertFails(setDoc(doc(as("dir1"), "notifications/b3"), notif({ recipientUserId: "ghost" })));
+    await assertFails(setDoc(doc(as("dir2"), "notifications/b4"), notif()));
+  });
+  it("a teacher may notify only their own student's login about a task, nothing else", async () => {
+    const task = (over = {}) => notif({ type: "new_assignment", relatedEntityType: "student", relatedEntityId: "s1", ...over });
+    await assertSucceeds(setDoc(doc(as("tA"), "notifications/t1"), task()));
+    await assertFails(setDoc(doc(as("tA"), "notifications/t2"), task({ type: "center_announcement" })));  // announcements are the director's
+    await assertFails(setDoc(doc(as("tB"), "notifications/t3"), task()));                               // not tB's student
+    await assertFails(setDoc(doc(as("tA"), "notifications/t4"), task({ recipientUserId: "uS2" })));     // not that student's login
+    await assertFails(setDoc(doc(as("tA"), "notifications/t5"), task({ relatedEntityId: "s3" })));      // s3 has no login
+    await assertFails(setDoc(doc(as("uS1"), "notifications/t6"), task()));                              // students send none
+  });
+  it("the recipient can mark it read and nothing else; nobody deletes", async () => {
+    await assertSucceeds(updateDoc(doc(as("uS1"), "notifications/n1"), { read: true, readAt: new Date() }));
+    await assertFails(updateDoc(doc(as("uS1"), "notifications/n1"), { read: true, title: "x" }));
+    await assertFails(updateDoc(doc(as("uS1"), "notifications/n1"), { read: false }));
+    await assertFails(updateDoc(doc(as("uS2"), "notifications/n1"), { read: true }));
+    await assertFails(updateDoc(doc(as("dir1"), "notifications/n1"), { read: true }));
+    await assertFails(deleteDoc(doc(as("uS1"), "notifications/n1")));
+  });
+  it("announcements belong to the director alone", async () => {
+    const ann = { centerId: C1, title: "ت", message: "م", authorId: "dir1", status: "published", targetAudience: "all" };
+    await assertSucceeds(setDoc(doc(as("dir1"), "announcements/a1"), ann));
+    await assertSucceeds(getDoc(doc(as("dir1"), "announcements/a1")));
+    await assertFails(getDoc(doc(as("tA"), "announcements/a1")));
+    await assertFails(getDoc(doc(as("dir2"), "announcements/a1")));
+    await assertFails(setDoc(doc(as("tA"), "announcements/a2"), { ...ann, authorId: "tA" }));
+    await assertFails(setDoc(doc(as("dir1"), "announcements/a3"), { ...ann, authorId: "someoneElse" }));
+    await assertFails(deleteDoc(doc(as("dir1"), "announcements/a1")));
+  });
+});
+
 describe("default deny for features not built yet", () => {
-  it("notifications and announcements stay closed", async () => {
-    await assertFails(setDoc(doc(as("dir1"), "notifications/n1"), { centerId: C1 }));
-    await assertFails(setDoc(doc(as("dir1"), "announcements/a1"), { centerId: C1 }));
+  it("unknown collections stay closed", async () => {
+    await assertFails(setDoc(doc(as("dir1"), "mystery/m1"), { centerId: C1 }));
   });
 });

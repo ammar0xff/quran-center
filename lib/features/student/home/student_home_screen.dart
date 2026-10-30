@@ -7,6 +7,7 @@ import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/core/utils/task_state.dart';
 import 'package:quran_center/features/director/circles/circle_detail_data.dart'
     show circleModeLabel;
+import 'package:quran_center/features/shared/notifications/notifications_screen.dart';
 import 'package:quran_center/features/student/tasks/student_task_detail_screen.dart'
     show taskRangeText;
 import 'package:quran_center/features/student/widgets/student_scaffold.dart';
@@ -34,9 +35,14 @@ class StudentHomeScreen extends ConsumerWidget {
         return ListView(
           padding: const EdgeInsets.all(DesignTokens.space20),
           children: [
-            Text('أهلاً بك، $name',
-                style: const TextStyle(
-                    fontSize: 22, fontWeight: FontWeight.bold, color: DesignTokens.mainText)),
+            Row(children: [
+              Expanded(
+                child: Text('أهلاً بك، $name',
+                    style: const TextStyle(
+                        fontSize: 22, fontWeight: FontWeight.bold, color: DesignTokens.mainText)),
+              ),
+              const NotificationBell(route: '/student/notifications'),
+            ]),
             const SizedBox(height: DesignTokens.space4),
             Text(DateFormat.yMMMMEEEEd('ar').format(now),
                 style: const TextStyle(color: DesignTokens.secondaryText)),

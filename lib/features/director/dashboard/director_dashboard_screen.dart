@@ -9,6 +9,7 @@ import 'package:quran_center/design_system/components/kpi_card.dart';
 import 'package:quran_center/design_system/components/section_header.dart';
 import 'package:quran_center/features/director/dashboard/dashboard_provider.dart';
 import 'package:quran_center/features/director/widgets/director_bottom_nav.dart';
+import 'package:quran_center/features/shared/notifications/notifications_screen.dart';
 
 /// Director overview. Every number comes from the center's own records
 /// (see [computeDashboardStats]); nothing here is a placeholder.
@@ -32,11 +33,16 @@ class DirectorDashboardScreen extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: DesignTokens.space20),
               children: [
                 const SizedBox(height: DesignTokens.space16),
-                Text('أهلاً بك، $name',
-                    style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: DesignTokens.mainText)),
+                Row(children: [
+                  Expanded(
+                    child: Text('أهلاً بك، $name',
+                        style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: DesignTokens.mainText)),
+                  ),
+                  const NotificationBell(route: '/director/notifications'),
+                ]),
                 const SizedBox(height: DesignTokens.space4),
                 Text(DateFormat.yMMMMEEEEd('ar').format(now),
                     style: const TextStyle(

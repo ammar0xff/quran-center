@@ -47,7 +47,7 @@ Authorization enforced by the backend (Firestore Security Rules + Cloud Function
 ## Enforced and tested
 
 Firestore Security Rules (`firebase/firestore.rules`) are tested against the
-real Firestore emulator (`firebase/rules-tests`, 103 tests) and cover:
+real Firestore emulator (`firebase/rules-tests`, 110 tests) and cover:
 users, centers, students, teachers, circles, enrollments, schedules,
 attendance and audit_logs, including the enrollment-assignment batch and the
 rule that director list queries must filter by `centerId`. Everything else is **default deny**.
@@ -98,6 +98,13 @@ archiving update it inside a transaction that re-checks the capacity, and the
 rules refuse any write that would push it past `maxCapacity` (proved with two
 concurrent real SDK transactions: exactly one commits). An in-progress session
 keeps its teacher when a circle's teacher changes, so no hand-over race exists.
+
+Notifications: addressed to one user and readable only by them (not even the
+director). A director may notify any active member of the center (announcements,
+alerts); a teacher may notify only the login of one of their own students, and
+only about tasks. The recipient can only mark a notification read. Messages are
+generic: no student detail is placed in a notification. Delivery is in-app;
+push (FCM) is not wired.
 
 Key design points:
 * `users/{uid}` is written only by the Admin SDK. Role and status are read from

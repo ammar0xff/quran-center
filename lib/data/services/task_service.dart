@@ -5,6 +5,7 @@ import 'package:quran_center/data/datasources/firestore_helpers.dart';
 import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/data/models/learning_plan.dart';
 import 'package:quran_center/data/models/learning_task.dart';
+import 'package:quran_center/data/services/notification_service.dart';
 
 /// A task action that cannot proceed. [message] is user-facing Arabic.
 class TaskException implements Exception {
@@ -76,6 +77,10 @@ class TaskService {
       throw TaskException('هذا الطالب ليس ضمن طلابك الحاليين.');
     }
 
+    // The student's login, if they have one: only then is there someone to tell.
+    final studentDoc = await _ds.getDoc('students/$studentId');
+    final studentLogin = studentDoc?['authUserId'] as String?;
+
     final planId = planIdFor(studentId, teacherId);
     final plans = await _ds.query('learning_plans', where: [
       QueryFilter.equal('centerId', centerId),
@@ -130,6 +135,20 @@ class TaskService {
         'learning_tasks/$taskId',
         firestoreConverter.encodeForWrite(task.toJson(), timestampKeys: _taskTs),
       ),
+      if (studentLogin != null)
+        BatchOp.set(
+          'notifications/${newNotificationId(now, studentLogin, 'asg')}',
+          notificationDoc(
+            centerId: centerId,
+            recipientUserId: studentLogin,
+            type: 'new_assignment',
+            title: 'مهمة جديدة',
+            message: 'أسند إليك معلمك مهمة جديدة. افتح «مهامي» لتراها.',
+            relatedEntityType: 'student',
+            relatedEntityId: studentId,
+            now: now,
+          ),
+        ),
     ]);
   }
 
@@ -152,7 +171,9 @@ class TaskService {
     }
     final now = _now();
     final fb = feedback?.trim();
-    await _ds.updateDoc('learning_tasks/$taskId', {
+    final studentLogin = (await _ds.getDoc('students/${task.studentId}'))?['authUserId'] as String?;
+    await _ds.commitBatch([
+      BatchOp.update('learning_tasks/$taskId', {
       'status': to.toJson(),
       'teacherVerification': firestoreConverter.encodeForWrite(
         {
@@ -171,7 +192,24 @@ class TaskService {
         timestampKeys: {'completedAt', 'verifiedAt'},
       ),
       'updatedAt': firestoreConverter.serverTimestamp(),
-    });
+      }),
+      if (studentLogin != null)
+        BatchOp.set(
+          'notifications/${newNotificationId(now, studentLogin, 'ver')}',
+          notificationDoc(
+            centerId: centerId,
+            recipientUserId: studentLogin,
+            type: 'teacher_feedback',
+            title: to == TaskStatus.completed ? 'اعتمد معلمك مهمتك' : 'راجع معلمك مهمتك',
+            message: to == TaskStatus.completed
+                ? 'اعتمد المعلم إنجاز إحدى مهامك.'
+                : 'طلب المعلم إعادة المحاولة في إحدى مهامك. افتحها لترى ملاحظته.',
+            relatedEntityType: 'student',
+            relatedEntityId: task.studentId,
+            now: now,
+          ),
+        ),
+    ]);
   }
 
   Future<void> cancel({

@@ -9,6 +9,11 @@ import 'package:quran_center/features/authentication/screens/forgot_password_scr
 import 'package:quran_center/features/authentication/screens/login_screen.dart';
 import 'package:quran_center/features/authentication/screens/splash_screen.dart';
 import 'package:quran_center/features/director/accounts/accounts_screen.dart';
+import 'package:quran_center/features/director/announcements/announcements_screen.dart';
+import 'package:quran_center/features/director/widgets/director_bottom_nav.dart';
+import 'package:quran_center/features/shared/notifications/notifications_screen.dart';
+import 'package:quran_center/features/student/widgets/student_bottom_nav.dart';
+import 'package:quran_center/features/teacher/widgets/teacher_bottom_nav.dart';
 import 'package:quran_center/features/director/attendance/attendance_administration_screen.dart';
 import 'package:quran_center/features/director/circles/circle_management_list_screen.dart';
 import 'package:quran_center/features/director/circles/circle_detail_screen.dart';
@@ -129,6 +134,28 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/director/attendance',
         builder: (_, __) => const AttendanceAdministrationScreen(),
+      ),
+      GoRoute(
+        path: '/director/announcements',
+        builder: (_, __) => const AnnouncementsScreen(),
+      ),
+      GoRoute(
+        path: '/director/notifications',
+        builder: (_, __) => const NotificationsScreen(
+          bottomNavigationBar: DirectorBottomNav(currentIndex: 0),
+        ),
+      ),
+      GoRoute(
+        path: '/teacher/notifications',
+        builder: (_, __) => const NotificationsScreen(
+          bottomNavigationBar: TeacherBottomNav(currentIndex: 0),
+        ),
+      ),
+      GoRoute(
+        path: '/student/notifications',
+        builder: (_, __) => const NotificationsScreen(
+          bottomNavigationBar: StudentBottomNav(currentIndex: 0),
+        ),
       ),
       GoRoute(
         path: '/director/accounts',
