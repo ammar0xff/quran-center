@@ -7,7 +7,7 @@ import 'package:quran_center/data/models/app_model.dart';
 import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/data/models/schedule.dart';
 import 'package:quran_center/data/providers/repositories.dart';
-import 'package:quran_center/design_system/components/custom_bottom_nav.dart';
+import 'package:quran_center/features/director/widgets/director_bottom_nav.dart';
 import 'package:quran_center/features/director/schedules/create_session_sheet.dart';
 
 enum ScheduleView { list, daily, weekly }
@@ -295,17 +295,7 @@ class _ScheduleManagementScreenState
             ),
           ],
         ),
-        bottomNavigationBar: CustomBottomNav(
-          items: const [
-            BottomNavItem(label: 'نظرة عامة', icon: Icons.dashboard, activeIcon: Icons.dashboard),
-            BottomNavItem(label: 'الطلاب', icon: Icons.people, activeIcon: Icons.people),
-            BottomNavItem(label: 'المعلمون', icon: Icons.person, activeIcon: Icons.person),
-            BottomNavItem(label: 'الحلقات', icon: Icons.school, activeIcon: Icons.school),
-            BottomNavItem(label: 'المزيد', icon: Icons.menu, activeIcon: Icons.menu),
-          ],
-          currentIndex: 4,
-          onTap: (i) {},
-        ),
+        bottomNavigationBar: const DirectorBottomNav(currentIndex: 4),
       ),
     );
   }

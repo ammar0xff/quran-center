@@ -243,6 +243,9 @@ class _SummaryCard extends StatelessWidget {
               cell('معذور', summary.excused, DesignTokens.informational),
             ],
           ),
+          const SizedBox(height: DesignTokens.space8),
+          const Text('تشمل جميع السجلات المسجلة (بلا تحديد فترة).',
+              style: TextStyle(fontSize: 12, color: DesignTokens.secondaryText)),
           const Divider(height: DesignTokens.space24),
           Text(
             rate == null

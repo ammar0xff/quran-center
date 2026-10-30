@@ -7,7 +7,7 @@ import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/data/models/student.dart';
 import 'package:quran_center/data/providers/repositories.dart';
 import 'package:quran_center/data/services/account_access_service.dart';
-import 'package:quran_center/design_system/components/custom_bottom_nav.dart';
+import 'package:quran_center/features/director/widgets/director_bottom_nav.dart';
 
 /// Director "Add Student" form.
 ///
@@ -339,17 +339,7 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
             ],
           ),
         ),
-        bottomNavigationBar: CustomBottomNav(
-          items: const [
-            BottomNavItem(label: 'نظرة عامة', icon: Icons.dashboard, activeIcon: Icons.dashboard),
-            BottomNavItem(label: 'الطلاب', icon: Icons.people, activeIcon: Icons.people),
-            BottomNavItem(label: 'الحلقات', icon: Icons.school, activeIcon: Icons.school),
-            BottomNavItem(label: 'التقارير', icon: Icons.insert_chart, activeIcon: Icons.insert_chart),
-            BottomNavItem(label: 'المزيد', icon: Icons.menu, activeIcon: Icons.menu),
-          ],
-          currentIndex: 1,
-          onTap: (i) {},
-        ),
+        bottomNavigationBar: const DirectorBottomNav(currentIndex: 1),
       ),
     );
   }

@@ -10,8 +10,10 @@ import 'package:quran_center/features/authentication/screens/login_screen.dart';
 import 'package:quran_center/features/authentication/screens/splash_screen.dart';
 import 'package:quran_center/features/director/attendance/attendance_administration_screen.dart';
 import 'package:quran_center/features/director/circles/circle_management_list_screen.dart';
+import 'package:quran_center/features/director/circles/create_circle_screen.dart';
 import 'package:quran_center/features/director/dashboard/director_dashboard_screen.dart';
 import 'package:quran_center/features/director/enrollments/enrollment_assignment_screen.dart';
+import 'package:quran_center/features/director/more/director_more_screen.dart';
 import 'package:quran_center/features/director/schedules/schedule_management_screen.dart';
 import 'package:quran_center/features/director/students/add_student_screen.dart';
 import 'package:quran_center/features/director/students/director_student_profile_screen.dart';
@@ -73,6 +75,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const CircleManagementListScreen(),
       ),
       GoRoute(
+        path: '/director/circles/add',
+        builder: (_, __) => const CreateCircleScreen(),
+      ),
+      GoRoute(
         path: '/director/enrollments/assign',
         builder: (_, __) => const EnrollmentAssignmentScreen(),
       ),
@@ -83,6 +89,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/director/attendance',
         builder: (_, __) => const AttendanceAdministrationScreen(),
+      ),
+      GoRoute(
+        path: '/director/more',
+        builder: (_, __) => const DirectorMoreScreen(),
       ),
 
       // Teacher and student areas: not built yet (Phases 5 and 6).
