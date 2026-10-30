@@ -94,9 +94,13 @@ service cloud.firestore {
     match /teachers/{teacherId} {
       allow read: if isDirector(resource.data.centerId)
         || (isTeacher(resource.data.centerId) && request.auth.uid == teacherId);
-      allow create: if isDirector(request.resource.data.centerId);
+      // Teachers are created, suspended and reactivated only by the
+      // createTeacher / setTeacherSuspended Cloud Functions, which also manage
+      // the login. A client-made teacher document would have no account and
+      // would break the "document id == auth uid" convention.
+      allow create: if false;
       allow update: if isDirector(resource.data.centerId)
-        && unchanged(['centerId', 'userId']);
+        && unchanged(['centerId', 'userId', 'status']);
       allow delete: if false;
     }
 

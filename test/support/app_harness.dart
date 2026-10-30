@@ -134,3 +134,41 @@ Future<AppHarness> bootApp(
   await tester.pumpAndSettle();
   return AppHarness(tester, gateway, db);
 }
+
+/// Records access-service calls; optionally fails them.
+class RecordingAccessService implements AccountAccessService {
+  final calls = <String>[];
+  Object? failWith;
+
+  void _record(String call) {
+    calls.add(call);
+    if (failWith != null) throw failWith!;
+  }
+
+  @override
+  Future<void> enableStudentAccess(
+          {required String studentId, required String email}) async =>
+      _record('enableStudent:$studentId:$email');
+
+  @override
+  Future<void> setSuspended(
+          {required String studentId, required bool suspend}) async =>
+      _record('suspendStudent:$studentId:$suspend');
+
+  @override
+  Future<void> createTeacher({
+    required String fullName,
+    required String email,
+    String? phone,
+    String? professionalNotes,
+  }) async =>
+      _record('createTeacher:$fullName:$email:${phone ?? ''}:${professionalNotes ?? ''}');
+
+  @override
+  Future<void> setTeacherSuspended(
+          {required String teacherId, required bool suspend}) async =>
+      _record('suspendTeacher:$teacherId:$suspend');
+
+  @override
+  Future<void> resendActivation(String email) async => _record('resend:$email');
+}

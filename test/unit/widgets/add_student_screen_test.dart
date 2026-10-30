@@ -23,6 +23,18 @@ class _FakeAccess implements AccountAccessService {
       {required String studentId, required bool suspend}) async {}
 
   @override
+  Future<void> createTeacher({
+    required String fullName,
+    required String email,
+    String? phone,
+    String? professionalNotes,
+  }) async {}
+
+  @override
+  Future<void> setTeacherSuspended(
+      {required String teacherId, required bool suspend}) async {}
+
+  @override
   Future<void> resendActivation(String email) async {}
 }
 

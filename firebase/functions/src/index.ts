@@ -6,8 +6,13 @@ import {
   AccessAction,
   AccessBlock,
   checkAccessAction,
+  checkTeacherAction,
+  cleanName,
   isPlausibleEmail,
   StudentAccessState,
+  TeacherAction,
+  TeacherBlock,
+  TeacherStatus,
 } from "./accessRules";
 
 initializeApp();
@@ -237,4 +242,139 @@ export const setStudentAccessSuspended = onCall(async (request) => {
     throw e instanceof HttpsError ? e : new HttpsError("internal", "Could not update access.");
   }
   return { accountMode: newMode };
+});
+
+const teacherBlockMessages: Record<TeacherBlock, string> = {
+  alreadySuspended: "This teacher is already suspended.",
+  notSuspended: "This teacher is not suspended.",
+  archived: "Archived teachers cannot be changed.",
+};
+
+/**
+ * Creates a teacher: the Auth account, its role claims, the authoritative
+ * users/{uid} profile and the teachers/{uid} record (document id == uid, which
+ * the Security Rules rely on) are created together. An email that already has
+ * an account is refused, and a failure part-way removes the new account.
+ * The client then calls sendPasswordResetEmail(email) to deliver activation.
+ */
+export const createTeacher = onCall(async (request) => {
+  const caller = await requireDirector(request);
+  const input = (request.data ?? {}) as Record<string, unknown>;
+  const fullName = cleanName(input["fullName"]);
+  const email = readString(input["email"]).trim().toLowerCase();
+  const phone = readString(input["phone"]).trim();
+  const notes = readString(input["professionalNotes"]).trim();
+  if (fullName === null) throw new HttpsError("invalid-argument", "A valid name is required.");
+  if (!isPlausibleEmail(email)) throw new HttpsError("invalid-argument", "A valid email is required.");
+
+  const uid = await createAuthUser(email, fullName);
+  try {
+    await auth.setCustomUserClaims(uid, { role: "teacher", centerId: caller.centerId });
+    const batch = db.batch();
+    batch.set(db.doc(`users/${uid}`), {
+      centerId: caller.centerId,
+      fullName,
+      role: "teacher",
+      status: "active",
+      authProvider: "password",
+      assignedCenterIds: [caller.centerId],
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    batch.set(db.doc(`teachers/${uid}`), {
+      centerId: caller.centerId,
+      userId: uid,
+      fullName,
+      contactInfo: phone === "" ? { email } : { email, phone },
+      ...(notes === "" ? {} : { professionalNotes: notes }),
+      status: "active",
+      assignedCircleIds: [],
+      createdBy: caller.uid,
+      updatedBy: caller.uid,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    batch.set(db.collection("audit_logs").doc(), {
+      centerId: caller.centerId,
+      actorUserId: caller.uid,
+      actorRole: "director",
+      action: "create_teacher",
+      entityType: "teacher",
+      entityId: uid,
+      newValue: { status: "active" },
+      createdAt: FieldValue.serverTimestamp(),
+    });
+    await batch.commit();
+  } catch (e) {
+    await auth.deleteUser(uid).catch(() => undefined);
+    throw e instanceof HttpsError ? e : new HttpsError("internal", "Could not create the teacher.");
+  }
+  return { uid };
+});
+
+/**
+ * Suspends or reactivates a teacher's login. The Auth change is applied first
+ * (suspension takes effect immediately and sessions are revoked); if the
+ * bookkeeping transaction then fails, the Auth change is reverted. Educational
+ * records the teacher created are untouched.
+ */
+export const setTeacherSuspended = onCall(async (request) => {
+  const caller = await requireDirector(request);
+  const input = (request.data ?? {}) as Record<string, unknown>;
+  const teacherId = readString(input["teacherId"]);
+  const suspend = input["suspend"];
+  if (teacherId === "") throw new HttpsError("invalid-argument", "teacherId is required.");
+  if (typeof suspend !== "boolean") throw new HttpsError("invalid-argument", "suspend must be a boolean.");
+
+  const action: TeacherAction = suspend ? "suspend" : "reactivate";
+  const ref = db.doc(`teachers/${teacherId}`);
+  const snap = await ref.get();
+  const data = snap.data();
+  // Unknown and other-center teachers are indistinguishable.
+  if (!data || data["centerId"] !== caller.centerId) {
+    throw new HttpsError("not-found", "Teacher not found.");
+  }
+  const assertTeacher = (status: unknown): void => {
+    const block = checkTeacherAction((status ?? "active") as TeacherStatus, action);
+    if (block) throw new HttpsError("failed-precondition", teacherBlockMessages[block]);
+  };
+  assertTeacher(data["status"]);
+
+  await auth.updateUser(teacherId, { disabled: suspend });
+  if (suspend) await auth.revokeRefreshTokens(teacherId);
+
+  const newStatus = suspend ? "suspended" : "active";
+  try {
+    await db.runTransaction(async (tx) => {
+      const fresh = (await tx.get(ref)).data();
+      if (!fresh || fresh["centerId"] !== caller.centerId) {
+        throw new HttpsError("not-found", "Teacher not found.");
+      }
+      assertTeacher(fresh["status"]);
+      tx.update(ref, {
+        status: newStatus,
+        updatedBy: caller.uid,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      tx.update(db.doc(`users/${teacherId}`), {
+        status: newStatus,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      tx.set(db.collection("audit_logs").doc(), {
+        centerId: caller.centerId,
+        actorUserId: caller.uid,
+        actorRole: "director",
+        action: suspend ? "suspend_teacher" : "reactivate_teacher",
+        entityType: "teacher",
+        entityId: teacherId,
+        previousValue: { status: suspend ? "active" : "suspended" },
+        newValue: { status: newStatus },
+        createdAt: FieldValue.serverTimestamp(),
+      });
+    });
+  } catch (e) {
+    await auth.updateUser(teacherId, { disabled: !suspend }).catch(() => undefined);
+    throw e instanceof HttpsError ? e : new HttpsError("internal", "Could not update the teacher.");
+  }
+  return { status: newStatus };
 });

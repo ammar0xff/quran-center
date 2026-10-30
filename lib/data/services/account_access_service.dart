@@ -50,6 +50,18 @@ abstract class AccountAccessService {
   /// Suspends ([suspend] = true) or reactivates a student's login.
   Future<void> setSuspended({required String studentId, required bool suspend});
 
+  /// Creates a teacher (login, role, profile and record together) and sends
+  /// activation instructions to [email].
+  Future<void> createTeacher({
+    required String fullName,
+    required String email,
+    String? phone,
+    String? professionalNotes,
+  });
+
+  /// Suspends ([suspend] = true) or reactivates a teacher's login.
+  Future<void> setTeacherSuspended({required String teacherId, required bool suspend});
+
   /// Re-sends the activation / password-setup email.
   Future<void> resendActivation(String email);
 }
@@ -103,6 +115,38 @@ class CloudFunctionsAccountAccessService implements AccountAccessService {
     await _call(() => _fn
         .httpsCallable('setStudentAccessSuspended')
         .call<dynamic>({'studentId': studentId, 'suspend': suspend}));
+  }
+
+  @override
+  Future<void> createTeacher({
+    required String fullName,
+    required String email,
+    String? phone,
+    String? professionalNotes,
+  }) async {
+    final normalized = email.trim().toLowerCase();
+    await _call(() => _fn.httpsCallable('createTeacher').call<dynamic>({
+          'fullName': fullName.trim(),
+          'email': normalized,
+          if (phone != null && phone.trim().isNotEmpty) 'phone': phone.trim(),
+          if (professionalNotes != null && professionalNotes.trim().isNotEmpty)
+            'professionalNotes': professionalNotes.trim(),
+        }));
+    try {
+      await _firebaseAuth.sendPasswordResetEmail(email: normalized);
+    } catch (_) {
+      throw ActivationEmailException();
+    }
+  }
+
+  @override
+  Future<void> setTeacherSuspended({
+    required String teacherId,
+    required bool suspend,
+  }) async {
+    await _call(() => _fn
+        .httpsCallable('setTeacherSuspended')
+        .call<dynamic>({'teacherId': teacherId, 'suspend': suspend}));
   }
 
   @override

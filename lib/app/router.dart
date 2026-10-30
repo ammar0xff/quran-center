@@ -18,6 +18,7 @@ import 'package:quran_center/features/director/schedules/schedule_management_scr
 import 'package:quran_center/features/director/students/add_student_screen.dart';
 import 'package:quran_center/features/director/students/director_student_profile_screen.dart';
 import 'package:quran_center/features/director/students/student_management_list_screen.dart';
+import 'package:quran_center/features/director/teachers/add_teacher_screen.dart';
 import 'package:quran_center/features/director/teachers/teacher_management_list_screen.dart';
 import 'package:quran_center/features/shared/role_home_placeholder.dart';
 
@@ -69,6 +70,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/director/teachers',
         builder: (_, __) => const TeacherManagementListScreen(),
+      ),
+      GoRoute(
+        path: '/director/teachers/add',
+        builder: (_, __) => const AddTeacherScreen(),
       ),
       GoRoute(
         path: '/director/circles',

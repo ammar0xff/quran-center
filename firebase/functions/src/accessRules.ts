@@ -49,3 +49,28 @@ export function checkAccessAction(
 export function isPlausibleEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
 }
+
+export type TeacherStatus = "active" | "suspended" | "archived";
+export type TeacherAction = "suspend" | "reactivate";
+export type TeacherBlock = "alreadySuspended" | "notSuspended" | "archived";
+
+/**
+ * State machine for a teacher's account:
+ *   active --suspend--> suspended --reactivate--> active
+ * Archived teachers cannot be changed here.
+ */
+export function checkTeacherAction(
+  status: TeacherStatus,
+  action: TeacherAction
+): TeacherBlock | null {
+  if (status === "archived") return "archived";
+  if (action === "suspend") return status === "suspended" ? "alreadySuspended" : null;
+  return status === "suspended" ? null : "notSuspended";
+}
+
+/** Trimmed, non-empty display name or null. */
+export function cleanName(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const v = value.trim().replace(/\s+/g, " ");
+  return v.length >= 2 && v.length <= 120 ? v : null;
+}

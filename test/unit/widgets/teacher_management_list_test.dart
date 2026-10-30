@@ -38,7 +38,11 @@ void main() {
 
       expect(find.text('إدارة المعلمين'), findsOneWidget);
       expect(find.text('فاطمة علي'), findsOneWidget);
-      expect(find.text('نشط'), findsOneWidget);
+      expect(
+        find.descendant(
+            of: find.widgetWithText(ListTile, 'فاطمة علي'), matching: find.text('نشط')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('shows empty state when no teachers', (tester) async {

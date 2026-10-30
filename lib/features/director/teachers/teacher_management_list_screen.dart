@@ -1,24 +1,110 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/data/models/teacher.dart';
 import 'package:quran_center/data/providers/repositories.dart';
+import 'package:quran_center/data/services/account_access_service.dart';
 import 'package:quran_center/features/director/widgets/director_bottom_nav.dart';
 
-/// Director teacher management list.
-///
-/// Lists teachers in the center with status, assigned circles, student count.
-/// Actions: open profile, edit, assign circles, reassign students, suspend,
-/// reactivate. Add Teacher via the header action.
-class TeacherManagementListScreen extends ConsumerWidget {
+/// Director teacher list: search, status filter, suspend / reactivate.
+class TeacherManagementListScreen extends ConsumerStatefulWidget {
   const TeacherManagementListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final teachers = ref.watch(teacherRepositoryProvider).getTeachersByCenter(ref.read(centerIdProvider));
+  ConsumerState<TeacherManagementListScreen> createState() =>
+      _TeacherManagementListScreenState();
+}
 
+class _TeacherManagementListScreenState
+    extends ConsumerState<TeacherManagementListScreen> {
+  List<Teacher> _teachers = [];
+  String _query = '';
+  AccountStatus? _status;
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final list = await ref
+          .read(teacherRepositoryProvider)
+          .getTeachersByCenter(ref.read(centerIdProvider));
+      if (!mounted) return;
+      setState(() {
+        _teachers = list;
+        _loading = false;
+        _error = null;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = 'تعذر تحميل المعلمين';
+      });
+    }
+  }
+
+  List<Teacher> get _visible {
+    final q = _query.trim().toLowerCase();
+    final list = _teachers.where((t) {
+      if (_status != null && t.status != _status) return false;
+      return q.isEmpty || t.fullName.toLowerCase().contains(q);
+    }).toList();
+    list.sort((a, b) => a.fullName.compareTo(b.fullName));
+    return list;
+  }
+
+  Future<void> _toggleSuspend(Teacher t) async {
+    final suspend = t.status == AccountStatus.active;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          title: Text(suspend ? 'تعليق ${t.fullName}؟' : 'إعادة تفعيل ${t.fullName}؟'),
+          content: Text(suspend
+              ? 'لن يتمكن المعلم من تسجيل الدخول. تبقى سجلاته وتقييماته كما هي، '
+                  'ويمكنك إعادة التفعيل في أي وقت.'
+              : 'سيتمكن المعلم من تسجيل الدخول مجددًا.'),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('إلغاء')),
+            FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: Text(suspend ? 'تعليق' : 'إعادة التفعيل')),
+          ],
+        ),
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await ref
+          .read(accountAccessServiceProvider)
+          .setTeacherSuspended(teacherId: t.teacherId, suspend: suspend);
+      await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(suspend ? 'تم تعليق المعلم' : 'تمت إعادة تفعيل المعلم'),
+          backgroundColor: DesignTokens.success));
+    } on AccountAccessException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message), backgroundColor: DesignTokens.error));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final items = _visible;
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -27,203 +113,197 @@ class TeacherManagementListScreen extends ConsumerWidget {
           title: const Text('إدارة المعلمين'),
           centerTitle: false,
           actions: [
-            FilledButton(
-              onPressed: () {},
-              style: FilledButton.styleFrom(
-                backgroundColor: DesignTokens.primaryDarkGreen,
-                foregroundColor: Colors.white,
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.person_add, size: 20),
-                  SizedBox(width: 6),
-                  Text('إضافة معلم', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                ],
-              ),
+            FilledButton.icon(
+              onPressed: () => context.push('/director/teachers/add'),
+              icon: const Icon(Icons.person_add, size: 20),
+              label: const Text('إضافة معلم'),
             ),
+            const SizedBox(width: DesignTokens.space12),
           ],
         ),
-        body: FutureBuilder<List<Teacher>>(
-          future: teachers,
-          builder: (context, snap) {
-            if (snap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snap.hasError) {
-              return Center(child: Text('خطأ: ${snap.error}'));
-            }
-            final list = snap.data ?? [];
-            if (list.isEmpty) {
-              return _buildEmptyState(context);
-            }
-            return ListView.builder(
-              itemCount: list.length,
-              itemBuilder: (_, i) => _TeacherCard(teacher: list[i]),
-            );
-          },
-        ),
+        body: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_error!),
+                        const SizedBox(height: DesignTokens.space12),
+                        OutlinedButton(
+                            onPressed: _load, child: const Text('إعادة المحاولة')),
+                      ],
+                    ),
+                  )
+                : _teachers.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.person_outline,
+                                size: 64, color: DesignTokens.secondaryText),
+                            const SizedBox(height: DesignTokens.space16),
+                            const Text('لا يوجد معلمون',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.w700)),
+                            const SizedBox(height: DesignTokens.space8),
+                            const Text('أضف معلمًا لبدء تعيين الحلقات والطلاب.',
+                                style: TextStyle(color: DesignTokens.secondaryText)),
+                            const SizedBox(height: DesignTokens.space24),
+                            FilledButton(
+                              onPressed: () => context.push('/director/teachers/add'),
+                              child: const Text('إضافة أول معلم'),
+                            ),
+                          ],
+                        ),
+                      )
+                    : Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(DesignTokens.space16),
+                            child: Column(
+                              children: [
+                                TextField(
+                                  onChanged: (v) => setState(() => _query = v),
+                                  decoration: const InputDecoration(
+                                    prefixIcon: Icon(Icons.search),
+                                    hintText: 'ابحث باسم المعلم',
+                                  ),
+                                ),
+                                const SizedBox(height: DesignTokens.space8),
+                                Align(
+                                  alignment: AlignmentDirectional.centerStart,
+                                  child: Wrap(
+                                    spacing: DesignTokens.space8,
+                                    children: [
+                                      ChoiceChip(
+                                        label: const Text('الكل'),
+                                        selected: _status == null,
+                                        onSelected: (_) => setState(() => _status = null),
+                                      ),
+                                      ChoiceChip(
+                                        label: const Text('نشط'),
+                                        selected: _status == AccountStatus.active,
+                                        onSelected: (_) => setState(
+                                            () => _status = AccountStatus.active),
+                                      ),
+                                      ChoiceChip(
+                                        label: const Text('معلّق'),
+                                        selected: _status == AccountStatus.suspended,
+                                        onSelected: (_) => setState(
+                                            () => _status = AccountStatus.suspended),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: items.isEmpty
+                                ? Center(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Text('لا يوجد معلمون مطابقون'),
+                                        TextButton(
+                                          onPressed: () => setState(() {
+                                            _query = '';
+                                            _status = null;
+                                          }),
+                                          child: const Text('مسح البحث والفلاتر'),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : ListView.builder(
+                                    itemCount: items.length,
+                                    itemBuilder: (_, i) => _TeacherCard(
+                                      teacher: items[i],
+                                      onToggleSuspend: () => _toggleSuspend(items[i]),
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      ),
         bottomNavigationBar: const DirectorBottomNav(currentIndex: 2),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.person_outline, size: 64, color: DesignTokens.secondaryText),
-          const SizedBox(height: DesignTokens.space16),
-          Text(
-            'لا يوجد معلمون',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: DesignTokens.mainText,
-            ),
-          ),
-          const SizedBox(height: DesignTokens.space8),
-          Text(
-            'أضف معلمًا لبدء تعيين الحلقات والطلاب.',
-            style: TextStyle(fontSize: 14, color: DesignTokens.secondaryText),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: DesignTokens.space24),
-          FilledButton(
-            onPressed: () {},
-            child: const Text('إضافة معلم'),
-          ),
-        ],
       ),
     );
   }
 }
 
 class _TeacherCard extends StatelessWidget {
+  const _TeacherCard({required this.teacher, required this.onToggleSuspend});
+
   final Teacher teacher;
-  const _TeacherCard({required this.teacher});
+  final VoidCallback onToggleSuspend;
 
   @override
   Widget build(BuildContext context) {
+    final active = teacher.status == AccountStatus.active;
+    final suspended = teacher.status == AccountStatus.suspended;
+    final label = switch (teacher.status) {
+      AccountStatus.active => 'نشط',
+      AccountStatus.suspended => 'معلّق',
+      AccountStatus.pending => 'قيد التفعيل',
+      AccountStatus.incomplete => 'ناقص',
+    };
+    final color = active
+        ? DesignTokens.success
+        : suspended
+            ? DesignTokens.error
+            : DesignTokens.warning;
     return Container(
       margin: const EdgeInsets.symmetric(
-        horizontal: DesignTokens.space20,
-        vertical: DesignTokens.space8,
-      ),
+          horizontal: DesignTokens.space20, vertical: DesignTokens.space8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(DesignTokens.radiusMedium),
         border: Border.all(color: DesignTokens.borders),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 1),
-          ),
-        ],
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: DesignTokens.space16,
-          vertical: DesignTokens.space8,
-        ),
+            horizontal: DesignTokens.space16, vertical: DesignTokens.space8),
         leading: CircleAvatar(
           backgroundColor: DesignTokens.softMint,
           child: Text(
             teacher.fullName.isNotEmpty ? teacher.fullName[0] : 'م',
             style: const TextStyle(
-              color: DesignTokens.primaryDarkGreen,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+                color: DesignTokens.primaryDarkGreen, fontWeight: FontWeight.bold),
           ),
         ),
-        title: Text(
-          teacher.fullName,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: DesignTokens.mainText,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: DesignTokens.space4),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: DesignTokens.space8,
-                    vertical: DesignTokens.space4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _statusColor(teacher.status).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusSmall),
-                    border: Border.all(color: _statusColor(teacher.status)),
-                  ),
-                  child: Text(
-                    _statusLabel(teacher.status),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: _statusColor(teacher.status),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: DesignTokens.space8),
-                Text(
-                  teacher.assignedCircleIds.isEmpty
-                      ? 'بدون حلقات'
-                      : '${teacher.assignedCircleIds.length} حلقة',
+        title: Text(teacher.fullName,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: DesignTokens.space4),
+          child: Wrap(
+            spacing: DesignTokens.space8,
+            children: [
+              Text(label,
                   style: TextStyle(
-                    fontSize: 11,
-                    color: DesignTokens.secondaryText,
-                  ),
-                ),
-              ],
-            ),
-          ],
+                      fontSize: 12, fontWeight: FontWeight.w700, color: color)),
+              Text(
+                teacher.assignedCircleIds.isEmpty
+                    ? 'بدون حلقات'
+                    : '${teacher.assignedCircleIds.length} حلقة',
+                style: const TextStyle(
+                    fontSize: 12, color: DesignTokens.secondaryText),
+              ),
+            ],
+          ),
         ),
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) {},
-          itemBuilder: (_) => [
-            const PopupMenuItem(value: 'open', child: Text('فتح الملف الشخصي')),
-            const PopupMenuItem(value: 'edit', child: Text('تعديل')),
-            const PopupMenuItem(value: 'assign_circles', child: Text('تعيين حلقات')),
-            const PopupMenuItem(value: 'reassign', child: Text('إعادة توزيع الطلاب')),
-            const PopupMenuItem(value: 'suspend', child: Text('تعليق الدخول')),
-            const PopupMenuItem(value: 'reactivate', child: Text('إعادة تفعيل')),
-          ],
-        ),
+        trailing: (active || suspended)
+            ? PopupMenuButton<String>(
+                tooltip: 'خيارات',
+                onSelected: (_) => onToggleSuspend(),
+                itemBuilder: (_) => [
+                  PopupMenuItem(
+                      value: 'toggle',
+                      child: Text(active ? 'تعليق الدخول' : 'إعادة تفعيل')),
+                ],
+              )
+            : null,
       ),
     );
-  }
-
-  Color _statusColor(AccountStatus s) {
-    switch (s) {
-      case AccountStatus.active:
-        return DesignTokens.success;
-      case AccountStatus.suspended:
-        return DesignTokens.error;
-      case AccountStatus.pending:
-        return DesignTokens.warning;
-      case AccountStatus.incomplete:
-        return DesignTokens.secondaryText;
-    }
-  }
-
-  String _statusLabel(AccountStatus s) {
-    switch (s) {
-      case AccountStatus.active:
-        return 'نشط';
-      case AccountStatus.suspended:
-        return 'مُعلَّق';
-      case AccountStatus.pending:
-        return 'قيد الانتظار';
-      case AccountStatus.incomplete:
-        return 'ناقص';
-    }
   }
 }

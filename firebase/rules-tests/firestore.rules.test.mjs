@@ -243,6 +243,41 @@ describe("attendance", () => {
   });
 });
 
+describe("teachers", () => {
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, "teachers/tA"), { centerId: C1, userId: "tA", fullName: "المعلم أ", status: "active", assignedCircleIds: [] });
+      await setDoc(doc(db, "teachers/tB"), { centerId: C1, userId: "tB", fullName: "المعلم ب", status: "active", assignedCircleIds: [] });
+    });
+  });
+  it("a teacher reads their own record but not a colleague's", async () => {
+    await assertSucceeds(getDoc(doc(as("tA"), "teachers/tA")));
+    await assertFails(getDoc(doc(as("tA"), "teachers/tB")));
+  });
+  it("students and other centers cannot read teachers", async () => {
+    await assertFails(getDoc(doc(as("uS1"), "teachers/tA")));
+    await assertFails(getDoc(doc(as("dir2"), "teachers/tA")));
+    await assertSucceeds(getDoc(doc(as("dir1"), "teachers/tA")));
+  });
+  it("no client can create a teacher document, even a director", async () => {
+    await assertFails(setDoc(doc(as("dir1"), "teachers/forged"), { centerId: C1, userId: "forged", fullName: "x", status: "active" }));
+  });
+  it("a director can edit notes but not status, link or center", async () => {
+    await assertSucceeds(updateDoc(doc(as("dir1"), "teachers/tA"), { professionalNotes: "ملاحظات" }));
+    await assertFails(updateDoc(doc(as("dir1"), "teachers/tA"), { status: "suspended" }));
+    await assertFails(updateDoc(doc(as("dir1"), "teachers/tA"), { userId: "other" }));
+    await assertFails(updateDoc(doc(as("dir1"), "teachers/tA"), { centerId: C2 }));
+  });
+  it("a teacher cannot edit their own record", async () => {
+    await assertFails(updateDoc(doc(as("tA"), "teachers/tA"), { fullName: "x" }));
+    await assertFails(updateDoc(doc(as("tA"), "teachers/tA"), { status: "active" }));
+  });
+  it("teachers are never deleted", async () => {
+    await assertFails(deleteDoc(doc(as("dir1"), "teachers/tA")));
+  });
+});
+
 describe("circles", () => {
   it("a teacher reads only their own circle", async () => {
     await assertSucceeds(getDoc(doc(as("tA"), "circles/circle1")));

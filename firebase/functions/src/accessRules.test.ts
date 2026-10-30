@@ -55,3 +55,25 @@ test("isPlausibleEmail", () => {
     assert.equal(isPlausibleEmail(bad), false, bad);
   }
 });
+
+import { checkTeacherAction, cleanName } from "./accessRules";
+
+test("teacher state machine", () => {
+  assert.equal(checkTeacherAction("active", "suspend"), null);
+  assert.equal(checkTeacherAction("suspended", "suspend"), "alreadySuspended");
+  assert.equal(checkTeacherAction("suspended", "reactivate"), null);
+  assert.equal(checkTeacherAction("active", "reactivate"), "notSuspended");
+  assert.equal(checkTeacherAction("archived", "suspend"), "archived");
+  assert.equal(checkTeacherAction("archived", "reactivate"), "archived");
+});
+
+test("cleanName trims, collapses spaces and bounds length", () => {
+  assert.equal(cleanName("  فاطمة   علي "), "فاطمة علي");
+  assert.equal(cleanName(""), null);
+  assert.equal(cleanName("   "), null);
+  assert.equal(cleanName("ا"), null);
+  assert.equal(cleanName(123), null);
+  assert.equal(cleanName(undefined), null);
+  assert.equal(cleanName("x".repeat(121)), null);
+  assert.equal(cleanName("x".repeat(120)), "x".repeat(120));
+});
