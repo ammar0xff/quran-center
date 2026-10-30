@@ -66,3 +66,15 @@ CircleFormErrors validateCircleForm({
     schedule: scheduleError,
   );
 }
+
+/// Problem with a weekly schedule (day -> (start, end) as `HH:mm`), or null.
+/// Every day must be a real weekday (ISO 1-7) and start strictly before end.
+String? weeklyScheduleError(Map<int, (String, String)> schedule) {
+  for (final e in schedule.entries) {
+    if (e.key < 1 || e.key > 7) return 'يوم غير صالح';
+    if (!isValidTimeRange(e.value.$1, e.value.$2)) {
+      return 'وقت البداية يجب أن يسبق وقت النهاية';
+    }
+  }
+  return null;
+}

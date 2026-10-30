@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quran_center/data/datasources/fake_firestore_datasource.dart';
 import 'package:quran_center/data/datasources/firestore_datasource.dart';
+import 'package:quran_center/data/models/circle.dart';
 import 'package:quran_center/data/services/circle_service.dart';
 
 final _today = DateTime(2026, 11, 10, 9);
@@ -80,11 +81,13 @@ void main() {
   });
 
   Future<bool> edit(String id, {String name = 'حلقة A', int cap = 5, String? teacher = 'tOld',
-          String level = 'مبتدئ', String mode = 'onsite', String? description, String center = 'c1'}) =>
+          String level = 'مبتدئ', String mode = 'onsite', String? description, String center = 'c1',
+          List<CircleWeeklySchedule>? schedule}) =>
       svc.update(id,
           centerId: center, actorId: 'dir-1', actorRole: 'director', name: name,
           educationalLevel: level, description: description, maxCapacity: cap,
-          sessionDurationMinutes: 60, locationOrMode: mode, teacherId: teacher);
+          sessionDurationMinutes: 60, locationOrMode: mode, teacherId: teacher,
+          weeklySchedule: schedule);
 
   Future<String?> teacherOf(String path, [String field = 'teacherId']) async =>
       (await store.getDoc(path))![field] as String?;
@@ -100,6 +103,36 @@ void main() {
     final audit = (await store.query('audit_logs', where: [])).single;
     expect(audit['action'], 'update_circle');
     expect((audit['newValue'] as Map).keys.toSet(), {'name', 'maxCapacity'});
+  });
+
+  test('the weekly schedule can be replaced, per day, and is audited', () async {
+    expect(
+        await edit('A', schedule: const [
+          CircleWeeklySchedule(dayOfWeek: 6, startTime: '08:00', endTime: '09:30'),
+          CircleWeeklySchedule(dayOfWeek: 1, startTime: '16:00', endTime: '17:00'),
+        ]),
+        isTrue);
+    final c = (await store.getDoc('circles/A'))!;
+    expect((c['weeklySchedule'] as List).map((w) => '${w['dayOfWeek']} ${w['startTime']}-${w['endTime']}').toList(),
+        ['1 16:00-17:00', '6 08:00-09:30']);
+    final audit = (await store.query('audit_logs', where: [])).single;
+    expect(audit['action'], 'update_circle');
+    expect((audit['newValue'] as Map).keys, ['weeklySchedule']);
+  });
+
+  test('re-saving the same schedule (any order) changes nothing; null leaves it alone', () async {
+    await edit('A', schedule: const [CircleWeeklySchedule(dayOfWeek: 6, startTime: '08:00', endTime: '09:00')]);
+    expect(await edit('A', schedule: const [CircleWeeklySchedule(dayOfWeek: 6, startTime: '08:00', endTime: '09:00')]), isFalse);
+    expect(await edit('A'), isFalse); // schedule null = untouched
+  });
+
+  test('an invalid or duplicated schedule is refused', () async {
+    await expectLater(edit('A', schedule: const [CircleWeeklySchedule(dayOfWeek: 6, startTime: '09:00', endTime: '08:00')]), throwsA(isA<CircleException>()));
+    await expectLater(edit('A', schedule: const [CircleWeeklySchedule(dayOfWeek: 9, startTime: '08:00', endTime: '09:00')]), throwsA(isA<CircleException>()));
+    await expectLater(edit('A', schedule: const [
+      CircleWeeklySchedule(dayOfWeek: 6, startTime: '08:00', endTime: '09:00'),
+      CircleWeeklySchedule(dayOfWeek: 6, startTime: '10:00', endTime: '11:00'),
+    ]), throwsA(isA<CircleException>()));
   });
 
   test('no change writes nothing and no audit', () async {

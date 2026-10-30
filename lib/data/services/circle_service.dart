@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:quran_center/core/utils/circle_validation.dart';
 import 'package:quran_center/data/datasources/firestore_datasource.dart';
 import 'package:quran_center/data/datasources/firestore_helpers.dart';
+import 'package:quran_center/data/models/circle.dart';
 import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/data/models/schedule.dart';
 
@@ -61,6 +64,9 @@ class CircleService {
     required int sessionDurationMinutes,
     required String locationOrMode,
     String? teacherId,
+
+    /// null leaves the weekly schedule as it is; a list replaces it.
+    List<CircleWeeklySchedule>? weeklySchedule,
   }) async {
     final current = await _circle(centerId, circleId);
     if (current['status'] != 'active') {
@@ -77,6 +83,15 @@ class CircleService {
     );
     if (errors.hasErrors) {
       throw CircleException(errors.name ?? errors.capacity ?? errors.duration ?? 'بيانات غير صالحة.');
+    }
+
+    if (weeklySchedule != null) {
+      final problem = weeklyScheduleError(
+          {for (final w in weeklySchedule) w.dayOfWeek: (w.startTime, w.endTime)});
+      if (problem != null) throw CircleException(problem);
+      if (weeklySchedule.map((w) => w.dayOfWeek).toSet().length != weeklySchedule.length) {
+        throw CircleException('يوم مكرر في الجدول.');
+      }
     }
 
     if (teacherId != null) {
@@ -109,10 +124,17 @@ class CircleService {
       'locationOrMode': locationOrMode,
       'assignedTeacherId': teacherId,
     };
+    if (weeklySchedule != null) {
+      final sorted = [...weeklySchedule]..sort((a, b) => a.dayOfWeek.compareTo(b.dayOfWeek));
+      wanted['weeklySchedule'] = [for (final w in sorted) w.toJson()];
+    }
     final previous = <String, dynamic>{};
     final next = <String, dynamic>{};
     wanted.forEach((key, value) {
-      if (current[key] != value) {
+      final same = value is List
+          ? jsonEncode(_normalized(current[key])) == jsonEncode(_normalized(value))
+          : current[key] == value;
+      if (!same) {
         previous[key] = current[key];
         next[key] = value;
       }
@@ -180,6 +202,16 @@ class CircleService {
     }));
     await _ds.commitBatch(ops);
     return true;
+  }
+
+  /// Schedules sorted by weekday so equal schedules compare equal.
+  List<dynamic> _normalized(dynamic list) {
+    final l = [...((list as List?) ?? const [])];
+    l.sort((a, b) => (a['dayOfWeek'] as int).compareTo(b['dayOfWeek'] as int));
+    return [
+      for (final w in l)
+        {'dayOfWeek': w['dayOfWeek'], 'startTime': w['startTime'], 'endTime': w['endTime']}
+    ];
   }
 
   /// Archives a circle. Refused while students are still enrolled, so no

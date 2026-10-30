@@ -8,11 +8,11 @@ import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/data/models/teacher.dart';
 import 'package:quran_center/data/providers/repositories.dart';
 import 'package:quran_center/data/services/circle_service.dart';
+import 'package:quran_center/features/director/circles/weekly_schedule_editor.dart';
 import 'package:quran_center/features/director/widgets/director_bottom_nav.dart';
 
 /// Edits a circle. Changing the teacher also moves the circle's students and
 /// upcoming sessions to that teacher in one atomic step (see [CircleService]).
-/// The weekly schedule is not editable here yet.
 class EditCircleScreen extends ConsumerStatefulWidget {
   const EditCircleScreen({super.key, required this.circleId});
 
@@ -32,6 +32,8 @@ class _EditCircleScreenState extends ConsumerState<EditCircleScreen> {
   String? _teacherId;
   String? _originalTeacherId;
   List<Teacher> _teachers = [];
+  Map<int, (String, String)> _schedule = {};
+  String? _scheduleError;
 
   CircleFormErrors _errors = const CircleFormErrors();
   bool _loading = true;
@@ -79,6 +81,7 @@ class _EditCircleScreenState extends ConsumerState<EditCircleScreen> {
             ? circle.locationOrMode
             : 'onsite';
         _teachers = teachers;
+        _schedule = scheduleToMap(circle.weeklySchedule);
         // A suspended current teacher is not selectable; keep the value out of
         // the dropdown so it does not assert, but remember it for messaging.
         _originalTeacherId = circle.assignedTeacherId;
@@ -107,11 +110,13 @@ class _EditCircleScreenState extends ConsumerState<EditCircleScreen> {
       start: '',
       end: '',
     );
+    final scheduleError = weeklyScheduleError(_schedule);
     setState(() {
       _errors = errors;
+      _scheduleError = scheduleError;
       _error = null;
     });
-    if (errors.hasErrors) return;
+    if (errors.hasErrors || scheduleError != null) return;
 
     setState(() => _saving = true);
     try {
@@ -128,6 +133,7 @@ class _EditCircleScreenState extends ConsumerState<EditCircleScreen> {
             sessionDurationMinutes: int.parse(_duration.text.trim()),
             locationOrMode: _mode,
             teacherId: _teacherId,
+            weeklySchedule: scheduleFromMap(_schedule),
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -226,6 +232,15 @@ class _EditCircleScreenState extends ConsumerState<EditCircleScreen> {
                                 value: t.teacherId, child: Text(t.fullName)),
                         ],
                         onChanged: (v) => setState(() => _teacherId = v),
+                      ),
+                      const SizedBox(height: DesignTokens.space20),
+                      const Text('الجدول الأسبوعي',
+                          style: TextStyle(fontWeight: FontWeight.w700)),
+                      const SizedBox(height: DesignTokens.space8),
+                      WeeklyScheduleEditor(
+                        value: _schedule,
+                        error: _scheduleError,
+                        onChanged: (v) => setState(() => _schedule = v),
                       ),
                       if (teacherWillChange)
                         const Padding(

@@ -145,6 +145,24 @@ void main() {
       expect(find.text('المعلمة خديجة'), findsOneWidget); // detail page refreshed
     });
 
+    testWidgets('the weekly schedule is editable per day', (tester) async {
+      final app = await open(tester, '/director/circles/cA/edit');
+      expect(find.text('البداية 08:00'), findsOneWidget); // existing Saturday slot
+      await tester.dragUntilVisible(
+          find.text('الاثنين'), find.byType(Scrollable).first, const Offset(0, -200));
+      await tester.tap(find.text('الاثنين'));
+      await tester.pump();
+      expect(find.text('البداية 08:00'), findsNWidgets(2)); // new day copies the last slot
+      await tester.dragUntilVisible(
+          find.widgetWithText(FilledButton, 'حفظ'), find.byType(Scrollable).first, const Offset(0, -300));
+      await tester.tap(find.widgetWithText(FilledButton, 'حفظ'));
+      await tester.pumpAndSettle();
+      final days = ((await app.store.getDoc('circles/cA'))!['weeklySchedule'] as List)
+          .map((w) => w['dayOfWeek'])
+          .toSet();
+      expect(days, {6, 1});
+    });
+
     testWidgets('capacity below the current students is refused with the reason', (tester) async {
       final app = await open(tester, '/director/circles/cA/edit');
       await tester.enterText(find.widgetWithText(TextField, 'السعة القصوى *'), '1');

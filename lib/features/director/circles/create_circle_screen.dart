@@ -8,18 +8,7 @@ import 'package:quran_center/data/models/circle.dart';
 import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/data/models/teacher.dart';
 import 'package:quran_center/data/providers/repositories.dart';
-
-/// Weekday labels in display order (week starts Saturday). Values are ISO
-/// weekday numbers: 1 = Monday ... 7 = Sunday.
-const _days = <(int, String)>[
-  (6, 'السبت'),
-  (7, 'الأحد'),
-  (1, 'الاثنين'),
-  (2, 'الثلاثاء'),
-  (3, 'الأربعاء'),
-  (4, 'الخميس'),
-  (5, 'الجمعة'),
-];
+import 'package:quran_center/features/director/circles/weekly_schedule_editor.dart';
 
 /// Director form that creates a circle.
 class CreateCircleScreen extends ConsumerStatefulWidget {
@@ -38,9 +27,8 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
 
   String _mode = 'onsite';
   String? _teacherId;
-  final Set<int> _selectedDays = {};
-  TimeOfDay _start = const TimeOfDay(hour: 8, minute: 0);
-  TimeOfDay _end = const TimeOfDay(hour: 10, minute: 0);
+  Map<int, (String, String)> _schedule = {};
+  String? _scheduleError;
 
   CircleFormErrors _errors = const CircleFormErrors();
   List<Teacher> _teachers = [];
@@ -78,24 +66,23 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
     super.dispose();
   }
 
-  String _fmt(TimeOfDay t) =>
-      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
-
   Future<void> _save() async {
     if (_saving || _saved) return;
     final errors = validateCircleForm(
       name: _name.text,
       capacity: _capacity.text,
       duration: _duration.text,
-      scheduleDays: _selectedDays,
-      start: _fmt(_start),
-      end: _fmt(_end),
+      scheduleDays: const {},
+      start: '',
+      end: '',
     );
+    final scheduleError = weeklyScheduleError(_schedule);
     setState(() {
       _errors = errors;
+      _scheduleError = scheduleError;
       _saveError = null;
     });
-    if (errors.hasErrors) return;
+    if (errors.hasErrors || scheduleError != null) return;
 
     setState(() => _saving = true);
     try {
@@ -111,12 +98,7 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
             assignedTeacherId: _teacherId,
             maxCapacity: int.parse(_capacity.text.trim()),
             locationOrMode: _mode,
-            weeklySchedule: [
-              for (final (d, _) in _days)
-                if (_selectedDays.contains(d))
-                  CircleWeeklySchedule(
-                      dayOfWeek: d, startTime: _fmt(_start), endTime: _fmt(_end)),
-            ],
+            weeklySchedule: scheduleFromMap(_schedule),
             sessionDurationMinutes: int.parse(_duration.text.trim()),
             status: CircleStatus.active,
             createdBy: actor.id,
@@ -220,52 +202,11 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
             const Text('الجدول الأسبوعي (اختياري)',
                 style: TextStyle(fontWeight: FontWeight.w700)),
             const SizedBox(height: DesignTokens.space8),
-            Wrap(
-              spacing: DesignTokens.space8,
-              children: [
-                for (final (d, label) in _days)
-                  FilterChip(
-                    label: Text(label),
-                    selected: _selectedDays.contains(d),
-                    onSelected: (on) => setState(
-                        () => on ? _selectedDays.add(d) : _selectedDays.remove(d)),
-                  ),
-              ],
+            WeeklyScheduleEditor(
+              value: _schedule,
+              error: _scheduleError,
+              onChanged: (v) => setState(() => _schedule = v),
             ),
-            if (_selectedDays.isNotEmpty) ...[
-              const SizedBox(height: DesignTokens.space12),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () async {
-                        final t = await showTimePicker(
-                            context: context, initialTime: _start);
-                        if (t != null) setState(() => _start = t);
-                      },
-                      child: Text('البداية ${_fmt(_start)}'),
-                    ),
-                  ),
-                  const SizedBox(width: DesignTokens.space12),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () async {
-                        final t = await showTimePicker(
-                            context: context, initialTime: _end);
-                        if (t != null) setState(() => _end = t);
-                      },
-                      child: Text('النهاية ${_fmt(_end)}'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            if (_errors.schedule != null)
-              Padding(
-                padding: const EdgeInsets.only(top: DesignTokens.space8),
-                child: Text(_errors.schedule!,
-                    style: const TextStyle(color: DesignTokens.error)),
-              ),
             if (_saveError != null)
               Padding(
                 padding: const EdgeInsets.only(top: DesignTokens.space16),

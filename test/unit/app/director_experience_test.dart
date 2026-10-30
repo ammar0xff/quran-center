@@ -236,6 +236,7 @@ void main() {
       await tester.enterText(find.widgetWithText(TextField, 'السعة القصوى *'), '25');
 
       await tester.tap(find.text('السبت'));
+      await tester.pump();
       await tester.tap(find.text('الاثنين'));
       await tester.pump();
 
