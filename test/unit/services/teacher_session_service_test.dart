@@ -159,4 +159,96 @@ void main() {
       await expectLater(record('theirs', 's1', AttendanceStatus.present), throwsA(isA<SessionException>()));
     });
   });
+
+  group('assessments', () {
+    final at = DateTime(2026, 11, 10, 8, 30);
+
+    Future<void> save(String session, String student,
+            {String id = 'rec1', AssessmentDraft? draft, String teacher = 't1'}) =>
+        svc.saveAssessment(
+          centerId: 'c1',
+          teacherId: teacher,
+          sessionId: session,
+          studentId: student,
+          recordId: id,
+          assessedAt: at,
+          draft: draft ??
+              const AssessmentDraft(
+                type: AssessmentType.newMemorization,
+                surah: 2,
+                startAyah: 1,
+                endAyah: 5,
+                scores: {'accuracy': 4},
+                mistakesCount: 2,
+                studentVisibleFeedback: '  أحسنت  ',
+                privateNote: ' يحتاج متابعة ',
+              ),
+        );
+
+    test('saves the assessment and keeps the private note in a separate document', () async {
+      await save('live', 's1');
+      final rec = (await store.getDoc('memorization_records/rec1'))!;
+      expect(rec['surah'], 2);
+      expect(rec['startAyah'], 1);
+      expect(rec['endAyah'], 5);
+      expect(rec['teacherId'], 't1');
+      expect(rec['sessionId'], 'live');
+      expect(rec['circleId'], 'cA');
+      expect(rec['schemaVersion'], 1);
+      expect(rec['studentVisibleFeedback'], 'أحسنت');
+      expect((rec['criteriaScores'] as Map)['accuracy'], 4.0);
+      // The student-readable document must not contain the private note anywhere.
+      expect(rec.containsKey('privateTeacherNote'), isFalse);
+      expect('$rec', isNot(contains('يحتاج متابعة')));
+
+      final note = (await store.getDoc('private_teacher_notes/rec1'))!;
+      expect(note['note'], 'يحتاج متابعة');
+      expect(note['studentId'], 's1');
+      expect(note['teacherId'], 't1');
+    });
+
+    test('no private note document is written when there is no private note', () async {
+      await save('live', 's1',
+          draft: const AssessmentDraft(
+              type: AssessmentType.recentRevision, surah: 1, startAyah: 1, endAyah: 7, privateNote: '   '));
+      expect(await store.query('private_teacher_notes', where: []), isEmpty);
+      expect(await store.getDoc('memorization_records/rec1'), isNotNull);
+    });
+
+    test('retrying the same form rewrites the same record, never a second', () async {
+      await save('live', 's1');
+      await save('live', 's1');
+      expect(await store.query('memorization_records', where: []), hasLength(1));
+    });
+
+    test('the roster counts this session\'s assessments per student', () async {
+      await save('live', 's1', id: 'a');
+      await save('live', 's1', id: 'b');
+      await save('live', 's2', id: 'c');
+      final r = await svc.loadRoster(centerId: 'c1', teacherId: 't1', sessionId: 'live');
+      expect(r.assessmentCounts, {'s1': 2, 's2': 1});
+    });
+
+    test('invalid ranges are refused before anything is written', () async {
+      for (final bad in [
+        const AssessmentDraft(type: AssessmentType.newMemorization, surah: 1, startAyah: 1, endAyah: 8),
+        const AssessmentDraft(type: AssessmentType.newMemorization, surah: 2, startAyah: 6, endAyah: 5),
+        const AssessmentDraft(type: AssessmentType.newMemorization, surah: 200, startAyah: 1, endAyah: 1),
+        const AssessmentDraft(type: AssessmentType.newMemorization, surah: 2, startAyah: 1, endAyah: 5, mistakesCount: -1),
+        const AssessmentDraft(type: AssessmentType.newMemorization, surah: 2, startAyah: 1, endAyah: 5, scores: {'accuracy': 9}),
+      ]) {
+        await expectLater(save('live', 's1', draft: bad), throwsA(isA<SessionException>()));
+      }
+      expect(await store.query('memorization_records', where: []), isEmpty);
+    });
+
+    test('only for the teacher\'s own in-progress session and own students', () async {
+      await expectLater(save('sched', 's1'), throwsA(isA<SessionException>()));
+      await expectLater(save('done', 's1'), throwsA(isA<SessionException>()));
+      await expectLater(save('theirs', 's1'), throwsA(isA<SessionException>()));
+      await expectLater(save('live', 's3'), throwsA(isA<SessionException>()));
+      await expectLater(save('live', 's4'), throwsA(isA<SessionException>()));
+      expect(await store.query('memorization_records', where: []), isEmpty);
+    });
+  });
 }

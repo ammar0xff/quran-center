@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:quran_center/data/datasources/fake_firestore_datasource.dart';
+import 'package:quran_center/data/datasources/firestore_datasource.dart';
 
 import '../../support/app_harness.dart';
 
@@ -195,6 +196,139 @@ void main() {
     });
   });
 
+  group('assessment', () {
+    Future<AppHarness> openLive(WidgetTester tester) async {
+      final app = await open(tester, path: '/teacher/sessions/today');
+      await tester.tap(find.text('بدء الجلسة'));
+      await tester.pumpAndSettle();
+      return app;
+    }
+
+    Future<void> openForm(WidgetTester tester, String student) async {
+      await tester.tap(find.descendant(
+          of: find.ancestor(of: find.text(student), matching: find.byType(Card)),
+          matching: find.text('تسميع')));
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> pickSurah(WidgetTester tester, String name) async {
+      await tester.tap(find.widgetWithText(DropdownButtonFormField<int>, 'السورة *'));
+      await tester.pumpAndSettle();
+      await tester.dragUntilVisible(find.textContaining(name),
+          find.byType(Scrollable).last, const Offset(0, -300));
+      await tester.tap(find.textContaining(name));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the Assess button exists only while the session is in progress', (tester) async {
+      await open(tester, path: '/teacher/sessions/today');
+      expect(find.text('تسميع'), findsNothing);
+    });
+
+    testWidgets('validation explains each problem and writes nothing', (tester) async {
+      final app = await openLive(tester);
+      await openForm(tester, 'بسمة خالد');
+      await tester.tap(find.text('حفظ التسميع'));
+      await tester.pumpAndSettle();
+      expect(find.text('اختر السورة'), findsOneWidget);
+      expect(await app.store.query('memorization_records', where: []), isEmpty);
+
+      await pickSurah(tester, 'الفاتحة');
+      await tester.enterText(find.widgetWithText(TextField, 'من آية *'), '1');
+      await tester.enterText(find.widgetWithText(TextField, 'إلى آية *'), '9');
+      await tester.tap(find.text('حفظ التسميع'));
+      await tester.pumpAndSettle();
+      expect(find.text('آية النهاية بين 1 و 7'), findsOneWidget);
+      expect(find.text('عدد آيات الفاتحة: 7'), findsOneWidget);
+      expect(await app.store.query('memorization_records', where: []), isEmpty);
+    });
+
+    testWidgets('saves the assessment, the private note separately, and shows the count',
+        (tester) async {
+      final app = await openLive(tester);
+      await openForm(tester, 'بسمة خالد');
+      await pickSurah(tester, 'الفاتحة');
+      await tester.enterText(find.widgetWithText(TextField, 'من آية *'), '1');
+      await tester.enterText(find.widgetWithText(TextField, 'إلى آية *'), '7');
+      await tester.enterText(find.widgetWithText(TextField, 'عدد الأخطاء *'), '2');
+      await tester.tap(find.widgetWithText(ChoiceChip, '4').first);
+      await tester.enterText(find.widgetWithText(TextField, 'ملاحظة تراها الطالبة/الطالب'), 'أحسنتِ');
+      await tester.enterText(find.widgetWithText(TextField, 'ملاحظة خاصة بالمعلم'), 'تحتاج متابعة سرية');
+      await tester.dragUntilVisible(
+          find.text('حفظ التسميع'), find.byType(Scrollable).first, const Offset(0, -300));
+      await tester.tap(find.text('حفظ التسميع'));
+      await tester.pumpAndSettle();
+
+      final records = await app.store.query('memorization_records', where: []);
+      expect(records, hasLength(1));
+      final r = records.single;
+      expect(r['studentId'], 's1');
+      expect(r['teacherId'], 'tea-1');
+      expect(r['sessionId'], 'today');
+      expect(r['surah'], 1);
+      expect(r['endAyah'], 7);
+      expect(r['mistakesCount'], 2);
+      expect((r['criteriaScores'] as Map)['accuracy'], 4.0);
+      expect(r['studentVisibleFeedback'], 'أحسنتِ');
+      expect('$r', isNot(contains('تحتاج متابعة سرية')));
+
+      final notes = await app.store.query('private_teacher_notes', where: []);
+      expect(notes.single['note'], 'تحتاج متابعة سرية');
+      expect(notes.single['studentId'], 's1');
+
+      // Back on the session with a visible count.
+      expect(find.text('تم حفظ التسميع'), findsOneWidget);
+      expect(find.text('تسميعات اليوم: 1'), findsOneWidget);
+    });
+
+    testWidgets('leaving with unsaved input asks first; keeping editing stays', (tester) async {
+      final app = await openLive(tester);
+      await openForm(tester, 'بسمة خالد');
+      await tester.enterText(find.widgetWithText(TextField, 'عدد الأخطاء *'), '3');
+      await tester.pump();
+
+      await Navigator.of(tester.element(find.text('حفظ التسميع'))).maybePop(); // like the back button
+      await tester.pumpAndSettle();
+      expect(find.text('تجاهل التسميع؟'), findsOneWidget);
+      await tester.tap(find.text('متابعة التعديل'));
+      await tester.pumpAndSettle();
+      expect(find.text('حفظ التسميع'), findsOneWidget);
+
+      await Navigator.of(tester.element(find.text('حفظ التسميع'))).maybePop();
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'تجاهل'));
+      await tester.pumpAndSettle();
+      expect(find.text('حفظ التسميع'), findsNothing);
+      expect(await app.store.query('memorization_records', where: []), isEmpty);
+    });
+
+    testWidgets('a failed save keeps the form and a retry creates exactly one record',
+        (tester) async {
+      final store = _FlakyStore();
+      final app = await bootApp(tester, accounts: _accounts, seed: _seed, store: store);
+      await app.signIn('tea@x.com', 'pw');
+      await app.go('/teacher/sessions/today');
+      await tester.tap(find.text('بدء الجلسة'));
+      await tester.pumpAndSettle();
+      await openForm(tester, 'أحمد علي');
+      await pickSurah(tester, 'الإخلاص');
+      await tester.enterText(find.widgetWithText(TextField, 'من آية *'), '1');
+      await tester.enterText(find.widgetWithText(TextField, 'إلى آية *'), '4');
+      await tester.dragUntilVisible(
+          find.text('حفظ التسميع'), find.byType(Scrollable).first, const Offset(0, -300));
+
+      store.failNextBatch = true;
+      await tester.tap(find.text('حفظ التسميع'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('تعذر الحفظ'), findsOneWidget);
+      expect(await store.query('memorization_records', where: []), isEmpty);
+
+      await tester.tap(find.text('حفظ التسميع'));
+      await tester.pumpAndSettle();
+      expect(await store.query('memorization_records', where: []), hasLength(1));
+    });
+  });
+
   group('circles', () {
     testWidgets('lists only my circles with my student counts', (tester) async {
       await open(tester, path: '/teacher/circles');
@@ -207,6 +341,16 @@ void main() {
 
 class _FlakyStore extends FakeFirestoreDataSource {
   bool failNextWrite = false;
+  bool failNextBatch = false;
+
+  @override
+  Future<void> commitBatch(List<BatchOp> ops) async {
+    if (failNextBatch) {
+      failNextBatch = false;
+      throw StateError('network down');
+    }
+    return super.commitBatch(ops);
+  }
 
   @override
   Future<void> setDoc(String path, Map<String, dynamic> data, {bool merge = false}) async {

@@ -208,10 +208,67 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // memorization_records, learning_plans, learning_tasks, notifications,
+    // ---------- memorization assessments ----------
+    // Everything in a memorization record may be shown to the student it is
+    // about. The teacher's private note is a separate document (below), because
+    // rules cannot hide individual fields of a document.
+    match /memorization_records/{recordId} {
+      allow read: if isDirector(resource.data.centerId)
+        || (isTeacher(resource.data.centerId)
+            && resource.data.teacherId == request.auth.uid)
+        || ownsStudent(resource.data.centerId, resource.data.studentId);
+
+      // Recorded by the session's teacher, for one of their students, while the
+      // session is in progress, with a valid surah / ayah range.
+      allow create: if isTeacher(request.resource.data.centerId)
+        && request.resource.data.teacherId == request.auth.uid
+        && !('privateTeacherNote' in request.resource.data)
+        && request.resource.data.sessionId is string
+        && sessionDoc(request.resource.data.sessionId).teacherId == request.auth.uid
+        && sessionDoc(request.resource.data.sessionId).centerId == request.resource.data.centerId
+        && sessionDoc(request.resource.data.sessionId).status == 'inProgress'
+        && request.auth.uid in get(/databases/$(database)/documents/students/$(request.resource.data.studentId)).data.assignedTeacherIds
+        && get(/databases/$(database)/documents/students/$(request.resource.data.studentId)).data.centerId == request.resource.data.centerId
+        && request.resource.data.surah is int
+        && request.resource.data.surah >= 1 && request.resource.data.surah <= 114
+        && request.resource.data.startAyah is int && request.resource.data.startAyah >= 1
+        && request.resource.data.endAyah is int
+        && request.resource.data.endAyah >= request.resource.data.startAyah;
+
+      // The author may amend it only while the same session is in progress.
+      allow update: if isTeacher(resource.data.centerId)
+        && resource.data.teacherId == request.auth.uid
+        && sessionDoc(resource.data.sessionId).status == 'inProgress'
+        && !('privateTeacherNote' in request.resource.data)
+        && unchanged(['centerId', 'studentId', 'teacherId', 'sessionId', 'circleId', 'assessedAt', 'createdAt'])
+        && request.resource.data.surah is int
+        && request.resource.data.surah >= 1 && request.resource.data.surah <= 114
+        && request.resource.data.startAyah >= 1
+        && request.resource.data.endAyah >= request.resource.data.startAyah;
+
+      allow delete: if false;
+    }
+
+    // The teacher's private note about an assessment. Same id as the
+    // assessment. Never readable by students.
+    match /private_teacher_notes/{noteId} {
+      allow read: if isDirector(resource.data.centerId)
+        || (isTeacher(resource.data.centerId)
+            && resource.data.teacherId == request.auth.uid);
+      allow create: if isTeacher(request.resource.data.centerId)
+        && request.resource.data.teacherId == request.auth.uid
+        && existsAfter(/databases/$(database)/documents/memorization_records/$(noteId))
+        && getAfter(/databases/$(database)/documents/memorization_records/$(noteId)).data.teacherId == request.auth.uid
+        && getAfter(/databases/$(database)/documents/memorization_records/$(noteId)).data.studentId == request.resource.data.studentId;
+      allow update: if isTeacher(resource.data.centerId)
+        && resource.data.teacherId == request.auth.uid
+        && unchanged(['centerId', 'studentId', 'teacherId']);
+      allow delete: if false;
+    }
+
+    // learning_plans, learning_tasks, notifications,
     // announcements, ... are intentionally NOT opened yet. They fall through
-    // to default deny until their feature (and, for memorization records, the
-    // private-note split) is implemented and tested.
+    // to default deny until their feature is implemented and tested.
     match /{document=**} {
       allow read, write: if false;
     }

@@ -4,8 +4,12 @@ import 'package:quran_center/data/models/enums.dart';
 /// A memorization / recitation assessment record.
 ///
 /// `schemaVersion` allows historical records to remain interpretable after
-/// the rubric evolves. Private teacher notes are stored separately from
-/// student-visible feedback.
+/// the rubric evolves.
+///
+/// Everything in this document may be shown to the student it is about. The
+/// teacher's PRIVATE note is deliberately not a field here: Firestore rules
+/// cannot hide single fields, so it lives in its own document
+/// (`private_teacher_notes/{recordId}`) that students can never read.
 class MemorizationRecord extends AppModel {
   const MemorizationRecord({
     required this.recordId,
@@ -28,7 +32,6 @@ class MemorizationRecord extends AppModel {
     required this.requiresFollowUp,
     this.strengths,
     this.areasForImprovement,
-    this.privateTeacherNote, // staff only
     this.studentVisibleFeedback,
     this.recommendedNextAssignment,
     this.suggestedNextReviewDate,
@@ -57,7 +60,6 @@ class MemorizationRecord extends AppModel {
   final bool requiresFollowUp;
   final String? strengths;
   final String? areasForImprovement;
-  final String? privateTeacherNote;
   final String? studentVisibleFeedback;
   final String? recommendedNextAssignment;
   final DateTime? suggestedNextReviewDate;
@@ -79,7 +81,6 @@ class MemorizationRecord extends AppModel {
     bool? requiresFollowUp,
     String? strengths,
     String? areasForImprovement,
-    String? privateTeacherNote,
     String? studentVisibleFeedback,
     String? recommendedNextAssignment,
     DateTime? suggestedNextReviewDate,
@@ -107,7 +108,6 @@ class MemorizationRecord extends AppModel {
       requiresFollowUp: requiresFollowUp ?? this.requiresFollowUp,
       strengths: strengths ?? this.strengths,
       areasForImprovement: areasForImprovement ?? this.areasForImprovement,
-      privateTeacherNote: privateTeacherNote ?? this.privateTeacherNote,
       studentVisibleFeedback: studentVisibleFeedback ?? this.studentVisibleFeedback,
       recommendedNextAssignment:
           recommendedNextAssignment ?? this.recommendedNextAssignment,
@@ -144,7 +144,6 @@ class MemorizationRecord extends AppModel {
       requiresFollowUp: json['requiresFollowUp'] as bool? ?? false,
       strengths: json['strengths'] as String?,
       areasForImprovement: json['areasForImprovement'] as String?,
-      privateTeacherNote: json['privateTeacherNote'] as String?,
       studentVisibleFeedback: json['studentVisibleFeedback'] as String?,
       recommendedNextAssignment: json['recommendedNextAssignment'] as String?,
       suggestedNextReviewDate: AppModel.parseDateTime(json['suggestedNextReviewDate']),
@@ -176,7 +175,6 @@ class MemorizationRecord extends AppModel {
       'requiresFollowUp': requiresFollowUp,
       if (strengths != null) 'strengths': strengths,
       if (areasForImprovement != null) 'areasForImprovement': areasForImprovement,
-      if (privateTeacherNote != null) 'privateTeacherNote': privateTeacherNote,
       if (studentVisibleFeedback != null)
         'studentVisibleFeedback': studentVisibleFeedback,
       if (recommendedNextAssignment != null)

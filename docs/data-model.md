@@ -145,7 +145,6 @@ All documents include: stable ID, `centerId` where applicable, `createdAt`, `upd
 - requiresFollowUp: boolean
 - strengths?: string
 - areasForImprovement?: string
-- privateTeacherNote?: string (staff only)
 - studentVisibleFeedback?: string
 - recommendedNextAssignment?: string
 - suggestedNextReviewDate?: timestamp
@@ -261,5 +260,7 @@ All documents include: stable ID, `centerId` where applicable, `createdAt`, `upd
 * **Attendance rate** = (present + late) / (present + late + absent). Excused
   and missing records are excluded from the denominator; a missing record is
   never counted as an absence.
-* **Needs change before Phase 5:** split `privateTeacherNote` out of
-  `memorization_records` (see security.md, known gap 1).
+* **Private teacher notes live in their own collection**
+  `private_teacher_notes/{recordId}` (same id as the assessment, fields
+  `centerId, studentId, teacherId, note`). Everything in `memorization_records`
+  may be seen by the student it is about; the private note never is.

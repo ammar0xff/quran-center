@@ -237,7 +237,16 @@ class _TeacherSessionScreenState extends ConsumerState<TeacherSessionScreen> {
               current: r.records[st.studentId]?.status,
               editable: live,
               saving: _saving.contains(st.studentId),
+              assessments: r.assessmentCounts[st.studentId] ?? 0,
               onPick: (status) => _mark(st.studentId, status),
+              onAssess: live
+                  ? () async {
+                      final saved = await context.push<bool>(
+                          '/teacher/sessions/${widget.sessionId}/assess/${st.studentId}'
+                          '?name=${Uri.encodeQueryComponent(st.displayName)}');
+                      if (saved == true) await _load();
+                    }
+                  : null,
             ),
         if (live) ...[
           const SizedBox(height: DesignTokens.space24),
@@ -259,14 +268,18 @@ class _StudentRow extends StatelessWidget {
     required this.current,
     required this.editable,
     required this.saving,
+    required this.assessments,
     required this.onPick,
+    required this.onAssess,
   });
 
   final String name;
   final AttendanceStatus? current;
   final bool editable;
   final bool saving;
+  final int assessments;
   final ValueChanged<AttendanceStatus> onPick;
+  final VoidCallback? onAssess;
 
   @override
   Widget build(BuildContext context) {
@@ -304,6 +317,24 @@ class _StudentRow extends StatelessWidget {
                   ),
               ],
             ),
+            if (onAssess != null || assessments > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: DesignTokens.space4),
+                child: Row(
+                  children: [
+                    if (onAssess != null)
+                      TextButton.icon(
+                        onPressed: onAssess,
+                        icon: const Icon(Icons.edit_note),
+                        label: const Text('تسميع'),
+                      ),
+                    if (assessments > 0)
+                      Text('تسميعات اليوم: $assessments',
+                          style: const TextStyle(
+                              fontSize: 12, color: DesignTokens.secondaryText)),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

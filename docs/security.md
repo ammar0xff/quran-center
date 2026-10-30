@@ -47,7 +47,7 @@ Authorization enforced by the backend (Firestore Security Rules + Cloud Function
 ## Enforced and tested
 
 Firestore Security Rules (`firebase/firestore.rules`) are tested against the
-real Firestore emulator (`firebase/rules-tests`, 68 tests) and cover:
+real Firestore emulator (`firebase/rules-tests`, 80 tests) and cover:
 users, centers, students, teachers, circles, enrollments, schedules,
 attendance and audit_logs, including the enrollment-assignment batch and the
 rule that director list queries must filter by `centerId`. Everything else is **default deny**.
@@ -71,6 +71,11 @@ Teaching sessions (Phase 5):
   progress; the teacher may fix their own entry (status/note only) until the
   session completes. After that only a director's audited correction works.
 
+Assessments: the session's teacher may record one for their own student while
+the session is in progress, with a valid surah (1-114) and ayah range, and may
+amend it until the session completes; afterwards it is frozen. Nothing is
+deleted.
+
 Key design points:
 * `users/{uid}` is written only by the Admin SDK. Role and status are read from
   it (not from client data or stale tokens), so suspension is immediate.
@@ -89,12 +94,11 @@ Key design points:
 
 ## Known gaps — do not treat as production-ready
 
-1. **Private teacher notes.** `memorization_records` stores `privateTeacherNote`
-   next to `studentVisibleFeedback` in one document. Firestore rules cannot hide
-   individual fields, so a student allowed to read the document would see the
-   private note. The collection is therefore fully denied for now. **Before
-   Phase 5/6, move the private note to a separate document/subcollection** (and
-   expose student-visible feedback separately).
+1. ~~Private teacher notes~~ **Resolved.** The note lives in
+   `private_teacher_notes/{recordId}`, readable only by the author and the
+   director; `memorization_records` holds nothing a student may not see. Rules
+   tests prove students (and other teachers/centers) cannot read a note and
+   that a note cannot be smuggled into the readable record.
 2. **Audit atomicity is by convention.** The attendance correction writes the
    update and its audit entry in one atomic batch, but rules cannot force the
    audit write. A modified client could skip it. Moving corrections into a

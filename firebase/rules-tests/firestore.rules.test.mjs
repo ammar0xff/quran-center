@@ -44,6 +44,12 @@ const att = (over = {}) => ({
   ...over,
 });
 
+const rec = (over = {}) => ({
+  centerId: C1, studentId: "s1", teacherId: "tA", sessionId: "sess9", circleId: "circle1",
+  assessmentType: "newMemorization", surah: 2, startAyah: 1, endAyah: 5,
+  criteriaScores: { accuracy: 4 }, mistakesCount: 0, requiresFollowUp: false, ...over,
+});
+
 async function seed() {
   await env.clearFirestore();
   await env.withSecurityRulesDisabled(async (ctx) => {
@@ -64,7 +70,8 @@ async function seed() {
     await setDoc(doc(db, "schedules/sessFuture"), sess({ status: "scheduled", date: new Date("2999-01-01") }));
     await setDoc(doc(db, "circles/circle1"), { centerId: C1, name: "A", assignedTeacherId: "tA" });
     await setDoc(doc(db, "circles/circle2"), { centerId: C1, name: "B", assignedTeacherId: "tB" });
-    await setDoc(doc(db, "memorization_records/m1"), { centerId: C1, studentId: "s1", teacherId: "tA", privateTeacherNote: "secret" });
+    await setDoc(doc(db, "memorization_records/m1"), rec({ sessionId: "sess9" }));
+    await setDoc(doc(db, "private_teacher_notes/m1"), { centerId: C1, studentId: "s1", teacherId: "tA", note: "secret" });
   });
 }
 
@@ -459,10 +466,89 @@ describe("audit_logs", () => {
   });
 });
 
+describe("memorization assessments and private notes", () => {
+  it("the student, the author and the director can read the assessment; others cannot", async () => {
+    await assertSucceeds(getDoc(doc(as("uS1"), "memorization_records/m1")));
+    await assertSucceeds(getDoc(doc(as("tA"), "memorization_records/m1")));
+    await assertSucceeds(getDoc(doc(as("dir1"), "memorization_records/m1")));
+    await assertFails(getDoc(doc(as("uS2"), "memorization_records/m1")));   // another student
+    await assertFails(getDoc(doc(as("tB"), "memorization_records/m1")));    // another teacher
+    await assertFails(getDoc(doc(as("dir2"), "memorization_records/m1")));  // another center
+    await assertFails(getDoc(doc(anon(), "memorization_records/m1")));
+  });
+  it("the private note is never readable by the student, nor by other teachers or centers", async () => {
+    await assertFails(getDoc(doc(as("uS1"), "private_teacher_notes/m1")));
+    await assertFails(getDoc(doc(as("tB"), "private_teacher_notes/m1")));
+    await assertFails(getDoc(doc(as("dir2"), "private_teacher_notes/m1")));
+    await assertSucceeds(getDoc(doc(as("tA"), "private_teacher_notes/m1")));
+    await assertSucceeds(getDoc(doc(as("dir1"), "private_teacher_notes/m1")));
+  });
+  it("the student's own query for their assessments works and never returns a private note", async () => {
+    const db = as("uS1");
+    await assertSucceeds(getDocs(query(collection(db, "memorization_records"), where("centerId", "==", C1), where("studentId", "==", "s1"))));
+    await assertFails(getDocs(query(collection(db, "private_teacher_notes"), where("centerId", "==", C1), where("studentId", "==", "s1"))));
+  });
+  it("a teacher records an assessment for their student in their in-progress session", async () => {
+    await assertSucceeds(setDoc(doc(as("tA"), "memorization_records/new1"), rec({ studentId: "s3" })));
+  });
+  it("assessment + private note can be written together in one batch", async () => {
+    const db = as("tA");
+    const batch = writeBatch(db);
+    batch.set(doc(db, "memorization_records/new2"), rec({ studentId: "s3" }));
+    batch.set(doc(db, "private_teacher_notes/new2"), { centerId: C1, studentId: "s3", teacherId: "tA", note: "ملاحظة" });
+    await assertSucceeds(batch.commit());
+  });
+  it("a private note cannot be created without its assessment, or for someone else's", async () => {
+    await assertFails(setDoc(doc(as("tA"), "private_teacher_notes/orphan"), { centerId: C1, studentId: "s3", teacherId: "tA", note: "x" }));
+    await assertFails(setDoc(doc(as("tB"), "private_teacher_notes/m1x"), { centerId: C1, studentId: "s1", teacherId: "tB", note: "x" }));
+  });
+  it("the private note cannot be smuggled into the readable record", async () => {
+    await assertFails(setDoc(doc(as("tA"), "memorization_records/new3"), rec({ studentId: "s3", privateTeacherNote: "secret" })));
+  });
+  it("refused: not your student, not your session, not in progress, or as someone else", async () => {
+    await assertFails(setDoc(doc(as("tA"), "memorization_records/n4"), rec({ studentId: "s2" })));          // s2 is tB's
+    await assertFails(setDoc(doc(as("tA"), "memorization_records/n5"), rec({ studentId: "s3", sessionId: "sessB" })));
+    await assertFails(setDoc(doc(as("tA"), "memorization_records/n6"), rec({ studentId: "s3", sessionId: "sess1" })));      // completed
+    await assertFails(setDoc(doc(as("tA"), "memorization_records/n7"), rec({ studentId: "s3", sessionId: "sessSched" })));   // not started
+    await assertFails(setDoc(doc(as("tA"), "memorization_records/n8"), rec({ studentId: "s3", teacherId: "tB" })));
+    const noSession = rec({ studentId: "s3" });
+    delete noSession.sessionId;
+    await assertFails(setDoc(doc(as("tA"), "memorization_records/n9"), noSession));
+    await assertFails(setDoc(doc(as("uS1"), "memorization_records/n10"), rec({ teacherId: "uS1" })));
+  });
+  it("invalid surah and ayah ranges are refused by the backend too", async () => {
+    for (const bad of [{ surah: 0 }, { surah: 115 }, { startAyah: 0 }, { startAyah: 6, endAyah: 5 }, { surah: "2" }]) {
+      await assertFails(setDoc(doc(as("tA"), "memorization_records/bad"), rec({ studentId: "s3", ...bad })));
+    }
+  });
+  it("the author may amend while the session runs, but cannot retarget the record", async () => {
+    await assertSucceeds(updateDoc(doc(as("tA"), "memorization_records/m1"), { mistakesCount: 2, endAyah: 6 }));
+    await assertFails(updateDoc(doc(as("tA"), "memorization_records/m1"), { studentId: "s3" }));
+    await assertFails(updateDoc(doc(as("tA"), "memorization_records/m1"), { teacherId: "tB" }));
+    await assertFails(updateDoc(doc(as("tA"), "memorization_records/m1"), { endAyah: 0 }));
+    await assertFails(updateDoc(doc(as("tA"), "memorization_records/m1"), { privateTeacherNote: "x" }));
+    await assertFails(updateDoc(doc(as("tB"), "memorization_records/m1"), { mistakesCount: 9 }));
+    await assertFails(updateDoc(doc(as("uS1"), "memorization_records/m1"), { mistakesCount: 9 }));
+  });
+  it("after the session completes the assessment is frozen, and nothing is ever deleted", async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "memorization_records/old"), rec({ sessionId: "sess1" }));
+    });
+    await assertFails(updateDoc(doc(as("tA"), "memorization_records/old"), { mistakesCount: 1 }));
+    await assertFails(deleteDoc(doc(as("tA"), "memorization_records/m1")));
+    await assertFails(deleteDoc(doc(as("dir1"), "memorization_records/m1")));
+    await assertFails(deleteDoc(doc(as("tA"), "private_teacher_notes/m1")));
+  });
+  it("the teacher can edit their own private note", async () => {
+    await assertSucceeds(updateDoc(doc(as("tA"), "private_teacher_notes/m1"), { note: "محدّثة" }));
+    await assertFails(updateDoc(doc(as("tA"), "private_teacher_notes/m1"), { studentId: "s3" }));
+    await assertFails(updateDoc(doc(as("tB"), "private_teacher_notes/m1"), { note: "x" }));
+  });
+});
+
 describe("default deny for features not built yet", () => {
-  it("private teacher notes are unreachable for students (and everyone, until the split)", async () => {
-    await assertFails(getDoc(doc(as("uS1"), "memorization_records/m1")));
-    await assertFails(getDoc(doc(as("tA"), "memorization_records/m1")));
-    await assertFails(getDoc(doc(as("dir1"), "memorization_records/m1")));
+  it("learning plans and notifications stay closed", async () => {
+    await assertFails(getDoc(doc(as("dir1"), "learning_plans/p1")));
+    await assertFails(setDoc(doc(as("dir1"), "notifications/n1"), { centerId: C1 }));
   });
 });

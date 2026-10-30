@@ -27,6 +27,7 @@ import 'package:quran_center/features/shared/role_home_placeholder.dart';
 import 'package:quran_center/features/teacher/circles/teacher_circles_screen.dart';
 import 'package:quran_center/features/teacher/home/teacher_home_screen.dart';
 import 'package:quran_center/features/teacher/more/teacher_more_screen.dart';
+import 'package:quran_center/features/teacher/sessions/assessment_screen.dart';
 import 'package:quran_center/features/teacher/sessions/teacher_session_screen.dart';
 
 /// The application router.
@@ -142,6 +143,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/teacher/sessions/:id',
         builder: (_, state) =>
             TeacherSessionScreen(sessionId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/teacher/sessions/:id/assess/:studentId',
+        builder: (_, state) => AssessmentScreen(
+          sessionId: state.pathParameters['id']!,
+          studentId: state.pathParameters['studentId']!,
+          studentName: state.uri.queryParameters['name'],
+        ),
       ),
 
       // Student area: not built yet (Phase 6).

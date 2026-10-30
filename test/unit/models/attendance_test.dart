@@ -72,7 +72,6 @@ void main() {
       'requiresFollowUp': true,
       'strengths': 'حفظ جيد',
       'areasForImprovement': 'التجويد',
-      'privateTeacherNote': ' needs more practice',
       'studentVisibleFeedback': ' excellent effort',
       'recommendedNextAssignment': 'سورة البقرة آية 6-10',
       'suggestedNextReviewDate': 1700086400000,
@@ -94,22 +93,21 @@ void main() {
       expect(record.criteriaScores['accuracy'], 4.0);
       expect(record.mistakesCount, 2);
       expect(record.requiresFollowUp, isTrue);
-      expect(record.privateTeacherNote, ' needs more practice');
       expect(record.studentVisibleFeedback, ' excellent effort');
 
       final back = record.toJson();
       expect(back['surah'], 2);
       expect(back['assessmentType'], 'newMemorization');
       expect(back['criteriaScores']['accuracy'], 4.0);
-      expect(back['privateTeacherNote'], ' needs more practice');
+      expect(back.containsKey('privateTeacherNote'), isFalse);
       expect(back['studentVisibleFeedback'], ' excellent effort');
     });
 
-    test('private and student-visible fields are stored separately', () {
-      final record = MemorizationRecord.fromJson('rec-1', json);
-      expect(record.privateTeacherNote, isNotNull);
-      expect(record.studentVisibleFeedback, isNotNull);
-      expect(record.privateTeacherNote, isNot(record.studentVisibleFeedback));
+    test('a private note can never ride along in the record document', () {
+      final record = MemorizationRecord.fromJson(
+          'rec-1', {...json, 'privateTeacherNote': 'secret'});
+      expect(record.toJson().containsKey('privateTeacherNote'), isFalse);
+      expect(record.toJson().values.map((v) => '$v'), isNot(contains('secret')));
     });
   });
 }
