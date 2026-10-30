@@ -16,6 +16,7 @@ import 'package:quran_center/data/repositories/impl/user_repository_impl.dart';
 import 'package:quran_center/data/repositories/schedule_repository.dart';
 import 'package:quran_center/data/services/circle_service.dart';
 import 'package:quran_center/data/services/enrollment_service.dart';
+import 'package:quran_center/data/services/finance_service.dart';
 import 'package:quran_center/data/services/notification_service.dart';
 import 'package:quran_center/data/services/student_workspace.dart';
 import 'package:quran_center/data/services/task_service.dart';
@@ -54,6 +55,10 @@ final notificationServiceProvider = Provider<NotificationService>(
 
 final studentWorkspaceProvider = Provider<StudentWorkspace>(
   (ref) => StudentWorkspace(ref.watch(firestoreDataSourceProvider)),
+);
+
+final financeServiceProvider = Provider<FinanceService>(
+  (ref) => FinanceService(ref.watch(firestoreDataSourceProvider)),
 );
 
 final taskServiceProvider = Provider<TaskService>(

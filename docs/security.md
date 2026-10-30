@@ -47,7 +47,7 @@ Authorization enforced by the backend (Firestore Security Rules + Cloud Function
 ## Enforced and tested
 
 Firestore Security Rules (`firebase/firestore.rules`) are tested against the
-real Firestore emulator (`firebase/rules-tests`, 110 tests) and cover:
+real Firestore emulator (`firebase/rules-tests`, 125 tests) and cover:
 users, centers, students, teachers, circles, enrollments, schedules,
 attendance and audit_logs, including the enrollment-assignment batch and the
 rule that director list queries must filter by `centerId`. Everything else is **default deny**.
@@ -105,6 +105,17 @@ alerts); a teacher may notify only the login of one of their own students, and
 only about tasks. The recipient can only mark a notification read. Messages are
 generic: no student detail is placed in a notification. Delivery is in-app;
 push (FCM) is not wired.
+
+Wirds and levels: each graded wird needs one of five marks (ممتاز، جيد جدًا،
+جيد، مقبول، إعادة); the new portion is ungraded. A student's own teachers read
+every wird heard for that student, including those a visiting teacher heard. A
+teacher may add one visiting student (from the names-only `student_directory`)
+to their running session and then record attendance and marks for them.
+
+Finance (director only): student fees, subscriptions, payments, expenses, wage
+rates and wages. Money is a whole number of minor units; payments and expenses
+are voided with a reason, never deleted or edited; a wage is frozen once paid;
+a teacher can read only their own wage record.
 
 Key design points:
 * `users/{uid}` is written only by the Admin SDK. Role and status are read from

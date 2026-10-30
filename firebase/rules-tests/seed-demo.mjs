@@ -59,6 +59,8 @@ for (const [id, name, level] of students) {
     assignedTeacherIds: [t.uid], currentCircleId: "circle-fajr", educationalLevel: level,
     createdAt: now, updatedAt: now,
   });
+  await db.doc(`student_directory/${id}`).set({ centerId: C, fullName: name, active: true });
+  await db.doc(`student_fees/${id}`).set({ centerId: C, studentId: id, monthlyFee: 15000 });
   await db.doc(`enrollments/enr_${id}_circle-fajr_seed`).set({
     centerId: C, studentId: id, circleId: "circle-fajr", teacherId: t.uid, startDate: ts(day(-30)),
     status: "active", createdAt: now, updatedAt: now,
@@ -95,10 +97,11 @@ await task("task-2", "stu-1", "inProgress", -1, 113, 1, 5);
 await task("task-3", "stu-2", "practiceReported", 3, 114, 1, 6, { selfReportedPractice: { reportedAt: ts(day(-1)) } });
 await db.doc("memorization_records/m-1").set({
   centerId: C, studentId: "stu-1", teacherId: t.uid, sessionId: "sess-yesterday", circleId: "circle-fajr",
-  assessmentType: "newMemorization", schemaVersion: 1, surah: 1, startAyah: 1, endAyah: 7,
-  criteriaScores: { accuracy: 4, tajweed: 4 }, mistakesCount: 1, requiresFollowUp: false,
+  assessmentType: "newMemorization", grade: "veryGood", schemaVersion: 1, surah: 1, startAyah: 1, endAyah: 7,
+  criteriaScores: {}, mistakesCount: 0, requiresFollowUp: false,
   studentVisibleFeedback: "أحسنتِ، واصلي بنفس الهمة", strengths: "إتقان وطلاقة",
   assessedAt: ts(day(-2)), createdAt: ts(day(-2)), updatedAt: ts(day(-2)),
 });
+await db.doc(`wage_rates/${t.uid}`).set({ centerId: C, teacherId: t.uid, monthlyAmount: 300000 });
 console.log("Seeded. Logins (password " + PASSWORD + "): director@demo.test, teacher@demo.test, student@demo.test");
 process.exit(0);
