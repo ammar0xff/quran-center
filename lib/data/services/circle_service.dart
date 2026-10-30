@@ -24,8 +24,9 @@ class CircleException implements Exception {
 /// students) and onto the circle's upcoming scheduled sessions. Sessions that
 /// already started or finished keep the teacher who actually ran them.
 ///
-/// Limitation: a Firestore batch holds at most 500 writes, so a teacher change
-/// is refused (not split) when a circle is too large to update atomically.
+/// A Firestore batch holds at most 500 writes. A normal circle changes teacher
+/// in ONE atomic batch; a very large one is applied in several batches, circle
+/// last, and is safe to repeat if one of them fails.
 class CircleService {
   CircleService(this._ds, {DateTime Function()? clock}) : _now = clock ?? DateTime.now;
 
@@ -157,11 +158,6 @@ class CircleService {
         return !s.date.isBefore(startOfToday);
       }).toList();
 
-      if (enrolled.length * 2 + upcoming.length + 2 > maxBatchOps) {
-        throw CircleException(
-            'الحلقة كبيرة جدًا لتغيير المعلم دفعة واحدة. قلّل عدد الطلاب أو الجلسات القادمة أولًا.');
-      }
-
       final now = firestoreConverter.serverTimestamp();
       for (final e in enrolled) {
         ops.add(BatchOp.update('enrollments/${e['id']}', {
@@ -184,12 +180,13 @@ class CircleService {
     }
 
     final when = _now();
-    ops.add(BatchOp.update('circles/$circleId', {
+    final tail = <BatchOp>[];
+    tail.add(BatchOp.update('circles/$circleId', {
       ...next,
       'updatedBy': actorId,
       'updatedAt': firestoreConverter.serverTimestamp(),
     }));
-    ops.add(BatchOp.set('audit_logs/aud_${when.microsecondsSinceEpoch}_$circleId', {
+    tail.add(BatchOp.set('audit_logs/aud_${when.microsecondsSinceEpoch}_$circleId', {
       'centerId': centerId,
       'actorUserId': actorId,
       'actorRole': actorRole,
@@ -200,7 +197,18 @@ class CircleService {
       'newValue': next,
       'createdAt': when.millisecondsSinceEpoch,
     }));
-    await _ds.commitBatch(ops);
+    if (ops.length + tail.length <= maxBatchOps) {
+      await _ds.commitBatch([...ops, ...tail]); // the normal case: fully atomic
+    } else {
+      // Too big for one Firestore batch. The dependants move first, and the
+      // circle (with its audit entry) changes last, so a failure part-way
+      // leaves the circle on its old teacher and the same save can simply be
+      // repeated: every step writes the same values again.
+      for (var i = 0; i < ops.length; i += maxBatchOps) {
+        await _ds.commitBatch(ops.sublist(i, (i + maxBatchOps).clamp(0, ops.length)));
+      }
+      await _ds.commitBatch(tail);
+    }
     return true;
   }
 

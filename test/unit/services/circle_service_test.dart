@@ -206,18 +206,54 @@ void main() {
     expect((await broken.getDoc('students/s1'))!['assignedTeacherIds'], ['tOld']);
   });
 
-  test('a circle too large for one atomic batch refuses a teacher change', () async {
+  Future<void> addBigRoster() async {
     for (var i = 0; i < 230; i++) {
+      await store.setDoc('students/bs$i', {
+        'centerId': 'c1', 'fullName': 'b$i', 'accountMode': 'none', 'enrollmentStatus': 'active',
+        'assignedTeacherIds': ['tOld'], 'educationalLevel': 'x',
+        'createdAt': 1700000000000, 'updatedAt': 1700000000000,
+      });
       await store.setDoc('enrollments/big$i', {
         'centerId': 'c1', 'studentId': 'bs$i', 'circleId': 'A', 'teacherId': 'tOld',
         'startDate': 1700000000000, 'status': 'active',
         'createdAt': 1700000000000, 'updatedAt': 1700000000000,
       });
     }
-    await expectLater(edit('A', teacher: 'tNew', cap: 500), throwsA(isA<CircleException>()));
-    expect((await store.getDoc('circles/A'))!['assignedTeacherId'], 'tOld');
-    // Non-teacher edits are still fine for a big circle.
-    expect(await edit('A', cap: 500), isTrue);
+  }
+
+  test('a very large circle changes teacher in several batches, circle last', () async {
+    await addBigRoster();
+    expect(await edit('A', teacher: 'tNew', cap: 500), isTrue);
+    expect((await store.getDoc('circles/A'))!['assignedTeacherId'], 'tNew');
+    expect((await store.getDoc('students/bs229'))!['assignedTeacherIds'], ['tNew']);
+    expect(await teacherOf('enrollments/big0'), 'tNew');
+  });
+
+  test('if a later batch fails the circle keeps its old teacher and the retry completes', () async {
+    await addBigRoster();
+    final flaky = _FailOnNth(2);
+    for (final d in await store.query('students', where: [])) {
+      await flaky.setDoc('students/${d['id']}', Map.of(d)..remove('id'));
+    }
+    for (final collection in ['circles', 'teachers', 'enrollments', 'schedules']) {
+      for (final d in await store.query(collection, where: [])) {
+        await flaky.setDoc('$collection/${d['id']}', Map.of(d)..remove('id'));
+      }
+    }
+    final svc2 = CircleService(flaky, clock: () => _today);
+    Future<bool> go() => svc2.update('A',
+        centerId: 'c1', actorId: 'dir-1', actorRole: 'director', name: 'حلقة A',
+        educationalLevel: 'مبتدئ', maxCapacity: 500, sessionDurationMinutes: 60,
+        locationOrMode: 'onsite', teacherId: 'tNew');
+
+    await expectLater(go(), throwsStateError);
+    expect((await flaky.getDoc('circles/A'))!['assignedTeacherId'], 'tOld'); // not switched
+    expect(await flaky.query('audit_logs', where: []), isEmpty);
+
+    expect(await go(), isTrue); // repeating the same save finishes the job
+    expect((await flaky.getDoc('circles/A'))!['assignedTeacherId'], 'tNew');
+    expect((await flaky.getDoc('students/bs0'))!['assignedTeacherIds'], ['tNew']);
+    expect((await flaky.getDoc('students/bs229'))!['assignedTeacherIds'], ['tNew']);
   });
 
   group('archive', () {
@@ -247,4 +283,18 @@ void main() {
       }
     });
   });
+}
+
+/// Fails exactly the Nth batch commit, then behaves normally.
+class _FailOnNth extends FakeFirestoreDataSource {
+  _FailOnNth(this.n);
+  final int n;
+  int _calls = 0;
+
+  @override
+  Future<void> commitBatch(List<BatchOp> ops) async {
+    _calls++;
+    if (_calls == n) throw StateError('network down');
+    return super.commitBatch(ops);
+  }
 }

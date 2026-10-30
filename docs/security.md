@@ -127,9 +127,11 @@ Key design points:
 3. **Director provisioning** is an operator CLI (`docs/operations.md`); there is
    no in-app way to create a director, by design.
 4. **App Check, rate limiting and Storage rules** are not configured.
-5. **Atomic batch size.** Changing a circle's teacher updates the circle, its
-   enrolments, students and upcoming sessions in one batch (Firestore limit 500
-   writes). Circles too large for that are refused, not split.
+5. **Atomic batch size.** Changing a circle's teacher is one atomic batch for a
+   normal circle. A circle needing more than ~450 writes is applied in several
+   batches with the circle itself last, so a failure part-way leaves the circle
+   on its old teacher and the same save can be repeated safely; it is not
+   atomic in that rare case.
 6. **Session start date** is checked by the rules (`date <= request.time`); the
    "same day only" restriction is enforced by the app, not the rules.
 7. `assertFails` in rules tests also passes when a rule *errors* (the emulator
