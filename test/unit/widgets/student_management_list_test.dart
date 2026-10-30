@@ -40,7 +40,13 @@ void main() {
 
       expect(find.text('إدارة الطلاب'), findsOneWidget);
       expect(find.text('أحمد محمد'), findsOneWidget);
-      expect(find.text('منتظم'), findsOneWidget);
+      // The status label on this student's card (the filter chip also says منتظم).
+      expect(
+        find.descendant(
+            of: find.widgetWithText(ListTile, 'أحمد محمد'),
+            matching: find.text('منتظم')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('shows empty state when no students', (tester) async {
