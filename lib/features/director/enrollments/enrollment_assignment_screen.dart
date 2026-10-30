@@ -18,10 +18,13 @@ import 'package:quran_center/features/director/widgets/director_bottom_nav.dart'
 /// a new circle transfers them (the old enrolment is kept as history). All the
 /// rules are enforced by [EnrollmentService]; this screen shows its answer.
 class EnrollmentAssignmentScreen extends ConsumerStatefulWidget {
-  const EnrollmentAssignmentScreen({super.key, this.initialStudentId});
+  const EnrollmentAssignmentScreen({super.key, this.initialStudentId, this.initialCircleId});
 
   /// Preselected student, when opened from a student's menu.
   final String? initialStudentId;
+
+  /// Preselected circle, when opened from a circle's page.
+  final String? initialCircleId;
 
   @override
   ConsumerState<EnrollmentAssignmentScreen> createState() =>
@@ -102,6 +105,10 @@ class _EnrollmentAssignmentScreenState
         _currentCircle = current;
         if (preselect != null && students.any((s) => s.studentId == preselect)) {
           _studentId = preselect;
+        }
+        final circlePre = widget.initialCircleId;
+        if (circlePre != null && circles.any((c) => c.circleId == circlePre)) {
+          _circleId = circlePre;
         }
         _loading = false;
       });

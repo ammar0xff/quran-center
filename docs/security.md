@@ -47,7 +47,7 @@ Authorization enforced by the backend (Firestore Security Rules + Cloud Function
 ## Enforced and tested
 
 Firestore Security Rules (`firebase/firestore.rules`) are tested against the
-real Firestore emulator (`firebase/rules-tests`, 59 tests) and cover:
+real Firestore emulator (`firebase/rules-tests`, 61 tests) and cover:
 users, centers, students, teachers, circles, enrollments, schedules,
 attendance and audit_logs, including the enrollment-assignment batch and the
 rule that director list queries must filter by `centerId`. Everything else is **default deny**.
@@ -106,10 +106,13 @@ Key design points:
    enrollments, attendance and audit_logs therefore carries a `centerId` filter
    (rules tests demonstrate that an unscoped query is refused). Teacher-side
    queries (`recordedBy`, `teacherId`) will need the same treatment in Phase 5.
-8. **Enrollment capacity** is checked by reading, not in a transaction; two
+8. **Atomic batch size.** Changing a circle's teacher updates the circle, its
+   enrolments, students and upcoming sessions in one batch (Firestore limit 500
+   writes). Circles too large for that are refused, not split.
+9. **Enrollment capacity** is checked by reading, not in a transaction; two
    directors taking the last seat simultaneously could both succeed.
-9. **Student creation** is not written to the audit log (archive, reinstate,
+10. **Student creation** is not written to the audit log (archive, reinstate,
    edit, assign/transfer and access changes are).
-10. Teachers/students cannot yet read what they need for several planned
+11. Teachers/students cannot yet read what they need for several planned
    screens (e.g. a student reading their circle/schedule). Add rules together
    with those features, each with tests.

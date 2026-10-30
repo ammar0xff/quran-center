@@ -6,6 +6,7 @@ import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/data/models/circle.dart';
 import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/data/providers/repositories.dart';
+import 'package:quran_center/data/services/circle_service.dart';
 import 'package:quran_center/features/director/widgets/director_bottom_nav.dart';
 
 /// Director circle list: search, teacher and enrolment per circle, archive.
@@ -37,13 +38,15 @@ class _CircleManagementListScreenState
       final centerId = ref.read(centerIdProvider);
       final circles =
           await ref.read(circleRepositoryProvider).getCirclesByCenter(centerId);
-      final teachers =
-          await ref.read(teacherRepositoryProvider).getTeachersByCenter(centerId);
+      final teachers = await ref
+          .read(teacherRepositoryProvider)
+          .getTeachersByCenter(centerId);
       final enrollments = ref.read(enrollmentRepositoryProvider);
       final counts = <String, int>{};
       for (final c in circles) {
-        counts[c.circleId] =
-            (await enrollments.getActiveEnrollmentsForCircle(c.circleId, centerId: centerId)).length;
+        counts[c.circleId] = (await enrollments
+                .getActiveEnrollmentsForCircle(c.circleId, centerId: centerId))
+            .length;
       }
       if (!mounted) return;
       setState(() {
@@ -64,7 +67,8 @@ class _CircleManagementListScreenState
 
   List<Circle> get _visible {
     final q = _query.trim();
-    final list = _circles.where((c) => q.isEmpty || c.name.contains(q)).toList();
+    final list =
+        _circles.where((c) => q.isEmpty || c.name.contains(q)).toList();
     list.sort((a, b) => a.name.compareTo(b.name));
     return list;
   }
@@ -91,14 +95,20 @@ class _CircleManagementListScreenState
     );
     if (ok != true) return;
     try {
-      await ref
-          .read(circleRepositoryProvider)
-          .archiveCircle(circle.circleId, actorId: ref.read(actorProvider).id);
+      final actor = ref.read(actorProvider);
+      await ref.read(circleServiceProvider).archive(circle.circleId,
+          centerId: ref.read(centerIdProvider),
+          actorId: actor.id,
+          actorRole: actor.role);
       await _load();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('تمت أرشفة الحلقة'),
           backgroundColor: DesignTokens.success));
+    } on CircleException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e.message), backgroundColor: DesignTokens.error));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -136,7 +146,8 @@ class _CircleManagementListScreenState
                         Text(_error!),
                         const SizedBox(height: DesignTokens.space12),
                         OutlinedButton(
-                            onPressed: _load, child: const Text('إعادة المحاولة')),
+                            onPressed: _load,
+                            child: const Text('إعادة المحاولة')),
                       ],
                     ),
                   )
@@ -153,10 +164,12 @@ class _CircleManagementListScreenState
                                     fontSize: 18, fontWeight: FontWeight.w700)),
                             const SizedBox(height: DesignTokens.space8),
                             const Text('أنشئ حلقة لبدء توزيع الطلاب والمعلمين.',
-                                style: TextStyle(color: DesignTokens.secondaryText)),
+                                style: TextStyle(
+                                    color: DesignTokens.secondaryText)),
                             const SizedBox(height: DesignTokens.space24),
                             FilledButton(
-                              onPressed: () => context.push('/director/circles/add'),
+                              onPressed: () =>
+                                  context.push('/director/circles/add'),
                               child: const Text('إنشاء أول حلقة'),
                             ),
                           ],
@@ -182,7 +195,8 @@ class _CircleManagementListScreenState
                                       children: [
                                         const Text('لا توجد حلقات مطابقة'),
                                         TextButton(
-                                          onPressed: () => setState(() => _query = ''),
+                                          onPressed: () =>
+                                              setState(() => _query = ''),
                                           child: const Text('مسح البحث'),
                                         ),
                                       ],
@@ -192,8 +206,10 @@ class _CircleManagementListScreenState
                                     itemCount: items.length,
                                     itemBuilder: (_, i) => _CircleCard(
                                       circle: items[i],
-                                      teacherName: _teacherNames[items[i].assignedTeacherId],
-                                      enrolled: _enrolled[items[i].circleId] ?? 0,
+                                      teacherName: _teacherNames[
+                                          items[i].assignedTeacherId],
+                                      enrolled:
+                                          _enrolled[items[i].circleId] ?? 0,
                                       onArchive: () => _archive(items[i]),
                                     ),
                                   ),
@@ -223,55 +239,76 @@ class _CircleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final active = circle.status == CircleStatus.active;
     final color = active ? DesignTokens.success : DesignTokens.secondaryText;
-    return Container(
-      margin: const EdgeInsets.symmetric(
+    // Material (not a colored DecoratedBox) so the tap ripple is visible.
+    return Padding(
+      padding: const EdgeInsets.symmetric(
           horizontal: DesignTokens.space20, vertical: DesignTokens.space8),
-      decoration: BoxDecoration(
+      child: Material(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMedium),
-        border: Border.all(color: DesignTokens.borders),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-            horizontal: DesignTokens.space16, vertical: DesignTokens.space8),
-        leading: const CircleAvatar(
-          backgroundColor: DesignTokens.softMint,
-          child: Icon(Icons.school, color: DesignTokens.primaryDarkGreen),
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusMedium),
+          side: const BorderSide(color: DesignTokens.borders),
         ),
-        title: Text(circle.name,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: DesignTokens.space4),
-          child: Wrap(
-            spacing: DesignTokens.space8,
-            runSpacing: DesignTokens.space4,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Text(active ? 'نشطة' : 'مؤرشفة',
-                  style: TextStyle(
-                      fontSize: 12, fontWeight: FontWeight.w700, color: color)),
-              Text('الطلاب $enrolled/${circle.maxCapacity}',
-                  style: const TextStyle(
-                      fontSize: 12, color: DesignTokens.secondaryText)),
-              Text(teacherName ?? 'بدون معلم',
-                  style: const TextStyle(
-                      fontSize: 12, color: DesignTokens.secondaryText)),
-              Text('${circle.weeklySchedule.length} جلسة أسبوعيًا',
-                  style: const TextStyle(
-                      fontSize: 12, color: DesignTokens.secondaryText)),
+        child: ListTile(
+          onTap: () => context.push('/director/circles/${circle.circleId}'),
+          contentPadding: const EdgeInsets.symmetric(
+              horizontal: DesignTokens.space16, vertical: DesignTokens.space8),
+          leading: const CircleAvatar(
+            backgroundColor: DesignTokens.softMint,
+            child: Icon(Icons.school, color: DesignTokens.primaryDarkGreen),
+          ),
+          title: Text(circle.name,
+              style:
+                  const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: DesignTokens.space4),
+            child: Wrap(
+              spacing: DesignTokens.space8,
+              runSpacing: DesignTokens.space4,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(active ? 'نشطة' : 'مؤرشفة',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: color)),
+                Text('الطلاب $enrolled/${circle.maxCapacity}',
+                    style: const TextStyle(
+                        fontSize: 12, color: DesignTokens.secondaryText)),
+                Text(teacherName ?? 'بدون معلم',
+                    style: const TextStyle(
+                        fontSize: 12, color: DesignTokens.secondaryText)),
+                Text('${circle.weeklySchedule.length} جلسة أسبوعيًا',
+                    style: const TextStyle(
+                        fontSize: 12, color: DesignTokens.secondaryText)),
+              ],
+            ),
+          ),
+          trailing: PopupMenuButton<String>(
+            tooltip: 'خيارات',
+            onSelected: (v) {
+              if (v == 'open')
+                context.push('/director/circles/${circle.circleId}');
+              if (v == 'edit')
+                context.push('/director/circles/${circle.circleId}/edit');
+              if (v == 'assign') {
+                context.push(
+                    '/director/enrollments/assign?circle=${circle.circleId}');
+              }
+              if (v == 'archive') onArchive();
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(
+                  value: 'open', child: Text('التفاصيل والطلاب')),
+              if (active)
+                const PopupMenuItem(value: 'edit', child: Text('تعديل')),
+              if (active)
+                const PopupMenuItem(value: 'assign', child: Text('تعيين طالب')),
+              if (active)
+                const PopupMenuItem(value: 'archive', child: Text('أرشفة')),
             ],
           ),
-        ),
-        trailing: PopupMenuButton<String>(
-          tooltip: 'خيارات',
-          onSelected: (v) {
-            if (v == 'assign') context.push('/director/enrollments/assign');
-            if (v == 'archive') onArchive();
-          },
-          itemBuilder: (_) => [
-            const PopupMenuItem(value: 'assign', child: Text('تعيين طالب')),
-            if (active) const PopupMenuItem(value: 'archive', child: Text('أرشفة')),
-          ],
         ),
       ),
     );

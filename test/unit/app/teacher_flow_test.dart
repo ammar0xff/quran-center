@@ -21,7 +21,20 @@ Future<void> _seed(FakeFirestoreDataSource s) async {
         'createdAt': 1700000000000,
         'updatedAt': 1700000000000,
       });
-  await teacher('t1', 'center-1', 'فاطمة علي', 'active', circles: ['c1', 'c2']);
+  await teacher('t1', 'center-1', 'فاطمة علي', 'active');
+  // The count comes from the circles themselves: two active ones count, the
+  // archived one and the other teacher's do not.
+  Future<void> circle(String id, String? teacherId, String status) =>
+      s.setDoc('circles/$id', {
+        'centerId': 'center-1', 'name': 'حلقة $id', 'educationalLevel': 'x',
+        'assignedTeacherId': teacherId, 'maxCapacity': 10, 'locationOrMode': 'onsite',
+        'weeklySchedule': [], 'sessionDurationMinutes': 60, 'status': status,
+        'createdAt': 1700000000000, 'updatedAt': 1700000000000,
+      });
+  await circle('c1', 't1', 'active');
+  await circle('c2', 't1', 'active');
+  await circle('c3', 't1', 'archived');
+  await circle('c4', 't2', 'active');
   await teacher('t2', 'center-1', 'خديجة حسن', 'suspended');
   await teacher('t3', 'center-2', 'معلمة مركز آخر', 'active');
 }
@@ -110,7 +123,8 @@ void main() {
       expect(find.text('خديجة حسن'), findsOneWidget);
       expect(find.text('معلمة مركز آخر'), findsNothing);
       expect(find.text('2 حلقة'), findsOneWidget);
-      expect(find.text('بدون حلقات'), findsOneWidget);
+      expect(find.text('1 حلقة'), findsOneWidget); // t2 has one circle
+      expect(find.text('بدون حلقات'), findsNothing);
     });
 
     testWidgets('search and status filters work and can be cleared', (tester) async {

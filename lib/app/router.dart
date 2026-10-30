@@ -10,7 +10,9 @@ import 'package:quran_center/features/authentication/screens/login_screen.dart';
 import 'package:quran_center/features/authentication/screens/splash_screen.dart';
 import 'package:quran_center/features/director/attendance/attendance_administration_screen.dart';
 import 'package:quran_center/features/director/circles/circle_management_list_screen.dart';
+import 'package:quran_center/features/director/circles/circle_detail_screen.dart';
 import 'package:quran_center/features/director/circles/create_circle_screen.dart';
+import 'package:quran_center/features/director/circles/edit_circle_screen.dart';
 import 'package:quran_center/features/director/dashboard/director_dashboard_screen.dart';
 import 'package:quran_center/features/director/enrollments/enrollment_assignment_screen.dart';
 import 'package:quran_center/features/director/more/director_more_screen.dart';
@@ -90,9 +92,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const CreateCircleScreen(),
       ),
       GoRoute(
+        path: '/director/circles/:id',
+        builder: (_, state) =>
+            CircleDetailScreen(circleId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/director/circles/:id/edit',
+        builder: (_, state) =>
+            EditCircleScreen(circleId: state.pathParameters['id']!),
+      ),
+      GoRoute(
         path: '/director/enrollments/assign',
         builder: (_, state) => EnrollmentAssignmentScreen(
           initialStudentId: state.uri.queryParameters['student'],
+          initialCircleId: state.uri.queryParameters['circle'],
         ),
       ),
       GoRoute(

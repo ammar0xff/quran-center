@@ -21,6 +21,7 @@ class TeacherManagementListScreen extends ConsumerStatefulWidget {
 class _TeacherManagementListScreenState
     extends ConsumerState<TeacherManagementListScreen> {
   List<Teacher> _teachers = [];
+  Map<String, int> _circleCounts = {};
   String _query = '';
   AccountStatus? _status;
   bool _loading = true;
@@ -34,11 +35,24 @@ class _TeacherManagementListScreenState
 
   Future<void> _load() async {
     try {
+      final centerId = ref.read(centerIdProvider);
       final list = await ref
           .read(teacherRepositoryProvider)
-          .getTeachersByCenter(ref.read(centerIdProvider));
+          .getTeachersByCenter(centerId);
+      // Circle counts come from the circles themselves (the single source of
+      // truth for who teaches what), never from a copy kept on the teacher.
+      final circles =
+          await ref.read(circleRepositoryProvider).getCirclesByCenter(centerId);
+      final counts = <String, int>{};
+      for (final c in circles) {
+        final t = c.assignedTeacherId;
+        if (t != null && c.status == CircleStatus.active) {
+          counts[t] = (counts[t] ?? 0) + 1;
+        }
+      }
       if (!mounted) return;
       setState(() {
+        _circleCounts = counts;
         _teachers = list;
         _loading = false;
         _error = null;
@@ -69,7 +83,8 @@ class _TeacherManagementListScreenState
       builder: (_) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          title: Text(suspend ? 'تعليق ${t.fullName}؟' : 'إعادة تفعيل ${t.fullName}؟'),
+          title: Text(
+              suspend ? 'تعليق ${t.fullName}؟' : 'إعادة تفعيل ${t.fullName}؟'),
           content: Text(suspend
               ? 'لن يتمكن المعلم من تسجيل الدخول. تبقى سجلاته وتقييماته كما هي، '
                   'ويمكنك إعادة التفعيل في أي وقت.'
@@ -97,8 +112,8 @@ class _TeacherManagementListScreenState
           backgroundColor: DesignTokens.success));
     } on AccountAccessException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message), backgroundColor: DesignTokens.error));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e.message), backgroundColor: DesignTokens.error));
     }
   }
 
@@ -131,7 +146,8 @@ class _TeacherManagementListScreenState
                         Text(_error!),
                         const SizedBox(height: DesignTokens.space12),
                         OutlinedButton(
-                            onPressed: _load, child: const Text('إعادة المحاولة')),
+                            onPressed: _load,
+                            child: const Text('إعادة المحاولة')),
                       ],
                     ),
                   )
@@ -148,10 +164,12 @@ class _TeacherManagementListScreenState
                                     fontSize: 18, fontWeight: FontWeight.w700)),
                             const SizedBox(height: DesignTokens.space8),
                             const Text('أضف معلمًا لبدء تعيين الحلقات والطلاب.',
-                                style: TextStyle(color: DesignTokens.secondaryText)),
+                                style: TextStyle(
+                                    color: DesignTokens.secondaryText)),
                             const SizedBox(height: DesignTokens.space24),
                             FilledButton(
-                              onPressed: () => context.push('/director/teachers/add'),
+                              onPressed: () =>
+                                  context.push('/director/teachers/add'),
                               child: const Text('إضافة أول معلم'),
                             ),
                           ],
@@ -179,19 +197,22 @@ class _TeacherManagementListScreenState
                                       ChoiceChip(
                                         label: const Text('الكل'),
                                         selected: _status == null,
-                                        onSelected: (_) => setState(() => _status = null),
+                                        onSelected: (_) =>
+                                            setState(() => _status = null),
                                       ),
                                       ChoiceChip(
                                         label: const Text('نشط'),
-                                        selected: _status == AccountStatus.active,
-                                        onSelected: (_) => setState(
-                                            () => _status = AccountStatus.active),
+                                        selected:
+                                            _status == AccountStatus.active,
+                                        onSelected: (_) => setState(() =>
+                                            _status = AccountStatus.active),
                                       ),
                                       ChoiceChip(
                                         label: const Text('معلّق'),
-                                        selected: _status == AccountStatus.suspended,
-                                        onSelected: (_) => setState(
-                                            () => _status = AccountStatus.suspended),
+                                        selected:
+                                            _status == AccountStatus.suspended,
+                                        onSelected: (_) => setState(() =>
+                                            _status = AccountStatus.suspended),
                                       ),
                                     ],
                                   ),
@@ -211,7 +232,8 @@ class _TeacherManagementListScreenState
                                             _query = '';
                                             _status = null;
                                           }),
-                                          child: const Text('مسح البحث والفلاتر'),
+                                          child:
+                                              const Text('مسح البحث والفلاتر'),
                                         ),
                                       ],
                                     ),
@@ -220,7 +242,11 @@ class _TeacherManagementListScreenState
                                     itemCount: items.length,
                                     itemBuilder: (_, i) => _TeacherCard(
                                       teacher: items[i],
-                                      onToggleSuspend: () => _toggleSuspend(items[i]),
+                                      circleCount:
+                                          _circleCounts[items[i].teacherId] ??
+                                              0,
+                                      onToggleSuspend: () =>
+                                          _toggleSuspend(items[i]),
                                     ),
                                   ),
                           ),
@@ -233,9 +259,14 @@ class _TeacherManagementListScreenState
 }
 
 class _TeacherCard extends StatelessWidget {
-  const _TeacherCard({required this.teacher, required this.onToggleSuspend});
+  const _TeacherCard({
+    required this.teacher,
+    required this.circleCount,
+    required this.onToggleSuspend,
+  });
 
   final Teacher teacher;
+  final int circleCount;
   final VoidCallback onToggleSuspend;
 
   @override
@@ -269,7 +300,8 @@ class _TeacherCard extends StatelessWidget {
           child: Text(
             teacher.fullName.isNotEmpty ? teacher.fullName[0] : 'م',
             style: const TextStyle(
-                color: DesignTokens.primaryDarkGreen, fontWeight: FontWeight.bold),
+                color: DesignTokens.primaryDarkGreen,
+                fontWeight: FontWeight.bold),
           ),
         ),
         title: Text(teacher.fullName,
@@ -283,9 +315,7 @@ class _TeacherCard extends StatelessWidget {
                   style: TextStyle(
                       fontSize: 12, fontWeight: FontWeight.w700, color: color)),
               Text(
-                teacher.assignedCircleIds.isEmpty
-                    ? 'بدون حلقات'
-                    : '${teacher.assignedCircleIds.length} حلقة',
+                circleCount == 0 ? 'بدون حلقات' : '$circleCount حلقة',
                 style: const TextStyle(
                     fontSize: 12, color: DesignTokens.secondaryText),
               ),

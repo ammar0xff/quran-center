@@ -362,6 +362,36 @@ describe("circles", () => {
   });
 });
 
+describe("circle teacher change (one batch)", () => {
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, "enrollments/ct1"), { centerId: C1, studentId: "s3", circleId: "circle1", teacherId: "tA", status: "active" });
+      await setDoc(doc(db, "schedules/ctS"), { centerId: C1, circleId: "circle1", teacherId: "tA", status: "scheduled" });
+    });
+  });
+  it("a director can move circle, enrolment, student, session and audit together", async () => {
+    const db = as("dir1");
+    const batch = writeBatch(db);
+    batch.update(doc(db, "circles/circle1"), { assignedTeacherId: "tB", updatedBy: "dir1" });
+    batch.update(doc(db, "enrollments/ct1"), { teacherId: "tB" });
+    batch.update(doc(db, "students/s3"), { assignedTeacherIds: ["tB"] });
+    batch.update(doc(db, "schedules/ctS"), { teacherId: "tB" });
+    batch.set(doc(db, "audit_logs/aud-ct-1"), {
+      centerId: C1, actorUserId: "dir1", actorRole: "director",
+      action: "change_circle_teacher", entityType: "circle", entityId: "circle1",
+    });
+    await assertSucceeds(batch.commit());
+    await assertSucceeds(getDoc(doc(as("tB"), "circles/circle1")));
+    await assertFails(getDoc(doc(as("tA"), "circles/circle1")));
+  });
+  it("a teacher cannot reassign a circle to themselves, and another center's director cannot touch it", async () => {
+    await assertFails(updateDoc(doc(as("tB"), "circles/circle1"), { assignedTeacherId: "tB" }));
+    await assertFails(updateDoc(doc(as("dir2"), "circles/circle1"), { assignedTeacherId: "tB" }));
+    await assertFails(updateDoc(doc(as("dir1"), "circles/circle1"), { centerId: C2 }));
+  });
+});
+
 describe("audit_logs", () => {
   const entry = (over = {}) => ({ centerId: C1, actorUserId: "dir1", action: "x", ...over });
   it("a director can append an entry attributed to themselves", async () => {
