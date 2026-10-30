@@ -56,3 +56,14 @@
 
 ## Offline session flow
 - Read cached students/schedule. Record attendance/assessment locally (outbox, idempotency key). Show "saved locally / waiting to sync". On reconnect: sync, retry, surface conflicts (never silently overwrite). Session may be locally complete while server-confirmed status remains distinct.
+
+## Enrollment policy (implemented)
+* A student has at most one **active** enrollment. Assigning to another circle
+  is a **transfer**: the old enrollment becomes `transferred` (with end date and
+  reason) and is kept as history; nothing is deleted.
+* Only `active` students go into `active` circles, never beyond `maxCapacity`.
+* Assignment is one atomic batch: new enrollment, closed old enrollment,
+  student `assignedTeacherIds` (set from the circle's teacher; security rules
+  use it to let that teacher read the student), and the audit entry.
+* The same enrollment/circle/day re-submitted is rejected as a duplicate, not
+  written twice.
