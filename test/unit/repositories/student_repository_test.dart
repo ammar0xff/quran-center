@@ -48,6 +48,26 @@ void main() {
       expect(s.hasLogin, isFalse);
     });
 
+    test('createStudent with an actor writes the student and its audit entry together', () async {
+      await repo.createStudent(
+        Student(
+          studentId: 'stu-aud', centerId: 'center-1', fullName: 'طالب جديد',
+          accountMode: AccountMode.none, enrollmentStatus: EnrollmentStatus.active,
+          educationalLevel: 'مبتدئ',
+          createdAt: DateTime(2026), updatedAt: DateTime(2026),
+        ),
+        actorId: 'dir-1',
+        actorRole: 'director',
+      );
+      final stored = (await fake.getDoc('students/stu-aud'))!;
+      expect(stored['createdBy'], 'dir-1');
+      final audit = (await fake.query('audit_logs', where: [])).single;
+      expect(audit['action'], 'create_student');
+      expect(audit['entityId'], 'stu-aud');
+      expect(audit['actorUserId'], 'dir-1');
+      expect(audit['centerId'], 'center-1');
+    });
+
     test('createStudent persists and is readable back', () async {
       await repo.createStudent(Student(
         studentId: 'student-new',
@@ -227,6 +247,23 @@ void main() {
       expect(s['currentCircleId'], isNull);
       final audit = (await fake.query('audit_logs', where: [])).single;
       expect((audit['previousValue'] as Map)['circleIds'], ['cA']);
+    });
+
+    test('archiving gives the seat back to the circle', () async {
+      await seedStudent();
+      await fake.setDoc('circles/cA', {
+        'centerId': 'center-1', 'name': 'A', 'educationalLevel': 'x', 'maxCapacity': 5,
+        'activeCount': 3, 'locationOrMode': 'onsite', 'weeklySchedule': [],
+        'sessionDurationMinutes': 60, 'status': 'active',
+        'createdAt': 1700000000000, 'updatedAt': 1700000000000,
+      });
+      await fake.setDoc('enrollments/e1', {
+        'centerId': 'center-1', 'studentId': 'student-1', 'circleId': 'cA',
+        'startDate': 1700000000000, 'status': 'active',
+        'createdAt': 1700000000000, 'updatedAt': 1700000000000,
+      });
+      await repo.archiveStudent('student-1', actorId: 'd', actorRole: 'director');
+      expect((await fake.getDoc('circles/cA'))!['activeCount'], 2);
     });
 
     test('reinstating does not touch enrolments or invent a circle', () async {

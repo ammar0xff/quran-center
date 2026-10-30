@@ -26,6 +26,14 @@ class BatchOp {
   final bool isUpdate;
 }
 
+/// Reads and buffered writes inside a transaction. All reads must come before
+/// the writes are applied (writes are applied together when the body returns).
+abstract class TxContext {
+  Future<Map<String, dynamic>?> get(String path);
+  void set(String path, Map<String, dynamic> data);
+  void update(String path, Map<String, dynamic> data);
+}
+
 /// Abstract Firestore data source.
 ///
 /// Keeps repository implementations free of direct Firebase SDK calls so they
@@ -42,6 +50,11 @@ abstract class FirestoreDataSource {
 
   /// Applies all [ops] atomically: either every write lands or none do.
   Future<void> commitBatch(List<BatchOp> ops);
+
+  /// Runs [body] as a transaction: the documents it reads are re-checked at
+  /// commit, and the whole body is retried if any of them changed meanwhile.
+  /// Use it for read-then-write rules such as "never exceed the capacity".
+  Future<T> runTransaction<T>(Future<T> Function(TxContext tx) body);
 
   /// Query a collection (one-page fetch).
   Future<List<Map<String, dynamic>>> query(
@@ -99,6 +112,16 @@ class FirebaseFirestoreDataSource implements FirestoreDataSource {
     await batch.commit();
   }
 
+  @override
+  Future<T> runTransaction<T>(Future<T> Function(TxContext tx) body) {
+    return _firestore.runTransaction((t) async {
+      final ctx = _FirebaseTx(_firestore, t);
+      final result = await body(ctx);
+      ctx.flush();
+      return result;
+    });
+  }
+
   Query<Map<String, dynamic>> _applyFilters(
       Query<Map<String, dynamic>> query, List<QueryFilter> where) {
     for (final f in where) {
@@ -151,5 +174,37 @@ class FirebaseFirestoreDataSource implements FirestoreDataSource {
       final data = d.data();
       return {...data, 'id': d.id};
     }).toList());
+  }
+}
+
+class _FirebaseTx implements TxContext {
+  _FirebaseTx(this._firestore, this._tx);
+
+  final FirebaseFirestore _firestore;
+  final Transaction _tx;
+  final _ops = <BatchOp>[];
+
+  @override
+  Future<Map<String, dynamic>?> get(String path) async {
+    final snap = await _tx.get(_firestore.doc(path));
+    return snap.data();
+  }
+
+  @override
+  void set(String path, Map<String, dynamic> data) => _ops.add(BatchOp.set(path, data));
+
+  @override
+  void update(String path, Map<String, dynamic> data) =>
+      _ops.add(BatchOp.update(path, data));
+
+  void flush() {
+    for (final op in _ops) {
+      final ref = _firestore.doc(op.path);
+      if (op.isUpdate) {
+        _tx.update(ref, op.data);
+      } else {
+        _tx.set(ref, op.data);
+      }
+    }
   }
 }

@@ -64,6 +64,7 @@ class Circle extends AppModel {
     required this.educationalLevel,
     this.assignedTeacherId,
     required this.maxCapacity,
+    this.activeCount = 0,
     required this.locationOrMode,
     required this.weeklySchedule,
     required this.sessionDurationMinutes,
@@ -81,6 +82,10 @@ class Circle extends AppModel {
   final String educationalLevel;
   final String? assignedTeacherId;
   final int maxCapacity;
+
+  /// Number of students currently enrolled. Kept in step with enrolment changes
+  /// inside transactions; the Security Rules never let it exceed [maxCapacity].
+  final int activeCount;
   final String locationOrMode; // onsite / online / hybrid
   final List<CircleWeeklySchedule> weeklySchedule;
   final int sessionDurationMinutes;
@@ -114,6 +119,7 @@ class Circle extends AppModel {
       educationalLevel: educationalLevel ?? this.educationalLevel,
       assignedTeacherId: assignedTeacherId ?? this.assignedTeacherId,
       maxCapacity: maxCapacity ?? this.maxCapacity,
+      activeCount: activeCount,
       locationOrMode: locationOrMode ?? this.locationOrMode,
       weeklySchedule: weeklySchedule ?? this.weeklySchedule,
       sessionDurationMinutes: sessionDurationMinutes ?? this.sessionDurationMinutes,
@@ -134,6 +140,7 @@ class Circle extends AppModel {
       educationalLevel: json['educationalLevel'] as String? ?? '',
       assignedTeacherId: json['assignedTeacherId'] as String?,
       maxCapacity: json['maxCapacity'] as int? ?? 0,
+      activeCount: json['activeCount'] as int? ?? 0,
       locationOrMode: json['locationOrMode'] as String? ?? '',
       weeklySchedule: (json['weeklySchedule'] as List<dynamic>?)
               ?.map((e) => CircleWeeklySchedule.fromJson(e as JsonMap))
@@ -157,6 +164,7 @@ class Circle extends AppModel {
       'educationalLevel': educationalLevel,
       if (assignedTeacherId != null) 'assignedTeacherId': assignedTeacherId,
       'maxCapacity': maxCapacity,
+      'activeCount': activeCount,
       'locationOrMode': locationOrMode,
       'weeklySchedule': weeklySchedule.map((e) => e.toJson()).toList(),
       'sessionDurationMinutes': sessionDurationMinutes,

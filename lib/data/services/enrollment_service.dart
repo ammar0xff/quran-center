@@ -156,7 +156,37 @@ class EnrollmentService {
         'createdAt': now.millisecondsSinceEpoch,
       }),
     ];
-    await _ds.commitBatch(ops);
+    // The circle's counter is the serialization point: the transaction reads it
+    // fresh, re-checks the capacity, and writes the new count together with
+    // everything else, so two directors taking the last seat cannot both win.
+    final movedOut = <String, int>{};
+    for (final old in plan.toTransfer) {
+      movedOut[old.circleId] = (movedOut[old.circleId] ?? 0) + 1;
+    }
+    await _ds.runTransaction((tx) async {
+      final target = await tx.get('circles/$circleId');
+      final oldCircles = {
+        for (final id in movedOut.keys) id: await tx.get('circles/$id'),
+      };
+      if (target == null || target['centerId'] != centerId) _notFound();
+      final count = (target['activeCount'] as int?) ?? 0;
+      final capacity = (target['maxCapacity'] as int?) ?? 0;
+      if (count >= capacity) {
+        throw EnrollmentAssignmentException(
+          assignmentErrorMessage(AssignmentError.circleFull),
+          error: AssignmentError.circleFull,
+        );
+      }
+      for (final op in ops) {
+        op.isUpdate ? tx.update(op.path, op.data) : tx.set(op.path, op.data);
+      }
+      tx.update('circles/$circleId', {'activeCount': count + 1});
+      oldCircles.forEach((id, doc) {
+        if (doc == null) return;
+        final c = (doc['activeCount'] as int?) ?? 0;
+        tx.update('circles/$id', {'activeCount': (c - movedOut[id]!).clamp(0, 1 << 30)});
+      });
+    });
     return created;
   }
 }

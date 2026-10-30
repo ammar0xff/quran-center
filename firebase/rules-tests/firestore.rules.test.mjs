@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { before, after, beforeEach, describe, it } from "node:test";
 import {
@@ -5,7 +6,7 @@ import {
   assertSucceeds,
   initializeTestEnvironment,
 } from "@firebase/rules-unit-testing";
-import { collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, updateDoc, where, writeBatch } from "firebase/firestore";
+import { collection, runTransaction, deleteDoc, doc, getDoc, getDocs, query, setDoc, updateDoc, where, writeBatch } from "firebase/firestore";
 
 let env;
 
@@ -429,6 +430,53 @@ describe("session lifecycle (teacher)", () => {
   it("a teacher reads only their own sessions", async () => {
     await assertSucceeds(getDoc(doc(as("tA"), "schedules/sess9")));
     await assertFails(getDoc(doc(as("tA"), "schedules/sessB")));
+  });
+});
+
+describe("circle capacity is enforced by the backend", () => {
+  const withCapacity = async (cap, count) => env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), "circles/cap"), { centerId: C1, name: "C", maxCapacity: cap, activeCount: count });
+  });
+  it("a seat can be taken until the circle is full, never beyond", async () => {
+    await withCapacity(2, 1);
+    await assertSucceeds(updateDoc(doc(as("dir1"), "circles/cap"), { activeCount: 2 }));
+    await assertFails(updateDoc(doc(as("dir1"), "circles/cap"), { activeCount: 3 }));
+  });
+  it("capacity cannot be cut below the students already in the circle", async () => {
+    await withCapacity(5, 3);
+    await assertFails(updateDoc(doc(as("dir1"), "circles/cap"), { maxCapacity: 2 }));
+    await assertSucceeds(updateDoc(doc(as("dir1"), "circles/cap"), { maxCapacity: 3 }));
+  });
+  it("a negative counter is refused and a new circle starts empty", async () => {
+    await withCapacity(5, 0);
+    await assertFails(updateDoc(doc(as("dir1"), "circles/cap"), { activeCount: -1 }));
+    await assertFails(setDoc(doc(as("dir1"), "circles/fresh"), { centerId: C1, name: "N", maxCapacity: 5, activeCount: 4 }));
+    await assertSucceeds(setDoc(doc(as("dir1"), "circles/fresh2"), { centerId: C1, name: "N", maxCapacity: 5, activeCount: 0 }));
+  });
+});
+
+describe("seat race with real Firestore transactions", () => {
+  it("two directors racing for the last seat: exactly one transaction commits", async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "circles/race"), { centerId: C1, name: "R", maxCapacity: 1, activeCount: 0 });
+    });
+    const take = (id) => {
+      const db = as("dir1");
+      return runTransaction(db, async (tx) => {
+        const ref = doc(db, "circles/race");
+        const snap = await tx.get(ref);
+        const { activeCount, maxCapacity } = snap.data();
+        if (activeCount >= maxCapacity) throw new Error("full");
+        tx.set(doc(db, `enrollments/race_${id}`), { centerId: C1, studentId: id, circleId: "race", status: "active" });
+        tx.update(ref, { activeCount: activeCount + 1 });
+      }).then(() => "ok", (e) => (String(e.message).includes("full") ? "full" : `error:${e.code ?? e.message}`));
+    };
+    const results = await Promise.all([take("x1"), take("x2")]);
+    assert.deepEqual([...results].sort(), ["full", "ok"]);
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const snap = await getDoc(doc(ctx.firestore(), "circles/race"));
+      assert.equal(snap.data().activeCount, 1);
+    });
   });
 });
 

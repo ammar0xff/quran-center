@@ -10,7 +10,9 @@ abstract class StudentRepository {
   Future<Student?> getStudent(String studentId);
 
   /// Create a student profile.
-  Future<void> createStudent(Student student);
+  /// When [actorId] and [actorRole] are given, the creation is written together
+  /// with its audit entry in one atomic batch.
+  Future<void> createStudent(Student student, {String? actorId, String? actorRole});
 
   /// Update a student profile.
   Future<void> updateStudent(Student student);

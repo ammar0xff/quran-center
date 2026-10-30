@@ -23,12 +23,33 @@ class StudentRepositoryImpl implements StudentRepository {
   }
 
   @override
-  Future<void> createStudent(Student student) async {
+  Future<void> createStudent(Student student, {String? actorId, String? actorRole}) async {
     final data = firestoreConverter.encodeForWrite(
       student.toJson(),
       timestampKeys: _timestampKeys,
     );
-    await _ds.setDoc('$_collectionPath/${student.studentId}', data);
+    final path = '$_collectionPath/${student.studentId}';
+    if (actorId == null || actorRole == null) {
+      await _ds.setDoc(path, data);
+      return;
+    }
+    final now = DateTime.now();
+    await _ds.commitBatch([
+      BatchOp.set(path, {...data, 'createdBy': actorId, 'updatedBy': actorId}),
+      BatchOp.set('audit_logs/aud_${now.microsecondsSinceEpoch}_${student.studentId}', {
+        'centerId': student.centerId,
+        'actorUserId': actorId,
+        'actorRole': actorRole,
+        'action': 'create_student',
+        'entityType': 'student',
+        'entityId': student.studentId,
+        'newValue': {
+          'enrollmentStatus': student.enrollmentStatus.toJson(),
+          'accountMode': student.accountMode.toJson(),
+        },
+        'createdAt': now.millisecondsSinceEpoch,
+      }),
+    ]);
   }
 
   @override
@@ -199,7 +220,7 @@ class StudentRepositoryImpl implements StudentRepository {
 
     final now = DateTime.now();
     final trimmed = reason?.trim();
-    await _ds.commitBatch([
+    final ops = <BatchOp>[
       for (final e in open)
         BatchOp.update('enrollments/${e['id']}', {
           'status': EnrollmentStatus.withdrawn.toJson(),
@@ -231,7 +252,29 @@ class StudentRepositoryImpl implements StudentRepository {
         if (trimmed != null && trimmed.isNotEmpty) 'reason': trimmed,
         'createdAt': now.millisecondsSinceEpoch,
       }),
-    ]);
+    ];
+
+    if (open.isEmpty) {
+      await _ds.commitBatch(ops);
+      return;
+    }
+    // Freed seats are returned to the circles' counters in the same transaction.
+    final freed = <String, int>{};
+    for (final e in open) {
+      final id = e['circleId'] as String;
+      freed[id] = (freed[id] ?? 0) + 1;
+    }
+    await _ds.runTransaction((tx) async {
+      final circles = {for (final id in freed.keys) id: await tx.get('circles/$id')};
+      for (final op in ops) {
+        op.isUpdate ? tx.update(op.path, op.data) : tx.set(op.path, op.data);
+      }
+      circles.forEach((id, doc) {
+        if (doc == null) return;
+        final c = (doc['activeCount'] as int?) ?? 0;
+        tx.update('circles/$id', {'activeCount': (c - freed[id]!).clamp(0, 1 << 30)});
+      });
+    });
   }
 
   @override

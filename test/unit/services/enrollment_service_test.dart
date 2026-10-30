@@ -45,6 +45,7 @@ Future<void> _seed(FakeFirestoreDataSource s) async {
 }
 
 void main() {
+  _raceTests();
   late FakeFirestoreDataSource store;
   late EnrollmentService service;
 
@@ -188,6 +189,68 @@ void main() {
     expect(await broken.getDoc('enrollments/enr_s1_A_20261102'), isNull);
     expect(await broken.query('audit_logs', where: []), isEmpty);
     expect((await broken.getDoc('students/s1'))!['assignedTeacherIds'], isEmpty);
+  });
+}
+
+
+void _raceTests() {
+  group('capacity and counter', () {
+    late FakeFirestoreDataSource store;
+    late EnrollmentService service;
+
+    setUp(() async {
+      store = FakeFirestoreDataSource();
+      await _seed(store);
+      for (final id in ['s2', 's3']) {
+        await store.setDoc('students/$id', {
+          'centerId': 'c1', 'fullName': id, 'accountMode': 'none', 'enrollmentStatus': 'active',
+          'assignedTeacherIds': <String>[], 'educationalLevel': 'x',
+          'createdAt': 1700000000000, 'updatedAt': 1700000000000,
+        });
+      }
+      service = EnrollmentService(store, clock: () => DateTime(2026, 11, 2, 9));
+    });
+
+    Future<void> assign(String student, String circle) => service.assign(
+          centerId: 'c1', studentId: student, circleId: circle,
+          actorId: 'dir-1', actorRole: 'director', startDate: DateTime(2026, 11, 2),
+        );
+
+    Future<int> count(String circle) async =>
+        ((await store.getDoc('circles/$circle'))!['activeCount'] as int?) ?? 0;
+
+    test('the circle counter follows assignments and transfers', () async {
+      await assign('s1', 'A');
+      expect(await count('A'), 1);
+      await assign('s2', 'A');
+      expect(await count('A'), 2);
+      await assign('s1', 'B'); // transfer out of A
+      expect(await count('A'), 1);
+      expect(await count('B'), 1);
+    });
+
+    test('two directors taking the last seat at the same moment: exactly one wins', () async {
+      // Circle A holds 2; fill one seat, then race s2 and s3 for the last one.
+      await store.updateDoc('circles/A', {'maxCapacity': 2});
+      await assign('s1', 'A');
+      final results = await Future.wait([
+        assign('s2', 'A').then((_) => 'ok', onError: (_) => 'full'),
+        assign('s3', 'A').then((_) => 'ok', onError: (_) => 'full'),
+      ]);
+      expect(results.where((r) => r == 'ok'), hasLength(1));
+      expect(results.where((r) => r == 'full'), hasLength(1));
+      expect(await count('A'), 2);
+      final active = (await store.query('enrollments', where: []))
+          .where((e) => e['circleId'] == 'A' && e['status'] == 'active');
+      expect(active, hasLength(2));
+    });
+
+    test('a refused assignment changes no counter', () async {
+      await store.updateDoc('circles/A', {'maxCapacity': 1, 'activeCount': 1});
+      await expectLater(assign('s2', 'A'), throwsA(isA<EnrollmentAssignmentException>()));
+      expect(await count('A'), 1);
+      expect(await count('B'), 0);
+    });
   });
 }
 

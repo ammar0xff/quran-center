@@ -97,7 +97,11 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
     // Step 1: the educational profile. Never blocked by login problems.
     try {
       final now = DateTime.now();
-      await ref.read(studentRepositoryProvider).createStudent(Student(
+      final actor = ref.read(actorProvider);
+      await ref.read(studentRepositoryProvider).createStudent(
+          actorId: actor.id,
+          actorRole: actor.role,
+          Student(
             studentId: _studentId,
             centerId: ref.read(centerIdProvider),
             fullName: _fullNameController.text.trim(),

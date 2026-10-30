@@ -95,6 +95,8 @@ final studentProfileProvider = FutureProvider.autoDispose
 /// Arabic text for an audit action; unknown actions are shown as recorded.
 String auditActionLabel(String action) {
   switch (action) {
+    case 'create_student':
+      return 'إنشاء الطالب';
     case 'update_student':
       return 'تعديل بيانات الطالب';
     case 'archive_student':

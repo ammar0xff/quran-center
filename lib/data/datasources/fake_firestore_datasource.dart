@@ -51,6 +51,27 @@ class FakeFirestoreDataSource implements FirestoreDataSource {
     }
   }
 
+  Future<void> _txTail = Future.value();
+
+  /// Transactions run one at a time, each seeing the previous one's writes, so
+  /// concurrent callers behave as they would after Firestore's retry.
+  @override
+  Future<T> runTransaction<T>(Future<T> Function(TxContext tx) body) {
+    final previous = _txTail;
+    final done = Completer<void>();
+    _txTail = done.future;
+    return previous.then((_) async {
+      try {
+        final ctx = _FakeTx(this);
+        final result = await body(ctx);
+        await commitBatch(ctx.ops);
+        return result;
+      } finally {
+        done.complete();
+      }
+    });
+  }
+
   List<Map<String, dynamic>> _docsInCollection(String collection) {
     final prefix = '$collection/';
     return _docs.entries
@@ -117,4 +138,19 @@ class FakeFirestoreDataSource implements FirestoreDataSource {
     yield await query(collection,
         where: where, orderBy: orderBy, descending: descending);
   }
+}
+
+class _FakeTx implements TxContext {
+  _FakeTx(this._store);
+  final FakeFirestoreDataSource _store;
+  final ops = <BatchOp>[];
+
+  @override
+  Future<Map<String, dynamic>?> get(String path) => _store.getDoc(path);
+
+  @override
+  void set(String path, Map<String, dynamic> data) => ops.add(BatchOp.set(path, data));
+
+  @override
+  void update(String path, Map<String, dynamic> data) => ops.add(BatchOp.update(path, data));
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/data/datasources/fake_firestore_datasource.dart';
+import 'package:quran_center/data/datasources/firestore_datasource.dart';
 import 'package:quran_center/data/providers/repositories.dart';
 import 'package:quran_center/data/services/account_access_service.dart';
 import 'package:quran_center/features/director/students/add_student_screen.dart';
@@ -52,6 +53,15 @@ class _FlakyDataSource extends FakeFirestoreDataSource {
     }
     return super.setDoc(path, data, merge: merge);
   }
+
+  @override
+  Future<void> commitBatch(List<BatchOp> ops) async {
+    if (failures > 0) {
+      failures--;
+      throw StateError('network down');
+    }
+    return super.commitBatch(ops);
+  }
 }
 
 Future<void> _pump(
@@ -65,6 +75,7 @@ Future<void> _pump(
   await tester.pumpWidget(ProviderScope(
     overrides: [
         centerIdProvider.overrideWithValue('center-1'),
+        actorProvider.overrideWithValue(const Actor('dir-1', 'director')),
       firestoreDataSourceProvider.overrideWithValue(store),
       accountAccessServiceProvider.overrideWithValue(access),
     ],

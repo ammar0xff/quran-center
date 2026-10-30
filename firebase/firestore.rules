@@ -146,8 +146,14 @@ service cloud.firestore {
         || (isTeacher(resource.data.centerId)
             && resource.data.assignedTeacherId == request.auth.uid)
         || studentInCircle(resource.data.centerId, circleId);
-      allow create: if isDirector(request.resource.data.centerId);
-      allow update: if isDirector(resource.data.centerId) && unchanged(['centerId']);
+      // activeCount (seats taken) can never exceed maxCapacity, however the
+      // write is made, so a capacity race or a capacity cut below the current
+      // number of students is refused by the backend itself.
+      allow create: if isDirector(request.resource.data.centerId)
+        && request.resource.data.get('activeCount', 0) == 0;
+      allow update: if isDirector(resource.data.centerId) && unchanged(['centerId'])
+        && request.resource.data.get('activeCount', 0) >= 0
+        && request.resource.data.get('activeCount', 0) <= request.resource.data.get('maxCapacity', 0);
       allow delete: if false;
     }
 

@@ -33,7 +33,8 @@ class CircleRepositoryImpl implements CircleRepository {
   @override
   Future<void> updateCircle(Circle circle) async {
     final data = firestoreConverter.encodeForWrite(
-      circle.toJson()..removeWhere((k, v) => k == 'circleId'),
+      // activeCount is owned by enrolment transactions; never overwrite it here.
+      circle.toJson()..removeWhere((k, v) => k == 'circleId' || k == 'activeCount'),
       timestampKeys: _timestampKeys,
     );
     await _ds.updateDoc('$_collectionPath/${circle.circleId}', data);
