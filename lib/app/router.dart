@@ -23,7 +23,12 @@ import 'package:quran_center/features/director/students/edit_student_screen.dart
 import 'package:quran_center/features/director/students/student_management_list_screen.dart';
 import 'package:quran_center/features/director/teachers/add_teacher_screen.dart';
 import 'package:quran_center/features/director/teachers/teacher_management_list_screen.dart';
-import 'package:quran_center/features/shared/role_home_placeholder.dart';
+import 'package:quran_center/features/student/feedback/student_feedback_screen.dart';
+import 'package:quran_center/features/student/home/student_home_screen.dart';
+import 'package:quran_center/features/student/profile/student_profile_screen.dart';
+import 'package:quran_center/features/student/schedule/student_schedule_screen.dart';
+import 'package:quran_center/features/student/tasks/student_task_detail_screen.dart';
+import 'package:quran_center/features/student/tasks/student_tasks_screen.dart';
 import 'package:quran_center/features/teacher/circles/teacher_circles_screen.dart';
 import 'package:quran_center/features/teacher/home/teacher_home_screen.dart';
 import 'package:quran_center/features/teacher/more/teacher_more_screen.dart';
@@ -169,13 +174,31 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
-      // Student area: not built yet (Phase 6).
+      // Student area
       GoRoute(
         path: Routes.studentHome,
-        builder: (_, __) => const RoleHomePlaceholder(
-          title: 'واجهة الطالب',
-          message: 'واجهة الطالب قيد التطوير ولم تتوفر بعد.',
-        ),
+        builder: (_, __) => const StudentHomeScreen(),
+      ),
+      GoRoute(
+        path: '/student/tasks',
+        builder: (_, __) => const StudentTasksScreen(),
+      ),
+      GoRoute(
+        path: '/student/tasks/:id',
+        builder: (_, state) =>
+            StudentTaskDetailScreen(taskId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/student/schedule',
+        builder: (_, __) => const StudentScheduleScreen(),
+      ),
+      GoRoute(
+        path: '/student/feedback',
+        builder: (_, __) => const StudentFeedbackScreen(),
+      ),
+      GoRoute(
+        path: '/student/profile',
+        builder: (_, __) => const StudentProfileScreen(),
       ),
     ],
   );

@@ -7,6 +7,7 @@ User _user({
   String uid = 'u1',
   UserRole role = UserRole.teacher,
   AccountStatus status = AccountStatus.active,
+  String? studentId,
 }) =>
     User(
       uid: uid,
@@ -15,6 +16,7 @@ User _user({
       role: role,
       status: status,
       authProvider: 'password',
+      studentId: studentId ?? (role == UserRole.student ? 'stu-1' : null),
       createdAt: DateTime(2026, 1, 1),
       updatedAt: DateTime(2026, 1, 1),
     );
@@ -36,6 +38,17 @@ void main() {
       expect(
           resolveSession(uid: 'u1', profile: _user(role: UserRole.student)).kind,
           SessionKind.student);
+    });
+
+    test('a student login without a linked student profile is blocked', () {
+      final profile = User(
+        uid: 'u1', centerId: 'c', fullName: 'x', role: UserRole.student,
+        status: AccountStatus.active, authProvider: 'password',
+        createdAt: DateTime(2026), updatedAt: DateTime(2026),
+      );
+      final s = resolveSession(uid: 'u1', profile: profile);
+      expect(s.kind, SessionKind.blocked);
+      expect(s.blockReason, BlockReason.incomplete);
     });
 
     test('signed in but no profile is blocked, not admitted', () {

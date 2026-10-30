@@ -85,6 +85,11 @@ AppSession resolveSession({required String? uid, required User? profile}) {
     case UserRole.teacher:
       return AppSession.signedIn(SessionKind.teacher, profile);
     case UserRole.student:
+      // A student login must point at its student profile; without that link
+      // there is nothing to show and nothing it may read.
+      if (profile.studentId == null || profile.studentId!.isEmpty) {
+        return AppSession.blocked(BlockReason.incomplete, profile: profile);
+      }
       return AppSession.signedIn(SessionKind.student, profile);
     case UserRole.guardian:
       // Guardian access is not part of the initial release.

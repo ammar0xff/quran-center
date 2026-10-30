@@ -61,6 +61,7 @@ Future<void> seedUser(
   String centerId = 'center-1',
   String status = 'active',
   String? name,
+  String? studentId,
 }) =>
     store.setDoc('users/$uid', {
       'centerId': centerId,
@@ -68,6 +69,7 @@ Future<void> seedUser(
       'role': role,
       'status': status,
       'authProvider': 'password',
+      if (studentId != null) 'studentId': studentId,
       'createdAt': 1700000000000,
       'updatedAt': 1700000000000,
     });
