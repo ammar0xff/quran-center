@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quran_center/design_system/components/empty_state.dart';
+import 'package:quran_center/design_system/components/q_app_bar.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/design_system/components/rosette.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
@@ -125,7 +127,7 @@ class _CircleManagementListScreenState
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
-        appBar: AppBar(
+        appBar: QAppBar(
           title: const Text('إدارة الحلقات'),
           centerTitle: false,
           actions: [
@@ -153,27 +155,14 @@ class _CircleManagementListScreenState
                     ),
                   )
                 : _circles.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.school_outlined,
-                                size: 64, color: DesignTokens.secondaryText),
-                            const SizedBox(height: DesignTokens.space16),
-                            const Text('لا توجد حلقات',
-                                style: TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.w700)),
-                            const SizedBox(height: DesignTokens.space8),
-                            const Text('أنشئ حلقة لبدء توزيع الطلاب والمعلمين.',
-                                style: TextStyle(
-                                    color: DesignTokens.secondaryText)),
-                            const SizedBox(height: DesignTokens.space24),
-                            FilledButton(
-                              onPressed: () =>
-                                  context.push('/director/circles/add'),
-                              child: const Text('إنشاء أول حلقة'),
-                            ),
-                          ],
+                    ? EmptyState(
+                        'أنشئ حلقة لبدء توزيع الطلاب والمعلمين.',
+                        icon: Icons.school_rounded,
+                        title: 'لا توجد حلقات',
+                        action: FilledButton(
+                          onPressed: () =>
+                              context.push('/director/circles/add'),
+                          child: const Text('إنشاء أول حلقة'),
                         ),
                       )
                     : Column(

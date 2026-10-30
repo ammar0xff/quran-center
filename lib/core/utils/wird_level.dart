@@ -53,7 +53,9 @@ const gradedTypes = {
 };
 
 WirdLevel computeLevel(Iterable<MemorizationRecord> records) {
-  final graded = records.where((r) => r.grade != null && gradedTypes.contains(r.assessmentType)).toList()
+  final graded = records
+      .where((r) => r.grade != null && gradedTypes.contains(r.assessmentType))
+      .toList()
     ..sort((a, b) => b.assessedAt.compareTo(a.assessedAt)); // newest first
   final used = graded.take(maxRecords).toList();
 
@@ -62,8 +64,9 @@ WirdLevel computeLevel(Iterable<MemorizationRecord> records) {
     counts[r.grade!] = counts[r.grade!]! + 1;
   }
 
-  double? mean(Iterable<MemorizationRecord> rs) =>
-      rs.isEmpty ? null : rs.map((r) => r.grade!.score).reduce((a, b) => a + b) / rs.length;
+  double? mean(Iterable<MemorizationRecord> rs) => rs.isEmpty
+      ? null
+      : rs.map((r) => r.grade!.score).reduce((a, b) => a + b) / rs.length;
 
   final byType = <AssessmentType, double>{};
   for (final t in gradedTypes) {

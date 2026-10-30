@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quran_center/design_system/components/app_hero.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/features/student/widgets/student_scaffold.dart';
@@ -33,6 +34,9 @@ class StudentProfileScreen extends ConsumerWidget {
         return ListView(
           padding: const EdgeInsets.all(DesignTokens.space20),
           children: [
+            ProfileBanner(
+                name: s.displayName, subtitle: d.circle?.name ?? 'طالب'),
+            const SizedBox(height: DesignTokens.space12),
             Card(
               child: Column(children: [
                 row('الاسم', s.fullName),

@@ -33,8 +33,8 @@ String paymentMethodLabel(PaymentMethod m) => switch (m) {
       PaymentMethod.other => 'أخرى',
     };
 
-PaymentMethod paymentMethodFrom(String? s) =>
-    PaymentMethod.values.firstWhere((m) => m.name == s, orElse: () => PaymentMethod.other);
+PaymentMethod paymentMethodFrom(String? s) => PaymentMethod.values
+    .firstWhere((m) => m.name == s, orElse: () => PaymentMethod.other);
 
 const expenseCategories = <String, String>{
   'rent': 'إيجار',
@@ -81,7 +81,11 @@ class MonthSummary {
 }
 
 class SubscriptionRec {
-  const SubscriptionRec({required this.month, required this.due, required this.paid, this.waived = false});
+  const SubscriptionRec(
+      {required this.month,
+      required this.due,
+      required this.paid,
+      this.waived = false});
   final String month;
   final int due;
   final int paid;
@@ -89,14 +93,19 @@ class SubscriptionRec {
 }
 
 class PaymentRec {
-  const PaymentRec({required this.at, required this.amount, this.voided = false});
+  const PaymentRec(
+      {required this.at, required this.amount, this.voided = false});
   final DateTime at;
   final int amount;
   final bool voided;
 }
 
 class ExpenseRec {
-  const ExpenseRec({required this.date, required this.amount, required this.category, this.voided = false});
+  const ExpenseRec(
+      {required this.date,
+      required this.amount,
+      required this.category,
+      this.voided = false});
   final DateTime date;
   final int amount;
   final String category;
@@ -104,7 +113,11 @@ class ExpenseRec {
 }
 
 class WageRec {
-  const WageRec({required this.month, required this.amount, required this.paid, this.paidAt});
+  const WageRec(
+      {required this.month,
+      required this.amount,
+      required this.paid,
+      this.paidAt});
   final String month;
   final int amount;
   final bool paid;
@@ -131,11 +144,18 @@ MonthSummary summarize(
   return MonthSummary(
     month: month,
     charged: subs.where((s) => !s.waived).fold(0, (a, s) => a + s.due),
-    collected: payments.where((p) => !p.voided && inMonth(p.at)).fold(0, (a, p) => a + p.amount),
+    collected: payments
+        .where((p) => !p.voided && inMonth(p.at))
+        .fold(0, (a, p) => a + p.amount),
     expenses: exp,
-    wagesPaid: wages.where((w) => w.paid && w.paidAt != null && inMonth(w.paidAt!)).fold(0, (a, w) => a + w.amount),
-    wagesDue: wages.where((w) => w.month == month && !w.paid).fold(0, (a, w) => a + w.amount),
-    outstandingTotal: subs.fold(0, (a, s) => a + outstanding(due: s.due, paid: s.paid, waived: s.waived)),
+    wagesPaid: wages
+        .where((w) => w.paid && w.paidAt != null && inMonth(w.paidAt!))
+        .fold(0, (a, w) => a + w.amount),
+    wagesDue: wages
+        .where((w) => w.month == month && !w.paid)
+        .fold(0, (a, w) => a + w.amount),
+    outstandingTotal: subs.fold(0,
+        (a, s) => a + outstanding(due: s.due, paid: s.paid, waived: s.waived)),
     expensesByCategory: byCat,
   );
 }

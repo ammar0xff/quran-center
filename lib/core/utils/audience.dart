@@ -18,15 +18,24 @@ Set<String> resolveAudience({
   required Iterable<Student> students,
   required Iterable<Circle> circles,
 }) {
-  final active = {for (final u in users) if (u.status == AccountStatus.active) u.uid: u};
+  final active = {
+    for (final u in users)
+      if (u.status == AccountStatus.active) u.uid: u
+  };
   Set<String> ids;
   switch (audience) {
     case AudienceType.all:
       ids = active.keys.toSet();
     case AudienceType.teachers:
-      ids = {for (final u in active.values) if (u.role == UserRole.teacher) u.uid};
+      ids = {
+        for (final u in active.values)
+          if (u.role == UserRole.teacher) u.uid
+      };
     case AudienceType.studentsWithAccount:
-      ids = {for (final u in active.values) if (u.role == UserRole.student) u.uid};
+      ids = {
+        for (final u in active.values)
+          if (u.role == UserRole.student) u.uid
+      };
     case AudienceType.selectedCircles:
       final wanted = targetIds.toSet();
       ids = {
@@ -36,7 +45,8 @@ Set<String> resolveAudience({
               wanted.contains(s.currentCircleId))
             s.authUserId!,
         for (final c in circles)
-          if (wanted.contains(c.circleId) && c.assignedTeacherId != null) c.assignedTeacherId!,
+          if (wanted.contains(c.circleId) && c.assignedTeacherId != null)
+            c.assignedTeacherId!,
       };
     case AudienceType.selectedUsers:
       ids = targetIds.toSet();

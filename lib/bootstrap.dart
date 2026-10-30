@@ -23,7 +23,8 @@ Future<void> bootstrap() async {
     return;
   }
   try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform);
     // Keep documents already read available offline (the session roster, for
     // example). Writes the teacher makes in a session go through the app's own
     // durable outbox, so they never depend on this cache.
@@ -43,9 +44,12 @@ Future<void> bootstrap() async {
   // docs/operations.md); until then it is harmless.
   try {
     await FirebaseAppCheck.instance.activate(
-      providerAndroid:
-          kDebugMode ? const AndroidDebugProvider() : const AndroidPlayIntegrityProvider(),
-      providerApple: kDebugMode ? const AppleDebugProvider() : const AppleAppAttestProvider(),
+      providerAndroid: kDebugMode
+          ? const AndroidDebugProvider()
+          : const AndroidPlayIntegrityProvider(),
+      providerApple: kDebugMode
+          ? const AppleDebugProvider()
+          : const AppleAppAttestProvider(),
     );
   } catch (e) {
     if (kDebugMode) debugPrint('App Check not activated: $e');
@@ -54,7 +58,8 @@ Future<void> bootstrap() async {
   // Crash reports in release builds only; never in debug or tests.
   if (!kDebugMode) {
     try {
-      FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+      FlutterError.onError =
+          FirebaseCrashlytics.instance.recordFlutterFatalError;
       PlatformDispatcher.instance.onError = (error, stack) {
         FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
         return true;
@@ -80,6 +85,7 @@ Future<void> _bootstrapEmulators() async {
   const host = '127.0.0.1';
   await FirebaseAuth.instance.useAuthEmulator(host, 9099);
   FirebaseFirestore.instance.useFirestoreEmulator(host, 8189);
-  FirebaseFirestore.instance.settings = const Settings(persistenceEnabled: false);
+  FirebaseFirestore.instance.settings =
+      const Settings(persistenceEnabled: false);
   FirebaseFunctions.instance.useFunctionsEmulator(host, 5001);
 }

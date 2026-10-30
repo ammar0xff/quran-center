@@ -103,4 +103,3 @@ final auditRepositoryProvider = Provider<AuditRepository>(
 final accountAccessServiceProvider = Provider<AccountAccessService>(
   (ref) => CloudFunctionsAccountAccessService(),
 );
-

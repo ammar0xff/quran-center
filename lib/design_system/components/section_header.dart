@@ -26,7 +26,9 @@ class SectionHeader extends StatelessWidget {
             width: 4,
             height: subtitle == null ? 18 : 34,
             margin: const EdgeInsetsDirectional.only(end: 10),
-            decoration: BoxDecoration(color: DesignTokens.gold, borderRadius: BorderRadius.circular(2)),
+            decoration: BoxDecoration(
+                color: DesignTokens.gold,
+                borderRadius: BorderRadius.circular(2)),
           ),
           Expanded(
             child: Column(
@@ -34,14 +36,18 @@ class SectionHeader extends StatelessWidget {
               children: [
                 Text(title,
                     style: const TextStyle(
-                        fontSize: 17, fontWeight: FontWeight.w700, color: DesignTokens.mainText)),
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: DesignTokens.mainText)),
                 if (subtitle != null)
                   Text(subtitle!,
-                      style: const TextStyle(fontSize: 12.5, color: DesignTokens.secondaryText)),
+                      style: const TextStyle(
+                          fontSize: 12.5, color: DesignTokens.secondaryText)),
               ],
             ),
           ),
-          if (onSeeAll != null) TextButton(onPressed: onSeeAll, child: Text(seeAllLabel)),
+          if (onSeeAll != null)
+            TextButton(onPressed: onSeeAll, child: Text(seeAllLabel)),
         ],
       ),
     );

@@ -34,13 +34,15 @@ bool canTransition(TaskStatus from, TaskStatus to, TaskActor actor) {
     case TaskActor.student:
       switch (from) {
         case TaskStatus.upcoming:
-          return to == TaskStatus.inProgress || to == TaskStatus.practiceReported;
+          return to == TaskStatus.inProgress ||
+              to == TaskStatus.practiceReported;
         case TaskStatus.inProgress:
           return to == TaskStatus.practiceReported;
         case TaskStatus.practiceReported:
           return to == TaskStatus.submittedForReview;
         case TaskStatus.needsReview:
-          return to == TaskStatus.inProgress || to == TaskStatus.practiceReported;
+          return to == TaskStatus.inProgress ||
+              to == TaskStatus.practiceReported;
         default:
           return false;
       }
@@ -51,8 +53,9 @@ bool canTransition(TaskStatus from, TaskStatus to, TaskActor actor) {
 const verificationPassed = 'passed';
 const verificationNeedsImprovement = 'needs_improvement';
 
-TaskStatus statusForVerification(String result) =>
-    result == verificationPassed ? TaskStatus.completed : TaskStatus.needsReview;
+TaskStatus statusForVerification(String result) => result == verificationPassed
+    ? TaskStatus.completed
+    : TaskStatus.needsReview;
 
 String taskStatusLabel(TaskStatus s) {
   switch (s) {

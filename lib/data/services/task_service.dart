@@ -22,7 +22,8 @@ class TaskException implements Exception {
 /// report can never do that. Every query carries the center and the teacher,
 /// as the Security Rules require.
 class TaskService {
-  TaskService(this._ds, {DateTime Function()? clock}) : _now = clock ?? DateTime.now;
+  TaskService(this._ds, {DateTime Function()? clock})
+      : _now = clock ?? DateTime.now;
 
   final FirestoreDataSource _ds;
   final DateTime Function() _now;
@@ -35,12 +36,16 @@ class TaskService {
 
   DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
-  Future<LearningTask> _task(String centerId, String teacherId, String taskId) async {
+  Future<LearningTask> _task(
+      String centerId, String teacherId, String taskId) async {
     final raw = await _ds.getDoc('learning_tasks/$taskId');
-    if (raw == null || raw['centerId'] != centerId || raw['teacherId'] != teacherId) {
+    if (raw == null ||
+        raw['centerId'] != centerId ||
+        raw['teacherId'] != teacherId) {
       throw TaskException('لم يتم العثور على المهمة.');
     }
-    return LearningTask.fromJson(taskId, firestoreConverter.decodeFromRead(raw));
+    return LearningTask.fromJson(
+        taskId, firestoreConverter.decodeFromRead(raw));
   }
 
   /// Assigns a task to one of the teacher's active students. [taskId] is fixed
@@ -62,7 +67,8 @@ class TaskService {
     if (rangeProblem != null) throw TaskException(rangeProblem);
     final today = _dateOnly(_now());
     final due = _dateOnly(dueDate);
-    if (due.isBefore(today)) throw TaskException('موعد التسليم لا يمكن أن يسبق اليوم.');
+    if (due.isBefore(today))
+      throw TaskException('موعد التسليم لا يمكن أن يسبق اليوم.');
     if (priority != null && !{'low', 'medium', 'high'}.contains(priority)) {
       throw TaskException('أولوية غير صالحة.');
     }
@@ -133,7 +139,8 @@ class TaskService {
         ),
       BatchOp.set(
         'learning_tasks/$taskId',
-        firestoreConverter.encodeForWrite(task.toJson(), timestampKeys: _taskTs),
+        firestoreConverter.encodeForWrite(task.toJson(),
+            timestampKeys: _taskTs),
       ),
       if (studentLogin != null)
         BatchOp.set(
@@ -161,37 +168,41 @@ class TaskService {
     required String result,
     String? feedback,
   }) async {
-    if (result != verificationPassed && result != verificationNeedsImprovement) {
+    if (result != verificationPassed &&
+        result != verificationNeedsImprovement) {
       throw TaskException('نتيجة غير صالحة.');
     }
     final task = await _task(centerId, teacherId, taskId);
     final to = statusForVerification(result);
     if (!canTransition(task.status, to, TaskActor.teacher)) {
-      throw TaskException('لا يمكن تغيير حالة هذه المهمة (${taskStatusLabel(task.status)}).');
+      throw TaskException(
+          'لا يمكن تغيير حالة هذه المهمة (${taskStatusLabel(task.status)}).');
     }
     final now = _now();
     final fb = feedback?.trim();
-    final studentLogin = (await _ds.getDoc('students/${task.studentId}'))?['authUserId'] as String?;
+    final studentLogin = (await _ds
+        .getDoc('students/${task.studentId}'))?['authUserId'] as String?;
     await _ds.commitBatch([
       BatchOp.update('learning_tasks/$taskId', {
-      'status': to.toJson(),
-      'teacherVerification': firestoreConverter.encodeForWrite(
-        {
-          'verifiedAt': now.millisecondsSinceEpoch,
-          'verifiedBy': teacherId,
-          'result': result,
-          if (fb != null && fb.isNotEmpty) 'feedback': fb,
-        },
-        timestampKeys: {'verifiedAt'},
-      ),
-      'completionMetadata': firestoreConverter.encodeForWrite(
-        {
-          if (to == TaskStatus.completed) 'completedAt': now.millisecondsSinceEpoch,
-          'verifiedAt': now.millisecondsSinceEpoch,
-        },
-        timestampKeys: {'completedAt', 'verifiedAt'},
-      ),
-      'updatedAt': firestoreConverter.serverTimestamp(),
+        'status': to.toJson(),
+        'teacherVerification': firestoreConverter.encodeForWrite(
+          {
+            'verifiedAt': now.millisecondsSinceEpoch,
+            'verifiedBy': teacherId,
+            'result': result,
+            if (fb != null && fb.isNotEmpty) 'feedback': fb,
+          },
+          timestampKeys: {'verifiedAt'},
+        ),
+        'completionMetadata': firestoreConverter.encodeForWrite(
+          {
+            if (to == TaskStatus.completed)
+              'completedAt': now.millisecondsSinceEpoch,
+            'verifiedAt': now.millisecondsSinceEpoch,
+          },
+          timestampKeys: {'completedAt', 'verifiedAt'},
+        ),
+        'updatedAt': firestoreConverter.serverTimestamp(),
       }),
       if (studentLogin != null)
         BatchOp.set(
@@ -200,7 +211,9 @@ class TaskService {
             centerId: centerId,
             recipientUserId: studentLogin,
             type: 'teacher_feedback',
-            title: to == TaskStatus.completed ? 'اعتمد معلمك مهمتك' : 'راجع معلمك مهمتك',
+            title: to == TaskStatus.completed
+                ? 'اعتمد معلمك مهمتك'
+                : 'راجع معلمك مهمتك',
             message: to == TaskStatus.completed
                 ? 'اعتمد المعلم إنجاز إحدى مهامك.'
                 : 'طلب المعلم إعادة المحاولة في إحدى مهامك. افتحها لترى ملاحظته.',
@@ -222,13 +235,18 @@ class TaskService {
     if (why.isEmpty) throw TaskException('سبب الإلغاء مطلوب.');
     final task = await _task(centerId, teacherId, taskId);
     if (!canTransition(task.status, TaskStatus.cancelled, TaskActor.teacher)) {
-      throw TaskException('لا يمكن إلغاء هذه المهمة (${taskStatusLabel(task.status)}).');
+      throw TaskException(
+          'لا يمكن إلغاء هذه المهمة (${taskStatusLabel(task.status)}).');
     }
     final now = _now();
     await _ds.updateDoc('learning_tasks/$taskId', {
       'status': TaskStatus.cancelled.toJson(),
       'completionMetadata': firestoreConverter.encodeForWrite(
-        {'reason': why, 'cancelledBy': teacherId, 'cancelledAt': now.millisecondsSinceEpoch},
+        {
+          'reason': why,
+          'cancelledBy': teacherId,
+          'cancelledAt': now.millisecondsSinceEpoch
+        },
         timestampKeys: {'cancelledAt'},
       ),
       'updatedAt': firestoreConverter.serverTimestamp(),
@@ -245,7 +263,8 @@ class TaskService {
     return _sorted(docs);
   }
 
-  Future<List<LearningTask>> tasksForTeacher(String centerId, String teacherId) async {
+  Future<List<LearningTask>> tasksForTeacher(
+      String centerId, String teacherId) async {
     final docs = await _ds.query('learning_tasks', where: [
       QueryFilter.equal('centerId', centerId),
       QueryFilter.equal('teacherId', teacherId),

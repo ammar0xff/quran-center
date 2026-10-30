@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quran_center/design_system/components/rosette.dart';
 import 'package:quran_center/core/auth/app_session.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
@@ -73,7 +74,13 @@ class AccountStatusScreen extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Icon(info.icon, size: 64, color: DesignTokens.warning),
+                  Center(
+                    child: Rosette(
+                      size: 96,
+                      color: DesignTokens.warning,
+                      child: Icon(info.icon, size: 40, color: Colors.white),
+                    ),
+                  ),
                   const SizedBox(height: DesignTokens.space16),
                   Text(info.title,
                       textAlign: TextAlign.center,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+import 'package:quran_center/design_system/components/q_app_bar.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/quran/surahs.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
@@ -116,7 +117,7 @@ class _NewTaskScreenState extends ConsumerState<NewTaskScreen> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
-        appBar: AppBar(title: const Text('مهمة جديدة'), centerTitle: false),
+        appBar: QAppBar(title: const Text('مهمة جديدة'), centerTitle: false),
         body: ListView(
           padding: const EdgeInsets.all(DesignTokens.space20),
           children: [

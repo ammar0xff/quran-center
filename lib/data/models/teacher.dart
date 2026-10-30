@@ -74,8 +74,7 @@ class Teacher extends AppModel {
       profileImageUrl: json['profileImageUrl'] as String?,
       professionalNotes: json['professionalNotes'] as String?,
       status: AccountStatusJson.fromJson(json['status'] as String?),
-      assignedCircleIds:
-          (json['assignedCircleIds'] as List<dynamic>?)
+      assignedCircleIds: (json['assignedCircleIds'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           [],
@@ -107,11 +106,14 @@ class Teacher extends AppModel {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Teacher && runtimeType == other.runtimeType && teacherId == other.teacherId;
+      other is Teacher &&
+          runtimeType == other.runtimeType &&
+          teacherId == other.teacherId;
 
   @override
   int get hashCode => teacherId.hashCode;
 
   @override
-  String toString() => 'Teacher(teacherId: $teacherId, fullName: $fullName, status: $status)';
+  String toString() =>
+      'Teacher(teacherId: $teacherId, fullName: $fullName, status: $status)';
 }

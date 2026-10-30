@@ -24,7 +24,8 @@ class EnrollmentRepositoryImpl implements EnrollmentRepository {
   Future<Enrollment?> getEnrollment(String enrollmentId) async {
     final data = await _ds.getDoc('$_collectionPath/$enrollmentId');
     if (data == null) return null;
-    return Enrollment.fromJson(enrollmentId, firestoreConverter.decodeFromRead(data));
+    return Enrollment.fromJson(
+        enrollmentId, firestoreConverter.decodeFromRead(data));
   }
 
   @override
@@ -55,8 +56,8 @@ class EnrollmentRepositoryImpl implements EnrollmentRepository {
     ];
     final docs = await _ds.query(_collectionPath, where: where);
     return docs
-        .map((d) => Enrollment.fromJson(d['id'] ?? '',
-            firestoreConverter.decodeFromRead(d)))
+        .map((d) => Enrollment.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .toList();
   }
 
@@ -70,8 +71,8 @@ class EnrollmentRepositoryImpl implements EnrollmentRepository {
     ];
     final docs = await _ds.query(_collectionPath, where: where);
     return docs
-        .map((d) => Enrollment.fromJson(d['id'] ?? '',
-            firestoreConverter.decodeFromRead(d)))
+        .map((d) => Enrollment.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .toList();
   }
 
@@ -98,8 +99,8 @@ class EnrollmentRepositoryImpl implements EnrollmentRepository {
       QueryFilter.equal('studentId', studentId),
     ];
     return _ds.watchQuery(_collectionPath, where: where).map((docs) => docs
-        .map((d) => Enrollment.fromJson(d['id'] ?? '',
-            firestoreConverter.decodeFromRead(d)))
+        .map((d) => Enrollment.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .toList());
   }
 }

@@ -65,6 +65,7 @@ class MemorizationRecord extends AppModel {
   final String? studentVisibleFeedback;
   final String? recommendedNextAssignment;
   final DateTime? suggestedNextReviewDate;
+
   /// The mark for this wird. Null only for the ungraded "new assignment".
   final WirdGrade? grade;
 
@@ -115,7 +116,8 @@ class MemorizationRecord extends AppModel {
       requiresFollowUp: requiresFollowUp ?? this.requiresFollowUp,
       strengths: strengths ?? this.strengths,
       areasForImprovement: areasForImprovement ?? this.areasForImprovement,
-      studentVisibleFeedback: studentVisibleFeedback ?? this.studentVisibleFeedback,
+      studentVisibleFeedback:
+          studentVisibleFeedback ?? this.studentVisibleFeedback,
       recommendedNextAssignment:
           recommendedNextAssignment ?? this.recommendedNextAssignment,
       suggestedNextReviewDate:
@@ -136,13 +138,13 @@ class MemorizationRecord extends AppModel {
       teacherId: json['teacherId'] as String,
       sessionId: json['sessionId'] as String?,
       circleId: json['circleId'] as String?,
-      assessmentType: AssessmentTypeJson.fromJson(json['assessmentType'] as String?),
+      assessmentType:
+          AssessmentTypeJson.fromJson(json['assessmentType'] as String?),
       schemaVersion: json['schemaVersion'] as int? ?? 1,
       surah: json['surah'] as int,
       startAyah: json['startAyah'] as int,
       endAyah: json['endAyah'] as int,
-      criteriaScores:
-          (json['criteriaScores'] as JsonMap?)
+      criteriaScores: (json['criteriaScores'] as JsonMap?)
               ?.map((k, v) => MapEntry(k, (v as num).toDouble())) ??
           {},
       overallAssessment: json['overallAssessment'] as String?,
@@ -155,8 +157,11 @@ class MemorizationRecord extends AppModel {
       areasForImprovement: json['areasForImprovement'] as String?,
       studentVisibleFeedback: json['studentVisibleFeedback'] as String?,
       recommendedNextAssignment: json['recommendedNextAssignment'] as String?,
-      suggestedNextReviewDate: AppModel.parseDateTime(json['suggestedNextReviewDate']),
-      grade: json['grade'] == null ? null : WirdGradeJson.fromJson(json['grade'] as String?),
+      suggestedNextReviewDate:
+          AppModel.parseDateTime(json['suggestedNextReviewDate']),
+      grade: json['grade'] == null
+          ? null
+          : WirdGradeJson.fromJson(json['grade'] as String?),
       visitId: json['visitId'] as String?,
       assessedAt: AppModel.parseDateTime(json['assessedAt']) ?? DateTime.now(),
       createdAt: AppModel.parseDateTime(json['createdAt']) ?? DateTime.now(),
@@ -185,13 +190,15 @@ class MemorizationRecord extends AppModel {
       if (teacherCorrection != null) 'teacherCorrection': teacherCorrection,
       'requiresFollowUp': requiresFollowUp,
       if (strengths != null) 'strengths': strengths,
-      if (areasForImprovement != null) 'areasForImprovement': areasForImprovement,
+      if (areasForImprovement != null)
+        'areasForImprovement': areasForImprovement,
       if (studentVisibleFeedback != null)
         'studentVisibleFeedback': studentVisibleFeedback,
       if (recommendedNextAssignment != null)
         'recommendedNextAssignment': recommendedNextAssignment,
       if (suggestedNextReviewDate != null)
-        'suggestedNextReviewDate': AppModel.encodeDateTime(suggestedNextReviewDate),
+        'suggestedNextReviewDate':
+            AppModel.encodeDateTime(suggestedNextReviewDate),
       if (grade != null) 'grade': grade!.toJson(),
       if (visitId != null) 'visitId': visitId,
       'assessedAt': AppModel.encodeDateTime(assessedAt),

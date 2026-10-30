@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+import 'package:quran_center/design_system/components/empty_state.dart';
+import 'package:quran_center/design_system/components/q_app_bar.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/quran/surahs.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
@@ -44,7 +46,7 @@ class TeacherStudentProfileScreen extends ConsumerWidget {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
-        appBar: AppBar(title: const Text('ملف الطالب'), centerTitle: false),
+        appBar: QAppBar(title: const Text('ملف الطالب'), centerTitle: false),
         body: async.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => Center(
@@ -61,33 +63,47 @@ class TeacherStudentProfileScreen extends ConsumerWidget {
             ),
           ),
           data: (d) {
-            if (d == null)
-              return const Center(child: Text('الطالب غير موجود ضمن طلابك'));
+            if (d == null) return EmptyState('الطالب غير موجود ضمن طلابك');
             return DefaultTabController(
               length: 3,
               child: Column(
                 children: [
                   Container(
                     width: double.infinity,
-                    color: Colors.white,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      border: Border(
+                          bottom: BorderSide(color: DesignTokens.borders)),
+                    ),
                     padding: const EdgeInsets.all(DesignTokens.space16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Text(d.student.displayName,
-                            style: const TextStyle(
-                                fontSize: 20, fontWeight: FontWeight.w700)),
-                        const SizedBox(height: DesignTokens.space4),
-                        Text(
-                          [
-                            if (d.circle != null) d.circle!.name,
-                            'المستوى: ${d.student.educationalLevel}',
-                          ].join(' • '),
-                          style: const TextStyle(
-                              color: DesignTokens.secondaryText),
+                        LevelBadge(
+                            level: computeLevel(d.assessments), size: 64),
+                        const SizedBox(width: DesignTokens.space16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(d.student.displayName,
+                                  style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w700)),
+                              Text(
+                                [
+                                  if (d.circle != null) d.circle!.name,
+                                  'المستوى: ${d.student.educationalLevel}',
+                                ].join(' • '),
+                                style: const TextStyle(
+                                    color: DesignTokens.secondaryText),
+                              ),
+                              const SizedBox(height: DesignTokens.space8),
+                              LevelSummary(
+                                  level: computeLevel(d.assessments),
+                                  compact: true),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: DesignTokens.space8),
-                        LevelSummary(level: computeLevel(d.assessments)),
                       ],
                     ),
                   ),
@@ -128,12 +144,7 @@ class TeacherStudentProfileScreen extends ConsumerWidget {
   }
 }
 
-Widget _empty(String m) => Center(
-      child: Padding(
-        padding: const EdgeInsets.all(DesignTokens.space24),
-        child: Text(m, textAlign: TextAlign.center),
-      ),
-    );
+Widget _empty(String m) => EmptyState(m);
 
 class _AssessmentsTab extends StatelessWidget {
   const _AssessmentsTab({required this.data});

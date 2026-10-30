@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+import 'package:quran_center/design_system/components/empty_state.dart';
+import 'package:quran_center/design_system/components/q_app_bar.dart';
 import 'package:quran_center/core/quran/surahs.dart';
 import 'package:quran_center/design_system/components/rosette.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
@@ -42,7 +44,7 @@ class DirectorStudentProfileScreen extends ConsumerWidget {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
-        appBar: AppBar(
+        appBar: QAppBar(
           title: const Text('ملف الطالب'),
           centerTitle: false,
           actions: [
@@ -74,7 +76,7 @@ class DirectorStudentProfileScreen extends ConsumerWidget {
             ),
           ),
           data: (d) {
-            if (d == null) return const Center(child: Text('الطالب غير موجود'));
+            if (d == null) return EmptyState('الطالب غير موجود');
             return DefaultTabController(
               length: 6,
               child: Column(
@@ -203,20 +205,7 @@ Widget _row(String label, String value) => Padding(
       ),
     );
 
-Widget _empty(String message) => Center(
-      child: Padding(
-        padding: const EdgeInsets.all(DesignTokens.space24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.info_outline,
-                size: 44, color: DesignTokens.secondaryText),
-            const SizedBox(height: DesignTokens.space12),
-            Text(message, textAlign: TextAlign.center),
-          ],
-        ),
-      ),
-    );
+Widget _empty(String message) => EmptyState(message);
 
 class _OverviewTab extends StatelessWidget {
   const _OverviewTab({required this.data});

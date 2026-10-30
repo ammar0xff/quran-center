@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+import 'package:quran_center/design_system/components/empty_state.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/quran/surahs.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
@@ -112,7 +113,7 @@ class StudentTaskDetailScreen extends ConsumerWidget {
           return ListView(children: const [
             Padding(
               padding: EdgeInsets.all(DesignTokens.space24),
-              child: Center(child: Text('المهمة غير موجودة')),
+              child: EmptyState('المهمة غير موجودة'),
             ),
           ]);
         }

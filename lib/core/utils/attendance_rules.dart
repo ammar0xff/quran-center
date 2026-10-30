@@ -60,8 +60,9 @@ class AttendanceSummary {
       }
     }
     final recorded = present + absent + late + excused;
-    final missing =
-        expectedCount == null ? 0 : (expectedCount - recorded).clamp(0, 1 << 30);
+    final missing = expectedCount == null
+        ? 0
+        : (expectedCount - recorded).clamp(0, 1 << 30);
     return AttendanceSummary(
       present: present,
       absent: absent,

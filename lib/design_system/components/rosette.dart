@@ -88,12 +88,16 @@ class _RosettePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_RosettePainter o) =>
-      o.color != color || o.ring != ring || o.filled != filled || o.petals != petals;
+      o.color != color ||
+      o.ring != ring ||
+      o.filled != filled ||
+      o.petals != petals;
 }
 
 /// A faint eight-point-star lattice (khatam) used behind headers.
 class LatticePainter extends CustomPainter {
-  const LatticePainter({this.color = Colors.white, this.opacity = 0.07, this.cell = 64});
+  const LatticePainter(
+      {this.color = Colors.white, this.opacity = 0.07, this.cell = 64});
   final Color color;
   final double opacity;
   final double cell;
@@ -125,5 +129,6 @@ class LatticePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(LatticePainter o) => o.color != color || o.opacity != opacity || o.cell != cell;
+  bool shouldRepaint(LatticePainter o) =>
+      o.color != color || o.opacity != opacity || o.cell != cell;
 }

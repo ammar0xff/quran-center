@@ -79,7 +79,10 @@ class Schedule extends AppModel {
       cancellationReason: json['cancellationReason'] as String?,
       cancelledBy: json['cancelledBy'] as String?,
       cancelledAt: AppModel.parseDateTime(json['cancelledAt']),
-      guestStudentIds: [for (final g in (json['guestStudentIds'] as List? ?? const [])) g as String],
+      guestStudentIds: [
+        for (final g in (json['guestStudentIds'] as List? ?? const []))
+          g as String
+      ],
       createdAt: AppModel.parseDateTime(json['createdAt']) ?? DateTime.now(),
       updatedAt: AppModel.parseDateTime(json['updatedAt']) ?? DateTime.now(),
     );
@@ -98,7 +101,8 @@ class Schedule extends AppModel {
       'status': status.toJson(),
       if (cancellationReason != null) 'cancellationReason': cancellationReason,
       if (cancelledBy != null) 'cancelledBy': cancelledBy,
-      if (cancelledAt != null) 'cancelledAt': AppModel.encodeDateTime(cancelledAt),
+      if (cancelledAt != null)
+        'cancelledAt': AppModel.encodeDateTime(cancelledAt),
       if (guestStudentIds.isNotEmpty) 'guestStudentIds': guestStudentIds,
       'createdAt': AppModel.encodeDateTime(createdAt),
       'updatedAt': AppModel.encodeDateTime(updatedAt),
@@ -108,7 +112,9 @@ class Schedule extends AppModel {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Schedule && runtimeType == other.runtimeType && scheduleId == other.scheduleId;
+      other is Schedule &&
+          runtimeType == other.runtimeType &&
+          scheduleId == other.scheduleId;
 
   @override
   int get hashCode => scheduleId.hashCode;

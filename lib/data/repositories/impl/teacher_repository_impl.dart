@@ -44,8 +44,8 @@ class TeacherRepositoryImpl implements TeacherRepository {
     final where = <QueryFilter>[QueryFilter.equal('centerId', centerId)];
     final docs = await _ds.query(_collectionPath, where: where);
     return docs
-        .map((d) => Teacher.fromJson(d['id'] ?? '',
-            firestoreConverter.decodeFromRead(d)))
+        .map((d) => Teacher.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .toList();
   }
 }

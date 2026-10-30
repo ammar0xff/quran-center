@@ -46,8 +46,8 @@ class UserRepositoryImpl implements UserRepository {
       QueryFilter.equal('status', 'active'),
     ];
     return _ds.watchQuery(_collectionPath, where: where).map((docs) => docs
-        .map((d) => User.fromJson(d['id'] ?? '',
-            firestoreConverter.decodeFromRead(d)))
+        .map((d) =>
+            User.fromJson(d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .toList());
   }
 
@@ -59,8 +59,8 @@ class UserRepositoryImpl implements UserRepository {
     ];
     final docs = await _ds.query(_collectionPath, where: where);
     return docs
-        .map((d) => User.fromJson(d['id'] ?? '',
-            firestoreConverter.decodeFromRead(d)))
+        .map((d) =>
+            User.fromJson(d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .toList();
   }
 
@@ -69,7 +69,8 @@ class UserRepositoryImpl implements UserRepository {
     final docs = await _ds.query(_collectionPath,
         where: [QueryFilter.equal('centerId', centerId)]);
     return docs
-        .map((d) => User.fromJson(d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
+        .map((d) =>
+            User.fromJson(d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .toList();
   }
 }

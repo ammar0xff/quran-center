@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quran_center/design_system/components/marks.dart';
+import 'package:quran_center/design_system/components/q_app_bar.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/core/utils/account_access_rules.dart';
@@ -161,14 +163,7 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: DesignTokens.space24),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: DesignTokens.mainText,
-            ),
-          ),
+          SectionTitle(title),
           const SizedBox(height: DesignTokens.space6),
           Text(
             subtitle,
@@ -186,7 +181,7 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
-        appBar: AppBar(
+        appBar: QAppBar(
           title: const Text('إضافة طالب جديد'),
           centerTitle: false,
         ),

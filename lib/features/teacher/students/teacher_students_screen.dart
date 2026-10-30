@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quran_center/design_system/components/empty_state.dart';
+import 'package:quran_center/design_system/components/q_app_bar.dart';
 import 'package:quran_center/design_system/components/rosette.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/core/utils/wird_level.dart';
@@ -27,7 +29,7 @@ class _TeacherStudentsScreenState extends ConsumerState<TeacherStudentsScreen> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
-        appBar: AppBar(title: const Text('طلابي'), centerTitle: false),
+        appBar: QAppBar(title: const Text('طلابي'), centerTitle: false),
         body: async.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => Center(
@@ -72,7 +74,7 @@ class _TeacherStudentsScreenState extends ConsumerState<TeacherStudentsScreen> {
                 ),
                 Expanded(
                   child: items.isEmpty
-                      ? const Center(child: Text('لا يوجد طلاب مطابقون'))
+                      ? EmptyState('لا يوجد طلاب مطابقون')
                       : ListView(
                           padding: const EdgeInsets.symmetric(
                               horizontal: DesignTokens.space16),

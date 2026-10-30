@@ -7,7 +7,8 @@ import 'package:quran_center/data/models/enums.dart';
 /// * excused sessions are skipped: they neither add to the streak nor break it;
 /// * the first absence ends it;
 /// * a session with no record is not counted either way (never an absence).
-int attendanceStreak(Iterable<({DateTime date, AttendanceStatus status})> records) {
+int attendanceStreak(
+    Iterable<({DateTime date, AttendanceStatus status})> records) {
   final sorted = records.toList()..sort((a, b) => b.date.compareTo(a.date));
   var n = 0;
   for (final r in sorted) {

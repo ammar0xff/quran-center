@@ -32,7 +32,8 @@ class SessionWork {
     return work;
   }
 
-  static String attendanceKey(String sessionId, String studentId) => 'att:$sessionId:$studentId';
+  static String attendanceKey(String sessionId, String studentId) =>
+      'att:$sessionId:$studentId';
 
   /// Anything wrong that retrying cannot fix becomes a permanent failure;
   /// network trouble is rethrown and retried later.
@@ -43,7 +44,8 @@ class SessionWork {
       throw PermanentOutboxFailure(e.message);
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        throw PermanentOutboxFailure('رُفض الحفظ من الخادم. تواصل مع الإدارة إن تكرر ذلك.');
+        throw PermanentOutboxFailure(
+            'رُفض الحفظ من الخادم. تواصل مع الإدارة إن تكرر ذلك.');
       }
       rethrow;
     }
@@ -69,8 +71,10 @@ class SessionWork {
           sessionId: p['sessionId'] as String,
           studentId: p['studentId'] as String,
           recordId: p['recordId'] as String,
-          assessedAt: DateTime.fromMillisecondsSinceEpoch(p['assessedAt'] as int),
-          draft: AssessmentDraft.fromJson(Map<String, dynamic>.from(p['draft'] as Map)),
+          assessedAt:
+              DateTime.fromMillisecondsSinceEpoch(p['assessedAt'] as int),
+          draft: AssessmentDraft.fromJson(
+              Map<String, dynamic>.from(p['draft'] as Map)),
         ));
   }
 
@@ -139,5 +143,6 @@ class SessionWork {
       };
 
   /// How many changes for [sessionId] are still waiting or were rejected.
-  int unsyncedCount(String sessionId) => outbox.snapshot.inScope(sessionId).length;
+  int unsyncedCount(String sessionId) =>
+      outbox.snapshot.inScope(sessionId).length;
 }

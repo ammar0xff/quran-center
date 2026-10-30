@@ -13,7 +13,8 @@ class AppHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.vertical(bottom: Radius.circular(bottomRadius)),
+      borderRadius:
+          BorderRadius.vertical(bottom: Radius.circular(bottomRadius)),
       child: Container(
         width: double.infinity,
         decoration: const BoxDecoration(
@@ -25,7 +26,8 @@ class AppHero extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            const Positioned.fill(child: CustomPaint(painter: LatticePainter())),
+            const Positioned.fill(
+                child: CustomPaint(painter: LatticePainter())),
             SafeArea(
               bottom: false,
               child: Padding(
@@ -42,7 +44,12 @@ class AppHero extends StatelessWidget {
 
 /// A translucent tile on the hero: a small label above a value.
 class HeroStat extends StatelessWidget {
-  const HeroStat({super.key, required this.label, required this.value, this.leading, this.onTap});
+  const HeroStat(
+      {super.key,
+      required this.label,
+      required this.value,
+      this.leading,
+      this.onTap});
 
   final String label;
   final Widget value;
@@ -69,10 +76,15 @@ class HeroStat extends StatelessWidget {
                     children: [
                       Text(label,
                           style: TextStyle(
-                              fontSize: 12, color: Colors.white.withValues(alpha: 0.75), fontWeight: FontWeight.w500)),
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.75),
+                              fontWeight: FontWeight.w500)),
                       const SizedBox(height: 2),
                       DefaultTextStyle.merge(
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 18),
                         child: value,
                       ),
                     ],
@@ -82,6 +94,53 @@ class HeroStat extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Who is signed in: a large rosette with the initial, the name and a line
+/// under it (role, circle…). Top of the account screens.
+class ProfileBanner extends StatelessWidget {
+  const ProfileBanner({super.key, required this.name, this.subtitle});
+
+  final String name;
+  final String? subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Rosette(
+            size: 72,
+            color: DesignTokens.primaryDarkGreen,
+            child: Text(name.characters.firstOrNull ?? '',
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w800)),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name,
+                    style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: DesignTokens.mainText,
+                        height: 1.3)),
+                if (subtitle != null)
+                  Text(subtitle!,
+                      style: const TextStyle(
+                          fontSize: 14, color: DesignTokens.secondaryText)),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

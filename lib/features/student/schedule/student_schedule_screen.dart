@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+import 'package:quran_center/design_system/components/marks.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/features/director/circles/circle_detail_data.dart'
@@ -33,9 +34,7 @@ class StudentScheduleScreen extends StatelessWidget {
         return ListView(
           padding: const EdgeInsets.all(DesignTokens.space16),
           children: [
-            Text(d.circle!.name,
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            SectionTitle(d.circle!.name),
             const SizedBox(height: DesignTokens.space8),
             if (upcoming.isEmpty)
               const Padding(

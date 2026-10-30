@@ -99,7 +99,9 @@ class LearningPlan extends AppModel {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is LearningPlan && runtimeType == other.runtimeType && planId == other.planId;
+      other is LearningPlan &&
+          runtimeType == other.runtimeType &&
+          planId == other.planId;
 
   @override
   int get hashCode => planId.hashCode;

@@ -82,8 +82,7 @@ class User extends AppModel {
       authProvider: json['authProvider'] as String? ?? 'anonymous',
       phone: json['phone'] as String?,
       profileImageUrl: json['profileImageUrl'] as String?,
-      assignedCenterIds:
-          (json['assignedCenterIds'] as List<dynamic>?)
+      assignedCenterIds: (json['assignedCenterIds'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           [],
@@ -106,7 +105,8 @@ class User extends AppModel {
       if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
       'assignedCenterIds': assignedCenterIds,
       if (studentId != null) 'studentId': studentId,
-      if (lastSignInAt != null) 'lastSignInAt': AppModel.encodeDateTime(lastSignInAt),
+      if (lastSignInAt != null)
+        'lastSignInAt': AppModel.encodeDateTime(lastSignInAt),
       'createdAt': AppModel.encodeDateTime(createdAt),
       'updatedAt': AppModel.encodeDateTime(updatedAt),
     };
@@ -128,29 +128,30 @@ class User extends AppModel {
           studentId == other.studentId &&
           assignedCenterIds.length == other.assignedCenterIds.length &&
           assignedCenterIds.asMap().entries.every(
-            (entry) => entry.value == other.assignedCenterIds[entry.key],
-          ) &&
+                (entry) => entry.value == other.assignedCenterIds[entry.key],
+              ) &&
           lastSignInAt == other.lastSignInAt &&
           createdAt == other.createdAt &&
           updatedAt == other.updatedAt;
 
   @override
   int get hashCode => Object.hash(
-    uid,
-    centerId,
-    fullName,
-    role,
-    status,
-    authProvider,
-    phone,
-    profileImageUrl,
-    Object.hashAll(assignedCenterIds),
-    studentId,
-    lastSignInAt,
-    createdAt,
-    updatedAt,
-  );
+        uid,
+        centerId,
+        fullName,
+        role,
+        status,
+        authProvider,
+        phone,
+        profileImageUrl,
+        Object.hashAll(assignedCenterIds),
+        studentId,
+        lastSignInAt,
+        createdAt,
+        updatedAt,
+      );
 
   @override
-  String toString() => 'User(uid: $uid, fullName: $fullName, role: $role, status: $status)';
+  String toString() =>
+      'User(uid: $uid, fullName: $fullName, role: $role, status: $status)';
 }

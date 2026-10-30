@@ -57,7 +57,9 @@ class Center extends AppModel {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Center && runtimeType == other.runtimeType && centerId == other.centerId;
+      other is Center &&
+          runtimeType == other.runtimeType &&
+          centerId == other.centerId;
 
   @override
   int get hashCode => centerId.hashCode;

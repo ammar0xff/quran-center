@@ -33,15 +33,20 @@ class EnrollmentService {
 
   static const _enrollments = 'enrollments';
   static const _timestampKeys = {
-    'createdAt', 'updatedAt', 'startDate', 'endDate', 'changedAt',
+    'createdAt',
+    'updatedAt',
+    'startDate',
+    'endDate',
+    'changedAt',
   };
 
-  Never _notFound() =>
-      throw EnrollmentAssignmentException('لم يتم العثور على الطالب أو الحلقة.');
+  Never _notFound() => throw EnrollmentAssignmentException(
+      'لم يتم العثور على الطالب أو الحلقة.');
 
   /// Deterministic id: re-submitting the same assignment on the same day
   /// rewrites the same record instead of duplicating it.
-  static String enrollmentId(String studentId, String circleId, DateTime start) {
+  static String enrollmentId(
+      String studentId, String circleId, DateTime start) {
     final d = '${start.year}${start.month.toString().padLeft(2, '0')}'
         '${start.day.toString().padLeft(2, '0')}';
     return 'enr_${studentId}_${circleId}_$d';
@@ -62,15 +67,18 @@ class EnrollmentService {
     if (studentRaw == null || studentRaw['centerId'] != centerId) _notFound();
     if (circleRaw == null || circleRaw['centerId'] != centerId) _notFound();
 
-    final student = Student.fromJson(studentId, firestoreConverter.decodeFromRead(studentRaw));
-    final circle = Circle.fromJson(circleId, firestoreConverter.decodeFromRead(circleRaw));
+    final student = Student.fromJson(
+        studentId, firestoreConverter.decodeFromRead(studentRaw));
+    final circle =
+        Circle.fromJson(circleId, firestoreConverter.decodeFromRead(circleRaw));
 
     final studentActive = (await _ds.query(_enrollments, where: [
       QueryFilter.equal('centerId', centerId),
       QueryFilter.equal('studentId', studentId),
       QueryFilter.equal('status', 'active'),
     ]))
-        .map((d) => Enrollment.fromJson(d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
+        .map((d) => Enrollment.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .toList();
     final circleCount = (await _ds.query(_enrollments, where: [
       QueryFilter.equal('centerId', centerId),
@@ -133,7 +141,8 @@ class EnrollmentService {
         ),
       BatchOp.set(
         '$_enrollments/${created.enrollmentId}',
-        firestoreConverter.encodeForWrite(created.toJson(), timestampKeys: _timestampKeys),
+        firestoreConverter.encodeForWrite(created.toJson(),
+            timestampKeys: _timestampKeys),
       ),
       BatchOp.update('students/$studentId', {
         'assignedTeacherIds': plan.studentTeacherIds,
@@ -141,20 +150,23 @@ class EnrollmentService {
         'updatedBy': actorId,
         'updatedAt': firestoreConverter.serverTimestamp(),
       }),
-      BatchOp.set('audit_logs/aud_${now.microsecondsSinceEpoch}_${studentId}_$circleId', {
-        'centerId': centerId,
-        'actorUserId': actorId,
-        'actorRole': actorRole,
-        'action': plan.toTransfer.isEmpty ? 'assign_student' : 'transfer_student',
-        'entityType': 'student',
-        'entityId': studentId,
-        'previousValue': {
-          'circleIds': plan.toTransfer.map((e) => e.circleId).toList(),
-        },
-        'newValue': {'circleId': circleId, 'teacherId': plan.teacherId},
-        if (trimmed != null && trimmed.isNotEmpty) 'reason': trimmed,
-        'createdAt': now.millisecondsSinceEpoch,
-      }),
+      BatchOp.set(
+          'audit_logs/aud_${now.microsecondsSinceEpoch}_${studentId}_$circleId',
+          {
+            'centerId': centerId,
+            'actorUserId': actorId,
+            'actorRole': actorRole,
+            'action':
+                plan.toTransfer.isEmpty ? 'assign_student' : 'transfer_student',
+            'entityType': 'student',
+            'entityId': studentId,
+            'previousValue': {
+              'circleIds': plan.toTransfer.map((e) => e.circleId).toList(),
+            },
+            'newValue': {'circleId': circleId, 'teacherId': plan.teacherId},
+            if (trimmed != null && trimmed.isNotEmpty) 'reason': trimmed,
+            'createdAt': now.millisecondsSinceEpoch,
+          }),
     ];
     // The circle's counter is the serialization point: the transaction reads it
     // fresh, re-checks the capacity, and writes the new count together with
@@ -184,7 +196,8 @@ class EnrollmentService {
       oldCircles.forEach((id, doc) {
         if (doc == null) return;
         final c = (doc['activeCount'] as int?) ?? 0;
-        tx.update('circles/$id', {'activeCount': (c - movedOut[id]!).clamp(0, 1 << 30)});
+        tx.update('circles/$id',
+            {'activeCount': (c - movedOut[id]!).clamp(0, 1 << 30)});
       });
     });
     return created;

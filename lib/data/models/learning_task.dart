@@ -159,13 +159,15 @@ class LearningTask extends AppModel {
       surah: json['surah'] as int,
       startAyah: json['startAyah'] as int,
       endAyah: json['endAyah'] as int,
-      assignedDate: AppModel.parseDateTime(json['assignedDate']) ?? DateTime.now(),
+      assignedDate:
+          AppModel.parseDateTime(json['assignedDate']) ?? DateTime.now(),
       dueDate: AppModel.parseDateTime(json['dueDate']) ?? DateTime.now(),
       priority: json['priority'] as String?,
       teacherInstructions: json['teacherInstructions'] as String,
       status: TaskStatusJson.fromJson(json['status'] as String?),
       selfReportedPractice: json['selfReportedPractice'] != null
-          ? SelfReportedPractice.fromJson(json['selfReportedPractice'] as JsonMap)
+          ? SelfReportedPractice.fromJson(
+              json['selfReportedPractice'] as JsonMap)
           : null,
       teacherVerification: json['teacherVerification'] != null
           ? TeacherVerification.fromJson(json['teacherVerification'] as JsonMap)
@@ -205,7 +207,9 @@ class LearningTask extends AppModel {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is LearningTask && runtimeType == other.runtimeType && taskId == other.taskId;
+      other is LearningTask &&
+          runtimeType == other.runtimeType &&
+          taskId == other.taskId;
 
   @override
   int get hashCode => taskId.hashCode;

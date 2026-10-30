@@ -47,7 +47,8 @@ class _Row extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final current = step.state == PathState.current || step.state == PathState.late;
+    final current =
+        step.state == PathState.current || step.state == PathState.late;
     final color = switch (step.state) {
       PathState.done => DesignTokens.success,
       PathState.current => DesignTokens.leaf,
@@ -64,7 +65,9 @@ class _Row extends StatelessWidget {
               style: TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: current ? 18 : 15,
-                  color: step.state == PathState.upcoming ? DesignTokens.secondaryText : Colors.white)),
+                  color: step.state == PathState.upcoming
+                      ? DesignTokens.secondaryText
+                      : Colors.white)),
     );
     return IntrinsicHeight(
       child: Row(
@@ -81,7 +84,9 @@ class _Row extends StatelessWidget {
                       width: 3,
                       margin: const EdgeInsets.symmetric(vertical: 4),
                       decoration: BoxDecoration(
-                        color: step.state == PathState.done ? DesignTokens.success.withValues(alpha: 0.5) : DesignTokens.borders,
+                        color: step.state == PathState.done
+                            ? DesignTokens.success.withValues(alpha: 0.5)
+                            : DesignTokens.borders,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -95,11 +100,15 @@ class _Row extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 10),
               child: Card(
                 margin: EdgeInsets.zero,
-                color: current ? Colors.white : Colors.white.withValues(alpha: 0.85),
+                color: current
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.85),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(DesignTokens.radiusLarge),
                   side: BorderSide(
-                    color: current ? color.withValues(alpha: 0.6) : DesignTokens.borders,
+                    color: current
+                        ? color.withValues(alpha: 0.6)
+                        : DesignTokens.borders,
                     width: current ? 2 : 1.5,
                   ),
                 ),
@@ -128,7 +137,9 @@ class _Row extends StatelessWidget {
                           const SizedBox(height: 10),
                           SizedBox(
                             width: double.infinity,
-                            child: FilledButton(onPressed: step.onTap, child: Text(step.actionLabel!)),
+                            child: FilledButton(
+                                onPressed: step.onTap,
+                                child: Text(step.actionLabel!)),
                           ),
                         ],
                       ],

@@ -31,7 +31,8 @@ class GradeChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = gradeColor(grade);
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: large ? 14 : 10, vertical: large ? 6 : 3),
+      padding: EdgeInsets.symmetric(
+          horizontal: large ? 14 : 10, vertical: large ? 6 : 3),
       decoration: BoxDecoration(
         color: c.withValues(alpha: 0.13),
         borderRadius: BorderRadius.circular(999),
@@ -47,7 +48,8 @@ class GradeChip extends StatelessWidget {
 
 /// A student's level as a rosette in the colour of its word.
 class LevelBadge extends StatelessWidget {
-  const LevelBadge({super.key, required this.level, this.size = 56, this.onDark = false});
+  const LevelBadge(
+      {super.key, required this.level, this.size = 56, this.onDark = false});
   final WirdLevel level;
   final double size;
   final bool onDark;
@@ -60,14 +62,19 @@ class LevelBadge extends StatelessWidget {
         size: size,
         color: onDark ? Colors.white54 : DesignTokens.bordersStrong,
         filled: false,
-        child: Icon(Icons.remove, size: size * 0.4, color: onDark ? Colors.white70 : DesignTokens.secondaryText),
+        child: Icon(Icons.remove,
+            size: size * 0.4,
+            color: onDark ? Colors.white70 : DesignTokens.secondaryText),
       );
     }
     return Rosette(
       size: size,
       color: levelColor(a),
       child: Text(a.toStringAsFixed(1),
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: size * 0.3)),
+          style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: size * 0.3)),
     );
   }
 }
@@ -88,11 +95,16 @@ class SectionTitle extends StatelessWidget {
             width: 4,
             height: 18,
             margin: const EdgeInsetsDirectional.only(end: 10),
-            decoration: BoxDecoration(color: DesignTokens.gold, borderRadius: BorderRadius.circular(2)),
+            decoration: BoxDecoration(
+                color: DesignTokens.gold,
+                borderRadius: BorderRadius.circular(2)),
           ),
           Expanded(
             child: Text(text,
-                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: DesignTokens.mainText)),
+                style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: DesignTokens.mainText)),
           ),
           if (trailing != null) trailing!,
         ],

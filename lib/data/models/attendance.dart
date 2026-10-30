@@ -17,9 +17,11 @@ class AttendanceCorrection {
 
   factory AttendanceCorrection.fromJson(JsonMap json) {
     return AttendanceCorrection(
-      originalStatus: AttendanceStatusJson.fromJson(json['originalStatus'] as String?),
+      originalStatus:
+          AttendanceStatusJson.fromJson(json['originalStatus'] as String?),
       correctedBy: json['correctedBy'] as String,
-      correctedAt: AppModel.parseDateTime(json['correctedAt']) ?? DateTime.now(),
+      correctedAt:
+          AppModel.parseDateTime(json['correctedAt']) ?? DateTime.now(),
       reason: json['reason'] as String,
     );
   }
@@ -116,7 +118,9 @@ class Attendance extends AppModel {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Attendance && runtimeType == other.runtimeType && attendanceId == other.attendanceId;
+      other is Attendance &&
+          runtimeType == other.runtimeType &&
+          attendanceId == other.attendanceId;
 
   @override
   int get hashCode => attendanceId.hashCode;

@@ -84,18 +84,22 @@ class AssessmentDraft {
         'studentVisibleFeedback': studentVisibleFeedback,
         'privateNote': privateNote,
         'recommendedNextAssignment': recommendedNextAssignment,
-        'suggestedNextReviewDate': suggestedNextReviewDate?.millisecondsSinceEpoch,
+        'suggestedNextReviewDate':
+            suggestedNextReviewDate?.millisecondsSinceEpoch,
       };
 
   factory AssessmentDraft.fromJson(Map<String, dynamic> j) => AssessmentDraft(
         type: AssessmentTypeJson.fromJson(j['type'] as String?),
-        grade: j['grade'] == null ? null : WirdGradeJson.fromJson(j['grade'] as String?),
+        grade: j['grade'] == null
+            ? null
+            : WirdGradeJson.fromJson(j['grade'] as String?),
         visitId: j['visitId'] as String?,
         surah: j['surah'] as int,
         startAyah: j['startAyah'] as int,
         endAyah: j['endAyah'] as int,
         scores: {
-          for (final e in (j['scores'] as Map? ?? const {}).entries) e.key as String: e.value as int
+          for (final e in (j['scores'] as Map? ?? const {}).entries)
+            e.key as String: e.value as int
         },
         mistakesCount: (j['mistakesCount'] as int?) ?? 0,
         mistakeCategory: j['mistakeCategory'] as String?,
@@ -109,7 +113,8 @@ class AssessmentDraft {
         recommendedNextAssignment: j['recommendedNextAssignment'] as String?,
         suggestedNextReviewDate: j['suggestedNextReviewDate'] == null
             ? null
-            : DateTime.fromMillisecondsSinceEpoch(j['suggestedNextReviewDate'] as int),
+            : DateTime.fromMillisecondsSinceEpoch(
+                j['suggestedNextReviewDate'] as int),
       );
 }
 
@@ -164,18 +169,20 @@ class TeacherSessionService {
   static const _tsKeys = {'createdAt', 'updatedAt', 'startedAt', 'completedAt'};
 
   /// Sessions of other teachers or centers look the same as missing ones.
-  Future<Schedule> _session(String centerId, String teacherId, String sessionId) async {
+  Future<Schedule> _session(
+      String centerId, String teacherId, String sessionId) async {
     final raw = await _ds.getDoc('schedules/$sessionId');
-    if (raw == null || raw['centerId'] != centerId || raw['teacherId'] != teacherId) {
+    if (raw == null ||
+        raw['centerId'] != centerId ||
+        raw['teacherId'] != teacherId) {
       throw SessionException('لم يتم العثور على الجلسة.');
     }
     return Schedule.fromJson(sessionId, firestoreConverter.decodeFromRead(raw));
   }
 
-
   /// Own student of the session's circle, or a visiting student added to it.
-  Future<void> _requireInSession(
-      String centerId, String teacherId, Schedule session, String studentId) async {
+  Future<void> _requireInSession(String centerId, String teacherId,
+      Schedule session, String studentId) async {
     if (session.guestStudentIds.contains(studentId)) return;
     final inCircle = await _ds.query('enrollments', where: [
       QueryFilter.equal('centerId', centerId),
@@ -209,7 +216,8 @@ class TeacherSessionService {
     ]);
     return [
       for (final c in cards)
-        if (!own.contains(c['id']) && !session.guestStudentIds.contains(c['id']))
+        if (!own.contains(c['id']) &&
+            !session.guestStudentIds.contains(c['id']))
           GuestStudent(c['id'] as String, (c['fullName'] as String?) ?? '')
     ]..sort((a, b) => a.name.compareTo(b.name));
   }
@@ -228,7 +236,9 @@ class TeacherSessionService {
     }
     if (session.guestStudentIds.contains(studentId)) return;
     final card = await _ds.getDoc('student_directory/$studentId');
-    if (card == null || card['centerId'] != centerId || card['active'] != true) {
+    if (card == null ||
+        card['centerId'] != centerId ||
+        card['active'] != true) {
       throw SessionException('لم يتم العثور على الطالب.');
     }
     await _ds.updateDoc('schedules/$sessionId', {
@@ -289,7 +299,8 @@ class TeacherSessionService {
       QueryFilter.equal('centerId', centerId),
       QueryFilter.arrayContains('assignedTeacherIds', teacherId),
     ]))
-        .map((d) => Student.fromJson(d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
+        .map((d) => Student.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .where((s) => enrolledIds.contains(s.studentId))
         .toList()
       ..sort((a, b) => a.displayName.compareTo(b.displayName));
@@ -350,7 +361,8 @@ class TeacherSessionService {
     final trimmed = note?.trim();
     final cleanNote = (trimmed == null || trimmed.isEmpty) ? null : trimmed;
     final path = 'attendance/${sessionId}_$studentId';
-    final existing = await _records(centerId, teacherId, sessionId, studentId: studentId);
+    final existing =
+        await _records(centerId, teacherId, sessionId, studentId: studentId);
 
     if (existing.containsKey(studentId)) {
       await _ds.updateDoc(path, {
@@ -394,7 +406,10 @@ class TeacherSessionService {
   }
 
   static const _assessmentTsKeys = {
-    'createdAt', 'updatedAt', 'assessedAt', 'suggestedNextReviewDate',
+    'createdAt',
+    'updatedAt',
+    'assessedAt',
+    'suggestedNextReviewDate',
   };
 
   /// Saves an assessment (and the private note, in its own document) for one
@@ -416,7 +431,8 @@ class TeacherSessionService {
     final block = checkRecord(session);
     if (block != null) throw SessionException(sessionBlockMessage(block));
 
-    final problem = validateAyahRange(draft.surah, draft.startAyah, draft.endAyah);
+    final problem =
+        validateAyahRange(draft.surah, draft.startAyah, draft.endAyah);
     if (problem != null) throw SessionException(problem);
     final bad = validateAssessment(
       surah: draft.surah,
@@ -426,7 +442,8 @@ class TeacherSessionService {
       scores: draft.scores,
     );
     if (bad.hasErrors) {
-      throw SessionException(bad.mistakes ?? bad.scores ?? bad.range ?? 'بيانات غير صالحة.');
+      throw SessionException(
+          bad.mistakes ?? bad.scores ?? bad.range ?? 'بيانات غير صالحة.');
     }
 
     await _requireInSession(centerId, teacherId, session, studentId);
@@ -455,7 +472,9 @@ class TeacherSessionService {
       surah: draft.surah,
       startAyah: draft.startAyah,
       endAyah: draft.endAyah,
-      criteriaScores: {for (final e in draft.scores.entries) e.key: e.value.toDouble()},
+      criteriaScores: {
+        for (final e in draft.scores.entries) e.key: e.value.toDouble()
+      },
       mistakesCount: draft.mistakesCount,
       mistakeCategory: clean(draft.mistakeCategory),
       mistakeReference: clean(draft.mistakeReference),
@@ -475,7 +494,8 @@ class TeacherSessionService {
     await _ds.commitBatch([
       BatchOp.set(
         'memorization_records/$recordId',
-        firestoreConverter.encodeForWrite(record.toJson(), timestampKeys: _assessmentTsKeys),
+        firestoreConverter.encodeForWrite(record.toJson(),
+            timestampKeys: _assessmentTsKeys),
       ),
       if (privateNote != null)
         BatchOp.set('private_teacher_notes/$recordId', {

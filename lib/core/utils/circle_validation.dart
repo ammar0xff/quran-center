@@ -2,7 +2,8 @@ import 'package:quran_center/core/utils/schedule_conflicts.dart';
 
 /// Field problems for the Create Circle form. `null` means the field is valid.
 class CircleFormErrors {
-  const CircleFormErrors({this.name, this.capacity, this.duration, this.schedule});
+  const CircleFormErrors(
+      {this.name, this.capacity, this.duration, this.schedule});
 
   final String? name;
   final String? capacity;

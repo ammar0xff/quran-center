@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+import 'package:quran_center/design_system/components/empty_state.dart';
+import 'package:quran_center/design_system/components/q_app_bar.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/core/utils/audience.dart';
@@ -45,7 +47,7 @@ class AnnouncementsScreen extends ConsumerWidget {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
-        appBar: AppBar(title: const Text('الإعلانات'), centerTitle: false),
+        appBar: QAppBar(title: const Text('الإعلانات'), centerTitle: false),
         floatingActionButton: async.hasValue
             ? FloatingActionButton.extended(
                 onPressed: () async {
@@ -71,7 +73,7 @@ class AnnouncementsScreen extends ConsumerWidget {
             ]),
           ),
           data: (d) => d.sent.isEmpty
-              ? const Center(child: Text('لم تُرسل إعلانات بعد.'))
+              ? EmptyState('لم تُرسل إعلانات بعد.')
               : ListView(
                   padding: const EdgeInsets.fromLTRB(DesignTokens.space16,
                       DesignTokens.space16, DesignTokens.space16, 96),
@@ -186,7 +188,7 @@ class _ComposeScreenState extends ConsumerState<_ComposeScreen> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
-        appBar: AppBar(title: const Text('إعلان جديد'), centerTitle: false),
+        appBar: QAppBar(title: const Text('إعلان جديد'), centerTitle: false),
         body: ListView(
           padding: const EdgeInsets.all(DesignTokens.space20),
           children: [

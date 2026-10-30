@@ -51,7 +51,8 @@ class Student extends AppModel {
   final DateTime updatedAt;
 
   String get displayName => preferredName ?? fullName;
-  bool get hasLogin => accountMode == AccountMode.loginEnabled && authUserId != null;
+  bool get hasLogin =>
+      accountMode == AccountMode.loginEnabled && authUserId != null;
 
   Student copyWith({
     String? fullName,
@@ -80,7 +81,8 @@ class Student extends AppModel {
       accountMode: accountMode ?? this.accountMode,
       authUserId: authUserId ?? this.authUserId,
       educationalLevel: educationalLevel ?? this.educationalLevel,
-      accessibilityPreferences: accessibilityPreferences ?? this.accessibilityPreferences,
+      accessibilityPreferences:
+          accessibilityPreferences ?? this.accessibilityPreferences,
       currentCircleId: currentCircleId ?? this.currentCircleId,
       assignedTeacherIds: assignedTeacherIds,
       createdBy: createdBy,
@@ -100,13 +102,17 @@ class Student extends AppModel {
       contactInfo: (json['contactInfo'] as JsonMap?)
           ?.map((k, v) => MapEntry(k, v as String)),
       profileImageUrl: json['profileImageUrl'] as String?,
-      enrollmentStatus: EnrollmentStatusJson.fromJson(json['enrollmentStatus'] as String?),
+      enrollmentStatus:
+          EnrollmentStatusJson.fromJson(json['enrollmentStatus'] as String?),
       accountMode: AccountModeJson.fromJson(json['accountMode'] as String?),
       authUserId: json['authUserId'] as String?,
       educationalLevel: json['educationalLevel'] as String? ?? '',
       accessibilityPreferences: json['accessibilityPreferences'] as String?,
       currentCircleId: json['currentCircleId'] as String?,
-      assignedTeacherIds: [for (final t in (json['assignedTeacherIds'] as List? ?? const [])) t as String],
+      assignedTeacherIds: [
+        for (final t in (json['assignedTeacherIds'] as List? ?? const []))
+          t as String
+      ],
       createdBy: json['createdBy'] as String?,
       updatedBy: json['updatedBy'] as String?,
       createdAt: AppModel.parseDateTime(json['createdAt']) ?? DateTime.now(),
@@ -120,7 +126,8 @@ class Student extends AppModel {
       'centerId': centerId,
       'fullName': fullName,
       if (preferredName != null) 'preferredName': preferredName,
-      if (dateOfBirth != null) 'dateOfBirth': AppModel.encodeDateTime(dateOfBirth),
+      if (dateOfBirth != null)
+        'dateOfBirth': AppModel.encodeDateTime(dateOfBirth),
       if (contactInfo != null) 'contactInfo': contactInfo,
       if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
       'enrollmentStatus': enrollmentStatus.toJson(),
@@ -149,5 +156,6 @@ class Student extends AppModel {
   int get hashCode => studentId.hashCode;
 
   @override
-  String toString() => 'Student(studentId: $studentId, fullName: $fullName, accountMode: $accountMode)';
+  String toString() =>
+      'Student(studentId: $studentId, fullName: $fullName, accountMode: $accountMode)';
 }

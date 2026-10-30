@@ -80,8 +80,8 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
     if (raw == null) {
       throw AttendanceCorrectionException('لا يوجد سجل حضور لتصحيحه');
     }
-    final current = Attendance.fromJson(
-        attendanceDocId(sessionId, studentId), firestoreConverter.decodeFromRead(raw));
+    final current = Attendance.fromJson(attendanceDocId(sessionId, studentId),
+        firestoreConverter.decodeFromRead(raw));
 
     final problem = validateCorrection(
       current: current.status,

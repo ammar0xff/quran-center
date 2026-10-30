@@ -64,8 +64,10 @@ class Session extends AppModel {
       endTime: endTime,
       status: status ?? this.status,
       studentCount: studentCount ?? this.studentCount,
-      attendanceCompletedCount: attendanceCompletedCount ?? this.attendanceCompletedCount,
-      assessmentCompletedCount: assessmentCompletedCount ?? this.assessmentCompletedCount,
+      attendanceCompletedCount:
+          attendanceCompletedCount ?? this.attendanceCompletedCount,
+      assessmentCompletedCount:
+          assessmentCompletedCount ?? this.assessmentCompletedCount,
       isLocallyComplete: isLocallyComplete ?? this.isLocallyComplete,
       serverConfirmedAt: serverConfirmedAt ?? this.serverConfirmedAt,
       createdAt: createdAt,
@@ -119,7 +121,9 @@ class Session extends AppModel {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Session && runtimeType == other.runtimeType && sessionId == other.sessionId;
+      other is Session &&
+          runtimeType == other.runtimeType &&
+          sessionId == other.sessionId;
 
   @override
   int get hashCode => sessionId.hashCode;

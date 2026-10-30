@@ -63,11 +63,14 @@ class AuditLog extends AppModel {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is AuditLog && runtimeType == other.runtimeType && auditId == other.auditId;
+      other is AuditLog &&
+          runtimeType == other.runtimeType &&
+          auditId == other.auditId;
 
   @override
   int get hashCode => auditId.hashCode;
 
   @override
-  String toString() => 'AuditLog(auditId: $auditId, action: $action, entity: $entityType/$entityId)';
+  String toString() =>
+      'AuditLog(auditId: $auditId, action: $action, entity: $entityType/$entityId)';
 }

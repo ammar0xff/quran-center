@@ -34,7 +34,8 @@ class CircleRepositoryImpl implements CircleRepository {
   Future<void> updateCircle(Circle circle) async {
     final data = firestoreConverter.encodeForWrite(
       // activeCount is owned by enrolment transactions; never overwrite it here.
-      circle.toJson()..removeWhere((k, v) => k == 'circleId' || k == 'activeCount'),
+      circle.toJson()
+        ..removeWhere((k, v) => k == 'circleId' || k == 'activeCount'),
       timestampKeys: _timestampKeys,
     );
     await _ds.updateDoc('$_collectionPath/${circle.circleId}', data);
@@ -57,8 +58,8 @@ class CircleRepositoryImpl implements CircleRepository {
   Stream<List<Circle>> watchCirclesByCenter(String centerId) {
     final where = <QueryFilter>[QueryFilter.equal('centerId', centerId)];
     return _ds.watchQuery(_collectionPath, where: where).map((docs) => docs
-        .map((d) => Circle.fromJson(d['id'] ?? '',
-            firestoreConverter.decodeFromRead(d)))
+        .map((d) => Circle.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .toList());
   }
 
@@ -67,18 +68,20 @@ class CircleRepositoryImpl implements CircleRepository {
     final where = <QueryFilter>[QueryFilter.equal('centerId', centerId)];
     final docs = await _ds.query(_collectionPath, where: where);
     return docs
-        .map((d) => Circle.fromJson(d['id'] ?? '',
-            firestoreConverter.decodeFromRead(d)))
+        .map((d) => Circle.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .toList();
   }
 
   @override
   Future<List<Circle>> getCirclesByTeacher(String teacherId) async {
-    final where = <QueryFilter>[QueryFilter.equal('assignedTeacherId', teacherId)];
+    final where = <QueryFilter>[
+      QueryFilter.equal('assignedTeacherId', teacherId)
+    ];
     final docs = await _ds.query(_collectionPath, where: where);
     return docs
-        .map((d) => Circle.fromJson(d['id'] ?? '',
-            firestoreConverter.decodeFromRead(d)))
+        .map((d) => Circle.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .toList();
   }
 }

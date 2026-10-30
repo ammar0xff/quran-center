@@ -1,7 +1,12 @@
 import 'package:quran_center/core/utils/report_builders.dart';
 import 'package:quran_center/data/models/enums.dart';
 
-enum FollowUpKind { overdueTask, awaitingVerification, repeatedAbsence, sessionWithoutAttendance }
+enum FollowUpKind {
+  overdueTask,
+  awaitingVerification,
+  repeatedAbsence,
+  sessionWithoutAttendance
+}
 
 /// One thing the director may want to look into, with the plain facts that put
 /// it here. It is a pointer to records, not a judgement of anyone.
@@ -54,9 +59,12 @@ List<FollowUpItem> followUps(ReportData d, DateTime now) {
   for (final t in d.tasks) {
     if (!activeStudent.containsKey(t.studentId)) continue;
     final circle = circleName[activeStudent[t.studentId]!.currentCircleId];
-    final open = t.status != TaskStatus.completed && t.status != TaskStatus.cancelled;
+    final open =
+        t.status != TaskStatus.completed && t.status != TaskStatus.cancelled;
     if (open && t.dueDate.isBefore(today)) {
-      final days = today.difference(DateTime(t.dueDate.year, t.dueDate.month, t.dueDate.day)).inDays;
+      final days = today
+          .difference(DateTime(t.dueDate.year, t.dueDate.month, t.dueDate.day))
+          .inDays;
       items.add(FollowUpItem(
         kind: FollowUpKind.overdueTask,
         reason: 'مهمة تجاوزت موعدها بـ $days يومًا',
@@ -68,13 +76,15 @@ List<FollowUpItem> followUps(ReportData d, DateTime now) {
       ));
     }
     final claim = t.selfReportedPractice;
-    if ((t.status == TaskStatus.practiceReported || t.status == TaskStatus.submittedForReview) &&
+    if ((t.status == TaskStatus.practiceReported ||
+            t.status == TaskStatus.submittedForReview) &&
         claim != null) {
       final waiting = now.difference(claim.reportedAt).inDays;
       if (waiting > awaitingVerificationDays) {
         items.add(FollowUpItem(
           kind: FollowUpKind.awaitingVerification,
-          reason: 'أبلغ الطالب عن تدريبه منذ $waiting يومًا ولم يتحقق المعلم بعد',
+          reason:
+              'أبلغ الطالب عن تدريبه منذ $waiting يومًا ولم يتحقق المعلم بعد',
           date: claim.reportedAt,
           studentId: t.studentId,
           studentName: studentName[t.studentId],
@@ -88,7 +98,8 @@ List<FollowUpItem> followUps(ReportData d, DateTime now) {
   final byStudent = <String, List<(DateTime, bool)>>{}; // (day, absent?)
   for (final a in d.attendance) {
     if (a.status == AttendanceStatus.excused) continue;
-    (byStudent[a.studentId] ??= []).add((attendanceDay(a, sessions), a.status == AttendanceStatus.absent));
+    (byStudent[a.studentId] ??= [])
+        .add((attendanceDay(a, sessions), a.status == AttendanceStatus.absent));
   }
   byStudent.forEach((id, list) {
     final student = activeStudent[id];
@@ -99,7 +110,8 @@ List<FollowUpItem> followUps(ReportData d, DateTime now) {
     if (absences.length >= repeatedAbsenceThreshold) {
       items.add(FollowUpItem(
         kind: FollowUpKind.repeatedAbsence,
-        reason: 'غاب ${absences.length} مرات من آخر ${recent.length} جلسات مسجّلة',
+        reason:
+            'غاب ${absences.length} مرات من آخر ${recent.length} جلسات مسجّلة',
         date: absences.first.$1,
         studentId: id,
         studentName: student.displayName,
@@ -110,7 +122,8 @@ List<FollowUpItem> followUps(ReportData d, DateTime now) {
 
   final recordedSessions = {for (final a in d.attendance) a.sessionId};
   for (final s in d.schedules) {
-    if (s.status == SessionStatus.completed && !recordedSessions.contains(s.scheduleId)) {
+    if (s.status == SessionStatus.completed &&
+        !recordedSessions.contains(s.scheduleId)) {
       items.add(FollowUpItem(
         kind: FollowUpKind.sessionWithoutAttendance,
         reason: 'جلسة منتهية بلا أي سجل حضور',

@@ -39,7 +39,8 @@ List<StudentLevelRow> studentLevels(ReportData d) {
             for (final id in s.assignedTeacherIds)
               if (teacher[id] != null) teacher[id]!
           ],
-          level: computeLevel([for (final a in byStudent[s.studentId] ?? const []) a]),
+          level: computeLevel(
+              [for (final a in byStudent[s.studentId] ?? const []) a]),
         ),
   ];
   rows.sort((a, b) {
@@ -86,24 +87,30 @@ List<TeacherLevelRow> teacherLevels(ReportData d) {
   final rows = <TeacherLevelRow>[];
   for (final t in d.teachers) {
     final mine = d.students.where((s) =>
-        s.enrollmentStatus == EnrollmentStatus.active && s.assignedTeacherIds.contains(t.teacherId));
+        s.enrollmentStatus == EnrollmentStatus.active &&
+        s.assignedTeacherIds.contains(t.teacherId));
     final avgs = [
       for (final s in mine)
         if (levels[s.studentId]?.average != null) levels[s.studentId]!.average!
     ];
     final heard = d.assessments
-        .where((a) => a.teacherId == t.teacherId && a.grade != null && gradedTypes.contains(a.assessmentType))
+        .where((a) =>
+            a.teacherId == t.teacherId &&
+            a.grade != null &&
+            gradedTypes.contains(a.assessmentType))
         .toList();
     rows.add(TeacherLevelRow(
       teacherId: t.teacherId,
       name: t.fullName,
       students: mine.length,
       studentsWithLevel: avgs.length,
-      studentsAverage: avgs.isEmpty ? null : avgs.reduce((a, b) => a + b) / avgs.length,
+      studentsAverage:
+          avgs.isEmpty ? null : avgs.reduce((a, b) => a + b) / avgs.length,
       wirdsHeard: heard.length,
       gradeGiven: heard.isEmpty
           ? null
-          : heard.map((a) => a.grade!.score).reduce((a, b) => a + b) / heard.length,
+          : heard.map((a) => a.grade!.score).reduce((a, b) => a + b) /
+              heard.length,
     ));
   }
   rows.sort((a, b) => a.name.compareTo(b.name));
@@ -114,7 +121,12 @@ List<TeacherLevelRow> teacherLevels(ReportData d) {
 String averageText(double? a) {
   if (a == null) return '—';
   final label = WirdLevel(
-    total: 1, counts: const {}, average: a, byType: const {}, trend: Trend.unknown, lastHeard: null,
+    total: 1,
+    counts: const {},
+    average: a,
+    byType: const {},
+    trend: Trend.unknown,
+    lastHeard: null,
   ).label;
   return '${a.toStringAsFixed(1)} ($label)';
 }

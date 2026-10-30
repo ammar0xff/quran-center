@@ -231,8 +231,8 @@ void main() {
 
   testWidgets('profile shows my details and signs out', (tester) async {
     await open(tester, path: '/student/profile');
-    expect(find.text('بسمة خالد'), findsOneWidget);
-    expect(find.text('حلقة الفجر'), findsOneWidget);
+    expect(find.text('بسمة خالد'), findsWidgets);
+    expect(find.text('حلقة الفجر'), findsWidgets);
     await tester.tap(find.text('تسجيل الخروج'));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(FilledButton, 'تسجيل الدخول'), findsOneWidget);

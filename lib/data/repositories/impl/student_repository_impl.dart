@@ -27,7 +27,8 @@ class StudentRepositoryImpl implements StudentRepository {
       {'centerId': centerId, 'fullName': name, 'active': active};
 
   @override
-  Future<void> createStudent(Student student, {String? actorId, String? actorRole}) async {
+  Future<void> createStudent(Student student,
+      {String? actorId, String? actorRole}) async {
     final data = firestoreConverter.encodeForWrite(
       student.toJson(),
       timestampKeys: _timestampKeys,
@@ -46,7 +47,8 @@ class StudentRepositoryImpl implements StudentRepository {
     await _ds.commitBatch([
       BatchOp.set(path, {...data, 'createdBy': actorId, 'updatedBy': actorId}),
       BatchOp.set('student_directory/${student.studentId}', card),
-      BatchOp.set('audit_logs/aud_${now.microsecondsSinceEpoch}_${student.studentId}', {
+      BatchOp.set(
+          'audit_logs/aud_${now.microsecondsSinceEpoch}_${student.studentId}', {
         'centerId': student.centerId,
         'actorUserId': actorId,
         'actorRole': actorRole,
@@ -88,7 +90,8 @@ class StudentRepositoryImpl implements StudentRepository {
       );
 
   @override
-  Future<String?> getAdminNote(String studentId, {required String centerId}) async {
+  Future<String?> getAdminNote(String studentId,
+      {required String centerId}) async {
     final docs = await _ds.query('student_admin_notes', where: [
       QueryFilter.equal('centerId', centerId),
       QueryFilter.equal('studentId', studentId),
@@ -163,7 +166,8 @@ class StudentRepositoryImpl implements StudentRepository {
           'updatedAt': firestoreConverter.serverTimestamp(),
         }),
       if (next.containsKey('fullName'))
-        BatchOp.set('student_directory/$studentId', _card(centerId, name, current['enrollmentStatus'] == 'active')),
+        BatchOp.set('student_directory/$studentId',
+            _card(centerId, name, current['enrollmentStatus'] == 'active')),
       if (noteChanged)
         BatchOp.set('student_admin_notes/$studentId', {
           'centerId': centerId,
@@ -260,7 +264,8 @@ class StudentRepositoryImpl implements StudentRepository {
         'entityId': studentId,
         'previousValue': {
           'enrollmentStatus': current['enrollmentStatus'],
-          if (open.isNotEmpty) 'circleIds': [for (final e in open) e['circleId']],
+          if (open.isNotEmpty)
+            'circleIds': [for (final e in open) e['circleId']],
         },
         'newValue': {'enrollmentStatus': to.toJson()},
         if (trimmed != null && trimmed.isNotEmpty) 'reason': trimmed,
@@ -279,14 +284,17 @@ class StudentRepositoryImpl implements StudentRepository {
       freed[id] = (freed[id] ?? 0) + 1;
     }
     await _ds.runTransaction((tx) async {
-      final circles = {for (final id in freed.keys) id: await tx.get('circles/$id')};
+      final circles = {
+        for (final id in freed.keys) id: await tx.get('circles/$id')
+      };
       for (final op in ops) {
         op.isUpdate ? tx.update(op.path, op.data) : tx.set(op.path, op.data);
       }
       circles.forEach((id, doc) {
         if (doc == null) return;
         final c = (doc['activeCount'] as int?) ?? 0;
-        tx.update('circles/$id', {'activeCount': (c - freed[id]!).clamp(0, 1 << 30)});
+        tx.update(
+            'circles/$id', {'activeCount': (c - freed[id]!).clamp(0, 1 << 30)});
       });
     });
   }
@@ -298,7 +306,8 @@ class StudentRepositoryImpl implements StudentRepository {
   }) {
     final where = <QueryFilter>[
       QueryFilter.equal('centerId', centerId),
-      if (status != null) QueryFilter.equal('enrollmentStatus', status.toJson()),
+      if (status != null)
+        QueryFilter.equal('enrollmentStatus', status.toJson()),
     ];
     return _ds.watchQuery(_collectionPath, where: where).map((docs) => docs
         .map((d) => Student.fromJson(

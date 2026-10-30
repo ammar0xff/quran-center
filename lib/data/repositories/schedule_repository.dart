@@ -19,14 +19,16 @@ abstract class ScheduleRepository {
   });
 
   /// Schedules in a center, optionally filtered by circle/teacher/date.
-  Future<List<Schedule>> getSchedulesByCenter(String centerId, {
+  Future<List<Schedule>> getSchedulesByCenter(
+    String centerId, {
     String? circleId,
     String? teacherId,
     DateTime? date,
   });
 
   /// Stream of schedules in a center (real-time).
-  Stream<List<Schedule>> watchSchedulesByCenter(String centerId, {
+  Stream<List<Schedule>> watchSchedulesByCenter(
+    String centerId, {
     String? circleId,
     String? teacherId,
     DateTime? date,

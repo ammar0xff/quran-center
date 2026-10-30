@@ -28,7 +28,8 @@ class CircleException implements Exception {
 /// in ONE atomic batch; a very large one is applied in several batches, circle
 /// last, and is safe to repeat if one of them fails.
 class CircleService {
-  CircleService(this._ds, {DateTime Function()? clock}) : _now = clock ?? DateTime.now;
+  CircleService(this._ds, {DateTime Function()? clock})
+      : _now = clock ?? DateTime.now;
 
   final FirestoreDataSource _ds;
   final DateTime Function() _now;
@@ -44,7 +45,8 @@ class CircleService {
     return raw;
   }
 
-  Future<List<Map<String, dynamic>>> _activeEnrollments(String centerId, String circleId) =>
+  Future<List<Map<String, dynamic>>> _activeEnrollments(
+          String centerId, String circleId) =>
       _ds.query('enrollments', where: [
         QueryFilter.equal('centerId', centerId),
         QueryFilter.equal('circleId', circleId),
@@ -83,14 +85,19 @@ class CircleService {
       end: '',
     );
     if (errors.hasErrors) {
-      throw CircleException(errors.name ?? errors.capacity ?? errors.duration ?? 'بيانات غير صالحة.');
+      throw CircleException(errors.name ??
+          errors.capacity ??
+          errors.duration ??
+          'بيانات غير صالحة.');
     }
 
     if (weeklySchedule != null) {
-      final problem = weeklyScheduleError(
-          {for (final w in weeklySchedule) w.dayOfWeek: (w.startTime, w.endTime)});
+      final problem = weeklyScheduleError({
+        for (final w in weeklySchedule) w.dayOfWeek: (w.startTime, w.endTime)
+      });
       if (problem != null) throw CircleException(problem);
-      if (weeklySchedule.map((w) => w.dayOfWeek).toSet().length != weeklySchedule.length) {
+      if (weeklySchedule.map((w) => w.dayOfWeek).toSet().length !=
+          weeklySchedule.length) {
         throw CircleException('يوم مكرر في الجدول.');
       }
     }
@@ -126,14 +133,16 @@ class CircleService {
       'assignedTeacherId': teacherId,
     };
     if (weeklySchedule != null) {
-      final sorted = [...weeklySchedule]..sort((a, b) => a.dayOfWeek.compareTo(b.dayOfWeek));
+      final sorted = [...weeklySchedule]
+        ..sort((a, b) => a.dayOfWeek.compareTo(b.dayOfWeek));
       wanted['weeklySchedule'] = [for (final w in sorted) w.toJson()];
     }
     final previous = <String, dynamic>{};
     final next = <String, dynamic>{};
     wanted.forEach((key, value) {
       final same = value is List
-          ? jsonEncode(_normalized(current[key])) == jsonEncode(_normalized(value))
+          ? jsonEncode(_normalized(current[key])) ==
+              jsonEncode(_normalized(value))
           : current[key] == value;
       if (!same) {
         previous[key] = current[key];
@@ -154,7 +163,8 @@ class CircleService {
         QueryFilter.equal('status', 'scheduled'),
       ]))
           .where((d) {
-        final s = Schedule.fromJson(d['id'] ?? '', firestoreConverter.decodeFromRead(d));
+        final s = Schedule.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d));
         return !s.date.isBefore(startOfToday);
       }).toList();
 
@@ -186,7 +196,8 @@ class CircleService {
       'updatedBy': actorId,
       'updatedAt': firestoreConverter.serverTimestamp(),
     }));
-    tail.add(BatchOp.set('audit_logs/aud_${when.microsecondsSinceEpoch}_$circleId', {
+    tail.add(
+        BatchOp.set('audit_logs/aud_${when.microsecondsSinceEpoch}_$circleId', {
       'centerId': centerId,
       'actorUserId': actorId,
       'actorRole': actorRole,
@@ -205,7 +216,8 @@ class CircleService {
       // leaves the circle on its old teacher and the same save can simply be
       // repeated: every step writes the same values again.
       for (var i = 0; i < ops.length; i += maxBatchOps) {
-        await _ds.commitBatch(ops.sublist(i, (i + maxBatchOps).clamp(0, ops.length)));
+        await _ds.commitBatch(
+            ops.sublist(i, (i + maxBatchOps).clamp(0, ops.length)));
       }
       await _ds.commitBatch(tail);
     }
@@ -218,7 +230,11 @@ class CircleService {
     l.sort((a, b) => (a['dayOfWeek'] as int).compareTo(b['dayOfWeek'] as int));
     return [
       for (final w in l)
-        {'dayOfWeek': w['dayOfWeek'], 'startTime': w['startTime'], 'endTime': w['endTime']}
+        {
+          'dayOfWeek': w['dayOfWeek'],
+          'startTime': w['startTime'],
+          'endTime': w['endTime']
+        }
     ];
   }
 

@@ -35,17 +35,21 @@ String formatAmount(int cents) {
   final abs = cents.abs();
   final whole = (abs ~/ 100).toString();
   final frac = abs % 100;
-  final grouped = whole.replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
-  final body = frac == 0 ? grouped : '$grouped.${frac.toString().padLeft(2, '0')}';
+  final grouped =
+      whole.replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
+  final body =
+      frac == 0 ? grouped : '$grouped.${frac.toString().padLeft(2, '0')}';
   return '${negative ? '-' : ''}$body $currencyLabel';
 }
 
 /// "2026-11" for a date.
-String monthKey(DateTime d) => '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}';
+String monthKey(DateTime d) =>
+    '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}';
 
 bool isMonthKey(String s) => RegExp(r'^\d{4}-(0[1-9]|1[0-2])$').hasMatch(s);
 
-DateTime monthStart(String key) => DateTime(int.parse(key.substring(0, 4)), int.parse(key.substring(5, 7)));
+DateTime monthStart(String key) =>
+    DateTime(int.parse(key.substring(0, 4)), int.parse(key.substring(5, 7)));
 
 DateTime nextMonthStart(String key) {
   final s = monthStart(key);
@@ -53,8 +57,18 @@ DateTime nextMonthStart(String key) {
 }
 
 const _months = [
-  'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-  'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
+  'يناير',
+  'فبراير',
+  'مارس',
+  'أبريل',
+  'مايو',
+  'يونيو',
+  'يوليو',
+  'أغسطس',
+  'سبتمبر',
+  'أكتوبر',
+  'نوفمبر',
+  'ديسمبر',
 ];
 
 String monthLabel(String key) {

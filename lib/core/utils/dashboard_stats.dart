@@ -69,8 +69,9 @@ DashboardStats computeDashboardStats({
   final recent = attendance.where((a) => a.createdAt.isAfter(since));
 
   return DashboardStats(
-    activeStudents:
-        students.where((s) => s.enrollmentStatus == EnrollmentStatus.active).length,
+    activeStudents: students
+        .where((s) => s.enrollmentStatus == EnrollmentStatus.active)
+        .length,
     activeTeachers:
         teachers.where((t) => t.status == AccountStatus.active).length,
     activeCircles: circles.where((c) => c.status == CircleStatus.active).length,

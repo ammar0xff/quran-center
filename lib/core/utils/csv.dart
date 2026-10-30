@@ -6,8 +6,12 @@
 String toCsv(List<String> headers, List<List<Object?>> rows) {
   String cell(Object? v) {
     var s = v == null ? '' : '$v';
-    if (s.isNotEmpty && '=+-@'.contains(s[0]) && double.tryParse(s) == null) s = "'$s";
-    if (s.contains(',') || s.contains('"') || s.contains('\n') || s.contains('\r')) {
+    if (s.isNotEmpty && '=+-@'.contains(s[0]) && double.tryParse(s) == null)
+      s = "'$s";
+    if (s.contains(',') ||
+        s.contains('"') ||
+        s.contains('\n') ||
+        s.contains('\r')) {
       s = '"${s.replaceAll('"', '""')}"';
     }
     return s;

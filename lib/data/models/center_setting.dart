@@ -29,14 +29,12 @@ class CenterSetting extends AppModel {
   factory CenterSetting.fromJson(JsonMap json) {
     return CenterSetting(
       centerId: json['centerId'] as String,
-      assessmentCriteria:
-          (json['assessmentCriteria'] as List<dynamic>?)
+      assessmentCriteria: (json['assessmentCriteria'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           [],
       scoringScale: json['scoringScale'] as Map<String, dynamic>? ?? {},
-      attendanceStatuses:
-          (json['attendanceStatuses'] as List<dynamic>?)
+      attendanceStatuses: (json['attendanceStatuses'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           ['present', 'absent', 'late', 'excused'],
@@ -70,7 +68,9 @@ class CenterSetting extends AppModel {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is CenterSetting && runtimeType == other.runtimeType && centerId == other.centerId;
+      other is CenterSetting &&
+          runtimeType == other.runtimeType &&
+          centerId == other.centerId;
 
   @override
   int get hashCode => centerId.hashCode;

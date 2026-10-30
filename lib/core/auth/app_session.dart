@@ -2,7 +2,14 @@ import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/data/models/user.dart';
 
 /// What the app knows about the person using it right now.
-enum SessionKind { loading, unauthenticated, director, teacher, student, blocked }
+enum SessionKind {
+  loading,
+  unauthenticated,
+  director,
+  teacher,
+  student,
+  blocked
+}
 
 /// Why a signed-in user was not let into a role shell.
 enum BlockReason {

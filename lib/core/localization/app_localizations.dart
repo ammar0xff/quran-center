@@ -31,7 +31,8 @@ class AppLocalizations {
       'privacyTerms': 'Privacy & Terms',
       'errorInvalidCredentials': 'Invalid email or password.',
       'errorAccountDisabled': 'This account has been disabled.',
-      'errorNetworkUnavailable': 'Network unavailable. Please check your connection.',
+      'errorNetworkUnavailable':
+          'Network unavailable. Please check your connection.',
       'errorSessionExpired': 'Session expired. Please sign in again.',
       'errorUnknown': 'An unexpected error occurred. Please try again.',
       'roleDirector': 'Director',
@@ -96,8 +97,8 @@ class AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
   const AppLocalizationsDelegate();
   @override
   bool isSupported(Locale locale) => AppLocalizations.supportedLocales.any(
-    (l) => l.languageCode == locale.languageCode,
-  );
+        (l) => l.languageCode == locale.languageCode,
+      );
   @override
   Future<AppLocalizations> load(Locale locale) =>
       SynchronousFuture<AppLocalizations>(AppLocalizations(locale));

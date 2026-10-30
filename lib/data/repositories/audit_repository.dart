@@ -6,5 +6,6 @@ import 'package:quran_center/data/models/audit_log.dart';
 /// operation (inside the same atomic batch), never directly by UI code.
 abstract class AuditRepository {
   /// Audit entries for one entity, newest first.
-  Future<List<AuditLog>> getForEntity(String entityType, String entityId, {required String centerId});
+  Future<List<AuditLog>> getForEntity(String entityType, String entityId,
+      {required String centerId});
 }

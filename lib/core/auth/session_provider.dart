@@ -4,7 +4,8 @@ import 'package:quran_center/core/auth/app_session.dart';
 import 'package:quran_center/core/auth/auth_gateway.dart';
 import 'package:quran_center/data/providers/repositories.dart';
 
-final authGatewayProvider = Provider<AuthGateway>((ref) => FirebaseAuthGateway());
+final authGatewayProvider =
+    Provider<AuthGateway>((ref) => FirebaseAuthGateway());
 
 /// The current [AppSession]. Rebuilt whenever authentication changes: a signed
 /// in uid has its authoritative `users/{uid}` profile fetched, and the role

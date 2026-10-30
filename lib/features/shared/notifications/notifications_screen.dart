@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+import 'package:quran_center/design_system/components/empty_state.dart';
+import 'package:quran_center/design_system/components/q_app_bar.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/data/models/notification.dart' as model;
@@ -77,7 +79,7 @@ class NotificationsScreen extends ConsumerWidget {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
-        appBar: AppBar(
+        appBar: QAppBar(
           title: const Text('الإشعارات'),
           centerTitle: false,
           actions: [
@@ -99,7 +101,7 @@ class NotificationsScreen extends ConsumerWidget {
           ),
           data: (items) {
             if (items.isEmpty) {
-              return const Center(child: Text('لا توجد إشعارات.'));
+              return EmptyState('لا توجد إشعارات.');
             }
             return ListView(
               padding: const EdgeInsets.all(DesignTokens.space12),

@@ -13,7 +13,8 @@ class AccountAccessException implements Exception {
 /// sent. The director can resend it; nothing needs to be redone.
 class ActivationEmailException extends AccountAccessException {
   ActivationEmailException()
-      : super('تم إنشاء الحساب لكن تعذر إرسال رسالة التفعيل. أعد إرسالها لاحقًا.');
+      : super(
+            'تم إنشاء الحساب لكن تعذر إرسال رسالة التفعيل. أعد إرسالها لاحقًا.');
 }
 
 /// Translates a Cloud Functions error code into an actionable Arabic message.
@@ -60,7 +61,8 @@ abstract class AccountAccessService {
   });
 
   /// Suspends ([suspend] = true) or reactivates a teacher's login.
-  Future<void> setTeacherSuspended({required String teacherId, required bool suspend});
+  Future<void> setTeacherSuspended(
+      {required String teacherId, required bool suspend});
 
   /// Re-sends the activation / password-setup email.
   Future<void> resendActivation(String email);
@@ -152,7 +154,8 @@ class CloudFunctionsAccountAccessService implements AccountAccessService {
   @override
   Future<void> resendActivation(String email) async {
     try {
-      await _firebaseAuth.sendPasswordResetEmail(email: email.trim().toLowerCase());
+      await _firebaseAuth.sendPasswordResetEmail(
+          email: email.trim().toLowerCase());
     } catch (_) {
       throw ActivationEmailException();
     }

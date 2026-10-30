@@ -149,8 +149,10 @@ class _FakeTx implements TxContext {
   Future<Map<String, dynamic>?> get(String path) => _store.getDoc(path);
 
   @override
-  void set(String path, Map<String, dynamic> data) => ops.add(BatchOp.set(path, data));
+  void set(String path, Map<String, dynamic> data) =>
+      ops.add(BatchOp.set(path, data));
 
   @override
-  void update(String path, Map<String, dynamic> data) => ops.add(BatchOp.update(path, data));
+  void update(String path, Map<String, dynamic> data) =>
+      ops.add(BatchOp.update(path, data));
 }

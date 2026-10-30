@@ -96,7 +96,8 @@ class Circle extends AppModel {
   final DateTime updatedAt;
 
   int get studentCount => 0; // populated by repository query, not stored here
-  bool get hasCapacity => true; // evaluated against enrollment count by repository
+  bool get hasCapacity =>
+      true; // evaluated against enrollment count by repository
 
   Circle copyWith({
     String? name,
@@ -122,7 +123,8 @@ class Circle extends AppModel {
       activeCount: activeCount,
       locationOrMode: locationOrMode ?? this.locationOrMode,
       weeklySchedule: weeklySchedule ?? this.weeklySchedule,
-      sessionDurationMinutes: sessionDurationMinutes ?? this.sessionDurationMinutes,
+      sessionDurationMinutes:
+          sessionDurationMinutes ?? this.sessionDurationMinutes,
       status: status ?? this.status,
       createdBy: createdBy,
       updatedBy: updatedBy ?? this.updatedBy,
@@ -179,11 +181,14 @@ class Circle extends AppModel {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Circle && runtimeType == other.runtimeType && circleId == other.circleId;
+      other is Circle &&
+          runtimeType == other.runtimeType &&
+          circleId == other.circleId;
 
   @override
   int get hashCode => circleId.hashCode;
 
   @override
-  String toString() => 'Circle(circleId: $circleId, name: $name, status: $status)';
+  String toString() =>
+      'Circle(circleId: $circleId, name: $name, status: $status)';
 }

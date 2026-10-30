@@ -23,7 +23,8 @@ class StudentActionException implements Exception {
 /// A student can only start a task and *report* practice; completion is the
 /// teacher's verification and is never reachable from here.
 class StudentWorkspace {
-  StudentWorkspace(this._ds, {DateTime Function()? clock}) : _now = clock ?? DateTime.now;
+  StudentWorkspace(this._ds, {DateTime Function()? clock})
+      : _now = clock ?? DateTime.now;
 
   final FirestoreDataSource _ds;
   final DateTime Function() _now;
@@ -48,7 +49,8 @@ class StudentWorkspace {
       QueryFilter.equal('circleId', circleId),
     ]);
     final list = docs
-        .map((d) => Schedule.fromJson(d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
+        .map((d) => Schedule.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .toList()
       ..sort((a, b) {
         final c = a.date.compareTo(b.date);
@@ -64,7 +66,8 @@ class StudentWorkspace {
       QueryFilter.equal('studentId', studentId),
     ]);
     return docs
-        .map((d) => Attendance.fromJson(d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
+        .map((d) => Attendance.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .toList();
   }
 
@@ -74,12 +77,14 @@ class StudentWorkspace {
       QueryFilter.equal('studentId', studentId),
     ]);
     return docs
-        .map((d) => LearningTask.fromJson(d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
+        .map((d) => LearningTask.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .toList()
       ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
   }
 
-  Future<List<MemorizationRecord>> feedback(String centerId, String studentId) async {
+  Future<List<MemorizationRecord>> feedback(
+      String centerId, String studentId) async {
     final docs = await _ds.query('memorization_records', where: [
       QueryFilter.equal('centerId', centerId),
       QueryFilter.equal('studentId', studentId),
@@ -91,15 +96,20 @@ class StudentWorkspace {
       ..sort((a, b) => b.assessedAt.compareTo(a.assessedAt));
   }
 
-  Future<LearningTask> _task(String centerId, String studentId, String taskId) async {
+  Future<LearningTask> _task(
+      String centerId, String studentId, String taskId) async {
     final raw = await _ds.getDoc('learning_tasks/$taskId');
-    if (raw == null || raw['centerId'] != centerId || raw['studentId'] != studentId) {
+    if (raw == null ||
+        raw['centerId'] != centerId ||
+        raw['studentId'] != studentId) {
       throw StudentActionException('لم يتم العثور على المهمة.');
     }
-    return LearningTask.fromJson(taskId, firestoreConverter.decodeFromRead(raw));
+    return LearningTask.fromJson(
+        taskId, firestoreConverter.decodeFromRead(raw));
   }
 
-  Future<void> _move(LearningTask t, TaskStatus to, Map<String, dynamic> extra) async {
+  Future<void> _move(
+      LearningTask t, TaskStatus to, Map<String, dynamic> extra) async {
     if (!canTransition(t.status, to, TaskActor.student)) {
       throw StudentActionException(
           'لا يمكن تنفيذ ذلك والمهمة في حالة «${taskStatusLabel(t.status)}».');
@@ -135,7 +145,8 @@ class StudentWorkspace {
   }
 
   /// Hand the practice over for the teacher to review.
-  Future<void> submitForReview(String centerId, String studentId, String taskId) async {
+  Future<void> submitForReview(
+      String centerId, String studentId, String taskId) async {
     final t = await _task(centerId, studentId, taskId);
     await _move(t, TaskStatus.submittedForReview, const {});
   }

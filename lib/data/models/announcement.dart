@@ -65,9 +65,9 @@ class Announcement extends AppModel {
       centerId: json['centerId'] as String,
       title: json['title'] as String,
       message: json['message'] as String,
-      targetAudience: AudienceTypeJson.fromJson(json['targetAudience'] as String?),
-      targetEntityIds:
-          (json['targetEntityIds'] as List<dynamic>?)
+      targetAudience:
+          AudienceTypeJson.fromJson(json['targetAudience'] as String?),
+      targetEntityIds: (json['targetEntityIds'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           [],

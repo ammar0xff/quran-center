@@ -8,7 +8,8 @@ import 'package:quran_center/core/sync/prefs_outbox_storage.dart';
 import 'package:quran_center/data/providers/repositories.dart';
 import 'package:quran_center/data/services/session_work.dart';
 
-final outboxStorageProvider = Provider<OutboxStorage>((ref) => SharedPrefsOutboxStorage());
+final outboxStorageProvider =
+    Provider<OutboxStorage>((ref) => SharedPrefsOutboxStorage());
 
 /// Fires whenever the device's connectivity changes. Tests replace it.
 final connectivityEventsProvider = Provider<Stream<void>>((ref) {
@@ -24,13 +25,15 @@ final connectivityEventsProvider = Provider<Stream<void>>((ref) {
 /// time the connection changes.
 final sessionWorkProvider = Provider<SessionWork>((ref) {
   final uid = ref.watch(currentSessionProvider.select((s) => s.profile?.uid));
-  if (uid == null) throw StateError('No signed-in user, so there is no outbox.');
+  if (uid == null)
+    throw StateError('No signed-in user, so there is no outbox.');
   final work = SessionWork.forOwner(
     ref.watch(teacherSessionServiceProvider),
     ref.watch(outboxStorageProvider),
     uid,
   );
-  final sub = ref.watch(connectivityEventsProvider).listen((_) => work.outbox.flush());
+  final sub =
+      ref.watch(connectivityEventsProvider).listen((_) => work.outbox.flush());
   ref.onDispose(() {
     sub.cancel();
     work.outbox.dispose();
@@ -40,7 +43,8 @@ final sessionWorkProvider = Provider<SessionWork>((ref) {
 });
 
 /// The queue's state, for indicators.
-final outboxSnapshotProvider = StreamProvider.autoDispose<OutboxSnapshot>((ref) async* {
+final outboxSnapshotProvider =
+    StreamProvider.autoDispose<OutboxSnapshot>((ref) async* {
   final box = ref.watch(sessionWorkProvider).outbox;
   await box.load();
   yield box.snapshot;

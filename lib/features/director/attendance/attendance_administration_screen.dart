@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+import 'package:quran_center/design_system/components/empty_state.dart';
+import 'package:quran_center/design_system/components/q_app_bar.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/core/utils/attendance_rules.dart';
 import 'package:quran_center/data/models/attendance.dart';
@@ -140,7 +142,7 @@ class _AttendanceAdministrationScreenState
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
-        appBar: AppBar(title: const Text('إدارة الحضور'), centerTitle: false),
+        appBar: QAppBar(title: const Text('إدارة الحضور'), centerTitle: false),
         body: _loading
             ? const Center(child: CircularProgressIndicator())
             : _error != null
@@ -181,17 +183,11 @@ class _AttendanceAdministrationScreenState
                       ),
                       const SizedBox(height: DesignTokens.space16),
                       if (items.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.all(DesignTokens.space32),
-                          child: Center(
-                            child: Text(
-                              _records.isEmpty
-                                  ? 'لا توجد سجلات حضور بعد'
-                                  : 'لا توجد سجلات مطابقة',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w600),
-                            ),
-                          ),
+                        EmptyState(
+                          _records.isEmpty
+                              ? 'لا توجد سجلات حضور بعد'
+                              : 'لا توجد سجلات مطابقة',
+                          icon: Icons.fact_check_rounded,
                         )
                       else
                         for (final r in items)

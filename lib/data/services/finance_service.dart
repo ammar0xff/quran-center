@@ -26,7 +26,8 @@ class Subscription {
   final int paid;
   final bool waived;
 
-  SubscriptionState get state => subscriptionState(due: due, paid: paid, waived: waived);
+  SubscriptionState get state =>
+      subscriptionState(due: due, paid: paid, waived: waived);
   int get owed => outstanding(due: due, paid: paid, waived: waived);
 }
 
@@ -37,7 +38,8 @@ class Payment {
         amount = j['amount'] as int,
         method = paymentMethodFrom(j['method'] as String?),
         note = j['note'] as String?,
-        paidAt = (j['paidAt'] as DateTime?) ?? DateTime.fromMillisecondsSinceEpoch(0),
+        paidAt = (j['paidAt'] as DateTime?) ??
+            DateTime.fromMillisecondsSinceEpoch(0),
         voided = (j['voided'] as bool?) ?? false;
   final String id;
   final String subscriptionId;
@@ -54,7 +56,8 @@ class Expense {
       : category = j['category'] as String,
         amount = j['amount'] as int,
         description = (j['description'] as String?) ?? '',
-        date = (j['date'] as DateTime?) ?? DateTime.fromMillisecondsSinceEpoch(0),
+        date =
+            (j['date'] as DateTime?) ?? DateTime.fromMillisecondsSinceEpoch(0),
         voided = (j['voided'] as bool?) ?? false,
         voidReason = j['voidReason'] as String?;
   final String id;
@@ -111,15 +114,28 @@ class FinanceData {
         month,
         subscriptions: [
           for (final s in subscriptions)
-            SubscriptionRec(month: s.month, due: s.due, paid: s.paid, waived: s.waived)
+            SubscriptionRec(
+                month: s.month, due: s.due, paid: s.paid, waived: s.waived)
         ],
-        payments: [for (final p in payments) PaymentRec(at: p.paidAt, amount: p.amount, voided: p.voided)],
+        payments: [
+          for (final p in payments)
+            PaymentRec(at: p.paidAt, amount: p.amount, voided: p.voided)
+        ],
         expenses: [
           for (final e in expenses)
-            ExpenseRec(date: e.date, amount: e.amount, category: e.category, voided: e.voided)
+            ExpenseRec(
+                date: e.date,
+                amount: e.amount,
+                category: e.category,
+                voided: e.voided)
         ],
         wages: [
-          for (final w in wages) WageRec(month: w.month, amount: w.amount, paid: w.paid, paidAt: w.paidAt)
+          for (final w in wages)
+            WageRec(
+                month: w.month,
+                amount: w.amount,
+                paid: w.paid,
+                paidAt: w.paidAt)
         ],
       );
 }
@@ -130,13 +146,15 @@ class FinanceData {
 /// with its audit entry, and a retried action (same id) changes nothing twice.
 /// Nothing is deleted: payments and expenses are voided with a reason.
 class FinanceService {
-  FinanceService(this._ds, {DateTime Function()? clock}) : _now = clock ?? DateTime.now;
+  FinanceService(this._ds, {DateTime Function()? clock})
+      : _now = clock ?? DateTime.now;
 
   final FirestoreDataSource _ds;
   final DateTime Function() _now;
 
-  Map<String, dynamic> _audit(String centerId, String actorId, String action, String type,
-          String id, Map<String, dynamic> newValue, [Map<String, dynamic>? previous]) =>
+  Map<String, dynamic> _audit(String centerId, String actorId, String action,
+          String type, String id, Map<String, dynamic> newValue,
+          [Map<String, dynamic>? previous]) =>
       {
         'centerId': centerId,
         'actorUserId': actorId,
@@ -152,10 +170,13 @@ class FinanceService {
   int _seq = 0;
 
   /// Unique even when two actions fall in the same microsecond.
-  String _auditPath(String entity) => 'audit_logs/aud_${_now().microsecondsSinceEpoch}_${_seq++}_$entity';
+  String _auditPath(String entity) =>
+      'audit_logs/aud_${_now().microsecondsSinceEpoch}_${_seq++}_$entity';
 
-  Future<List<Map<String, dynamic>>> _all(String collection, String centerId) async =>
-      (await _ds.query(collection, where: [QueryFilter.equal('centerId', centerId)]))
+  Future<List<Map<String, dynamic>>> _all(
+          String collection, String centerId) async =>
+      (await _ds.query(collection,
+              where: [QueryFilter.equal('centerId', centerId)]))
           .map((d) => {...firestoreConverter.decodeFromRead(d), 'id': d['id']})
           .toList();
 
@@ -169,8 +190,13 @@ class FinanceService {
       _all('wages', centerId),
     ).wait;
     return FinanceData(
-      fees: {for (final f in fees) f['studentId'] as String: f['monthlyFee'] as int},
-      rates: {for (final r in rates) r['teacherId'] as String: r['monthlyAmount'] as int},
+      fees: {
+        for (final f in fees) f['studentId'] as String: f['monthlyFee'] as int
+      },
+      rates: {
+        for (final r in rates)
+          r['teacherId'] as String: r['monthlyAmount'] as int
+      },
       subscriptions: [for (final s in subs) Subscription(s['id'] as String, s)]
         ..sort((a, b) {
           final m = b.month.compareTo(a.month);
@@ -180,8 +206,7 @@ class FinanceService {
         ..sort((a, b) => b.paidAt.compareTo(a.paidAt)),
       expenses: [for (final e in exps) Expense(e['id'] as String, e)]
         ..sort((a, b) => b.date.compareTo(a.date)),
-      wages: [for (final w in wages) Wage(w['id'] as String, w)]
-        ..sort((a, b) {
+      wages: [for (final w in wages) Wage(w['id'] as String, w)]..sort((a, b) {
           final m = b.month.compareTo(a.month);
           return m != 0 ? m : a.teacherName.compareTo(b.teacherName);
         }),
@@ -210,8 +235,15 @@ class FinanceService {
         'monthlyFee': monthlyFee,
         'updatedAt': firestoreConverter.timestampOf(_now()),
       }),
-      BatchOp.set(_auditPath(studentId),
-          _audit(centerId, actorId, 'set_student_fee', 'student', studentId, {'monthlyFee': monthlyFee},
+      BatchOp.set(
+          _auditPath(studentId),
+          _audit(
+              centerId,
+              actorId,
+              'set_student_fee',
+              'student',
+              studentId,
+              {'monthlyFee': monthlyFee},
               before == null ? null : {'monthlyFee': before['monthlyFee']})),
     ]);
   }
@@ -227,9 +259,12 @@ class FinanceService {
   }) async {
     if (!isMonthKey(month)) throw FinanceException('الشهر غير صالح.');
     final fees = {
-      for (final f in await _all('student_fees', centerId)) f['studentId'] as String: f['monthlyFee'] as int
+      for (final f in await _all('student_fees', centerId))
+        f['studentId'] as String: f['monthlyFee'] as int
     };
-    final existing = {for (final s in await _all('subscriptions', centerId)) s['id'] as String};
+    final existing = {
+      for (final s in await _all('subscriptions', centerId)) s['id'] as String
+    };
     final students = await _ds.query('students', where: [
       QueryFilter.equal('centerId', centerId),
       QueryFilter.equal('enrollmentStatus', 'active'),
@@ -244,7 +279,8 @@ class FinanceService {
       ops.add(BatchOp.set('subscriptions/$subId', {
         'centerId': centerId,
         'studentId': id,
-        'studentName': (s['preferredName'] as String?) ?? (s['fullName'] as String? ?? ''),
+        'studentName':
+            (s['preferredName'] as String?) ?? (s['fullName'] as String? ?? ''),
         'month': month,
         'amountDue': fee,
         'amountPaid': 0,
@@ -258,8 +294,10 @@ class FinanceService {
       final chunk = ops.sublist(i, (i + 450).clamp(0, ops.length));
       await _ds.commitBatch([
         ...chunk,
-        BatchOp.set('audit_logs/aud_${_now().microsecondsSinceEpoch}_subs_${month}_$i',
-            _audit(centerId, actorId, 'issue_subscriptions', 'subscription', month, {'count': chunk.length})),
+        BatchOp.set(
+            'audit_logs/aud_${_now().microsecondsSinceEpoch}_subs_${month}_$i',
+            _audit(centerId, actorId, 'issue_subscriptions', 'subscription',
+                month, {'count': chunk.length})),
       ]);
     }
     return ops.length;
@@ -282,7 +320,8 @@ class FinanceService {
     }
     final trimmed = note?.trim();
     await _ds.runTransaction((tx) async {
-      if (await tx.get('payments/$paymentId') != null) return; // a retry: already recorded
+      if (await tx.get('payments/$paymentId') != null)
+        return; // a retry: already recorded
       final sub = await tx.get('subscriptions/$subscriptionId');
       if (sub == null || sub['centerId'] != centerId) {
         throw FinanceException('لم يتم العثور على الاشتراك.');
@@ -302,7 +341,8 @@ class FinanceService {
         'createdAt': firestoreConverter.timestampOf(_now()),
       });
       tx.update('subscriptions/$subscriptionId', {'amountPaid': paid + amount});
-      tx.set(_auditPath(paymentId),
+      tx.set(
+          _auditPath(paymentId),
           _audit(centerId, actorId, 'record_payment', 'payment', paymentId,
               {'subscriptionId': subscriptionId, 'amount': amount}));
     });
@@ -318,7 +358,8 @@ class FinanceService {
     if (why.isEmpty) throw FinanceException('سبب الإلغاء مطلوب.');
     await _ds.runTransaction((tx) async {
       final p = await tx.get('payments/$paymentId');
-      if (p == null || p['centerId'] != centerId) throw FinanceException('لم يتم العثور على الدفعة.');
+      if (p == null || p['centerId'] != centerId)
+        throw FinanceException('لم يتم العثور على الدفعة.');
       if (p['voided'] == true) throw FinanceException('الدفعة ملغاة بالفعل.');
       final sub = await tx.get('subscriptions/${p['subscriptionId']}');
       tx.update('payments/$paymentId', {
@@ -328,12 +369,15 @@ class FinanceService {
         'voidedAt': firestoreConverter.timestampOf(_now()),
       });
       if (sub != null) {
-        tx.update('subscriptions/${p['subscriptionId']}',
-            {'amountPaid': ((sub['amountPaid'] as int) - (p['amount'] as int)).clamp(0, 1 << 40)});
+        tx.update('subscriptions/${p['subscriptionId']}', {
+          'amountPaid': ((sub['amountPaid'] as int) - (p['amount'] as int))
+              .clamp(0, 1 << 40)
+        });
       }
-      tx.set(_auditPath(paymentId),
-          _audit(centerId, actorId, 'void_payment', 'payment', paymentId, {'voided': true, 'reason': why},
-              {'amount': p['amount']}));
+      tx.set(
+          _auditPath(paymentId),
+          _audit(centerId, actorId, 'void_payment', 'payment', paymentId,
+              {'voided': true, 'reason': why}, {'amount': p['amount']}));
     });
   }
 
@@ -346,15 +390,19 @@ class FinanceService {
     final why = reason.trim();
     if (why.isEmpty) throw FinanceException('سبب الإعفاء مطلوب.');
     final sub = await _ds.getDoc('subscriptions/$subscriptionId');
-    if (sub == null || sub['centerId'] != centerId) throw FinanceException('لم يتم العثور على الاشتراك.');
+    if (sub == null || sub['centerId'] != centerId)
+      throw FinanceException('لم يتم العثور على الاشتراك.');
     if (sub['waived'] == true) return;
     if ((sub['amountPaid'] as int) > 0) {
       throw FinanceException('عليه مدفوعات. ألغِها أولًا إن أردت الإعفاء.');
     }
     await _ds.commitBatch([
-      BatchOp.update('subscriptions/$subscriptionId', {'waived': true, 'waivedReason': why}),
-      BatchOp.set(_auditPath(subscriptionId),
-          _audit(centerId, actorId, 'waive_subscription', 'subscription', subscriptionId, {'waived': true, 'reason': why})),
+      BatchOp.update('subscriptions/$subscriptionId',
+          {'waived': true, 'waivedReason': why}),
+      BatchOp.set(
+          _auditPath(subscriptionId),
+          _audit(centerId, actorId, 'waive_subscription', 'subscription',
+              subscriptionId, {'waived': true, 'reason': why})),
     ]);
   }
 
@@ -370,7 +418,8 @@ class FinanceService {
     String? description,
   }) async {
     if (amount <= 0) throw FinanceException('أدخل مبلغًا صحيحًا.');
-    if (!expenseCategories.containsKey(category)) throw FinanceException('اختر بند المصروف.');
+    if (!expenseCategories.containsKey(category))
+      throw FinanceException('اختر بند المصروف.');
     if (date.isAfter(_now().add(const Duration(days: 1)))) {
       throw FinanceException('تاريخ المصروف لا يمكن أن يكون في المستقبل.');
     }
@@ -387,8 +436,10 @@ class FinanceService {
         'voided': false,
         'createdAt': firestoreConverter.timestampOf(_now()),
       });
-      tx.set(_auditPath(expenseId),
-          _audit(centerId, actorId, 'add_expense', 'expense', expenseId, {'category': category, 'amount': amount}));
+      tx.set(
+          _auditPath(expenseId),
+          _audit(centerId, actorId, 'add_expense', 'expense', expenseId,
+              {'category': category, 'amount': amount}));
     });
   }
 
@@ -401,7 +452,8 @@ class FinanceService {
     final why = reason.trim();
     if (why.isEmpty) throw FinanceException('سبب الإلغاء مطلوب.');
     final e = await _ds.getDoc('expenses/$expenseId');
-    if (e == null || e['centerId'] != centerId) throw FinanceException('لم يتم العثور على المصروف.');
+    if (e == null || e['centerId'] != centerId)
+      throw FinanceException('لم يتم العثور على المصروف.');
     if (e['voided'] == true) throw FinanceException('المصروف ملغى بالفعل.');
     await _ds.commitBatch([
       BatchOp.update('expenses/$expenseId', {
@@ -410,9 +462,10 @@ class FinanceService {
         'voidedBy': actorId,
         'voidedAt': firestoreConverter.timestampOf(_now()),
       }),
-      BatchOp.set(_auditPath(expenseId),
-          _audit(centerId, actorId, 'void_expense', 'expense', expenseId, {'voided': true, 'reason': why},
-              {'amount': e['amount']})),
+      BatchOp.set(
+          _auditPath(expenseId),
+          _audit(centerId, actorId, 'void_expense', 'expense', expenseId,
+              {'voided': true, 'reason': why}, {'amount': e['amount']})),
     ]);
   }
 
@@ -426,7 +479,8 @@ class FinanceService {
   }) async {
     if (monthlyAmount < 0) throw FinanceException('المبلغ غير صالح.');
     final t = await _ds.getDoc('teachers/$teacherId');
-    if (t == null || t['centerId'] != centerId) throw FinanceException('لم يتم العثور على المعلمة.');
+    if (t == null || t['centerId'] != centerId)
+      throw FinanceException('لم يتم العثور على المعلمة.');
     final before = await _ds.getDoc('wage_rates/$teacherId');
     if (before != null && before['monthlyAmount'] == monthlyAmount) return;
     await _ds.commitBatch([
@@ -436,9 +490,18 @@ class FinanceService {
         'monthlyAmount': monthlyAmount,
         'updatedAt': firestoreConverter.timestampOf(_now()),
       }),
-      BatchOp.set(_auditPath(teacherId),
-          _audit(centerId, actorId, 'set_wage_rate', 'teacher', teacherId, {'monthlyAmount': monthlyAmount},
-              before == null ? null : {'monthlyAmount': before['monthlyAmount']})),
+      BatchOp.set(
+          _auditPath(teacherId),
+          _audit(
+              centerId,
+              actorId,
+              'set_wage_rate',
+              'teacher',
+              teacherId,
+              {'monthlyAmount': monthlyAmount},
+              before == null
+                  ? null
+                  : {'monthlyAmount': before['monthlyAmount']})),
     ]);
   }
 
@@ -451,9 +514,12 @@ class FinanceService {
   }) async {
     if (!isMonthKey(month)) throw FinanceException('الشهر غير صالح.');
     final rates = {
-      for (final r in await _all('wage_rates', centerId)) r['teacherId'] as String: r['monthlyAmount'] as int
+      for (final r in await _all('wage_rates', centerId))
+        r['teacherId'] as String: r['monthlyAmount'] as int
     };
-    final existing = {for (final w in await _all('wages', centerId)) w['id'] as String};
+    final existing = {
+      for (final w in await _all('wages', centerId)) w['id'] as String
+    };
     final teachers = await _ds.query('teachers', where: [
       QueryFilter.equal('centerId', centerId),
       QueryFilter.equal('status', 'active'),
@@ -480,8 +546,10 @@ class FinanceService {
     if (ops.isEmpty) return 0;
     await _ds.commitBatch([
       ...ops,
-      BatchOp.set('audit_logs/aud_${_now().microsecondsSinceEpoch}_wages_$month',
-          _audit(centerId, actorId, 'issue_wages', 'wage', month, {'count': ops.length})),
+      BatchOp.set(
+          'audit_logs/aud_${_now().microsecondsSinceEpoch}_wages_$month',
+          _audit(centerId, actorId, 'issue_wages', 'wage', month,
+              {'count': ops.length})),
     ]);
     return ops.length;
   }
@@ -495,10 +563,13 @@ class FinanceService {
     required String note,
   }) async {
     final why = note.trim();
-    if (adjustment != 0 && why.isEmpty) throw FinanceException('اكتب سبب التعديل.');
+    if (adjustment != 0 && why.isEmpty)
+      throw FinanceException('اكتب سبب التعديل.');
     final w = await _ds.getDoc('wages/$wageId');
-    if (w == null || w['centerId'] != centerId) throw FinanceException('لم يتم العثور على الأجر.');
-    if (w['status'] == 'paid') throw FinanceException('الأجر مدفوع ولا يمكن تعديله.');
+    if (w == null || w['centerId'] != centerId)
+      throw FinanceException('لم يتم العثور على الأجر.');
+    if (w['status'] == 'paid')
+      throw FinanceException('الأجر مدفوع ولا يمكن تعديله.');
     final base = (w['baseAmount'] as int?) ?? (w['amount'] as int);
     final amount = base + adjustment;
     if (amount < 0) throw FinanceException('الخصم أكبر من الأجر.');
@@ -508,8 +579,15 @@ class FinanceService {
         'adjustmentNote': why,
         'amount': amount,
       }),
-      BatchOp.set(_auditPath(wageId),
-          _audit(centerId, actorId, 'adjust_wage', 'wage', wageId, {'adjustment': adjustment, 'amount': amount},
+      BatchOp.set(
+          _auditPath(wageId),
+          _audit(
+              centerId,
+              actorId,
+              'adjust_wage',
+              'wage',
+              wageId,
+              {'adjustment': adjustment, 'amount': amount},
               {'amount': w['amount']})),
     ]);
   }
@@ -522,7 +600,8 @@ class FinanceService {
     DateTime? paidAt,
   }) async {
     final w = await _ds.getDoc('wages/$wageId');
-    if (w == null || w['centerId'] != centerId) throw FinanceException('لم يتم العثور على الأجر.');
+    if (w == null || w['centerId'] != centerId)
+      throw FinanceException('لم يتم العثور على الأجر.');
     if (w['status'] == 'paid') throw FinanceException('الأجر مدفوع بالفعل.');
     await _ds.commitBatch([
       BatchOp.update('wages/$wageId', {
@@ -531,8 +610,10 @@ class FinanceService {
         'paidAt': firestoreConverter.timestampOf(paidAt ?? _now()),
         'method': method.name,
       }),
-      BatchOp.set(_auditPath(wageId),
-          _audit(centerId, actorId, 'pay_wage', 'wage', wageId, {'amount': w['amount'], 'method': method.name})),
+      BatchOp.set(
+          _auditPath(wageId),
+          _audit(centerId, actorId, 'pay_wage', 'wage', wageId,
+              {'amount': w['amount'], 'method': method.name})),
     ]);
   }
 }

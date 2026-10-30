@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+import 'package:quran_center/design_system/components/marks.dart';
+import 'package:quran_center/design_system/components/empty_state.dart';
+import 'package:quran_center/design_system/components/q_app_bar.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/core/utils/supervision.dart';
 import 'package:quran_center/features/director/reports/reports_screen.dart'
@@ -20,8 +23,8 @@ class SupervisionScreen extends ConsumerWidget {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
-        appBar:
-            AppBar(title: const Text('المتابعة التعليمية'), centerTitle: false),
+        appBar: QAppBar(
+            title: const Text('المتابعة التعليمية'), centerTitle: false),
         body: async.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => Center(
@@ -52,11 +55,8 @@ class SupervisionScreen extends ConsumerWidget {
                   ),
                 ),
                 if (items.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(DesignTokens.space24),
-                    child: Text('لا توجد بنود للمتابعة الآن.',
-                        textAlign: TextAlign.center),
-                  ),
+                  const EmptyState('لا توجد بنود للمتابعة الآن.',
+                      icon: Icons.check_circle_outline_rounded),
                 for (final kind in FollowUpKind.values)
                   ..._section(context, kind,
                       items.where((i) => i.kind == kind).toList()),
@@ -73,12 +73,7 @@ class SupervisionScreen extends ConsumerWidget {
       BuildContext context, FollowUpKind kind, List<FollowUpItem> items) {
     if (items.isEmpty) return const [];
     return [
-      Padding(
-        padding: const EdgeInsets.only(
-            top: DesignTokens.space20, bottom: DesignTokens.space8),
-        child: Text('${followUpKindLabel(kind)} (${items.length})',
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-      ),
+      SectionTitle('${followUpKindLabel(kind)} (${items.length})'),
       for (final i in items)
         Card(
           child: ListTile(

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quran_center/design_system/components/empty_state.dart';
+import 'package:quran_center/design_system/components/q_app_bar.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/design_system/components/rosette.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
@@ -162,7 +164,7 @@ class _StudentManagementListScreenState
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
-        appBar: AppBar(
+        appBar: QAppBar(
           title: const Text('إدارة الطلاب'),
           centerTitle: false,
           actions: [
@@ -260,24 +262,13 @@ class _StudentManagementListScreenState
     );
   }
 
-  Widget _emptyNoStudents() => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.people_outline,
-                size: 64, color: DesignTokens.secondaryText),
-            const SizedBox(height: DesignTokens.space16),
-            const Text('لا يوجد طلاب',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-            const SizedBox(height: DesignTokens.space8),
-            const Text('أضف طالبًا جديدًا لبدء إدارة السجل التعليمي.',
-                style: TextStyle(color: DesignTokens.secondaryText)),
-            const SizedBox(height: DesignTokens.space24),
-            FilledButton(
-              onPressed: () => context.push('/director/students/add'),
-              child: const Text('إضافة أول طالب'),
-            ),
-          ],
+  Widget _emptyNoStudents() => EmptyState(
+        'أضف طالبًا جديدًا لبدء إدارة السجل التعليمي.',
+        icon: Icons.people_alt_rounded,
+        title: 'لا يوجد طلاب',
+        action: FilledButton(
+          onPressed: () => context.push('/director/students/add'),
+          child: const Text('إضافة أول طالب'),
         ),
       );
 

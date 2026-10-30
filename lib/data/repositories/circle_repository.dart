@@ -12,7 +12,8 @@ abstract class CircleRepository {
   Future<void> updateCircle(Circle circle);
 
   /// Archive a circle — enrollment history is preserved.
-  Future<void> archiveCircle(String circleId, {required String actorId, String? reason});
+  Future<void> archiveCircle(String circleId,
+      {required String actorId, String? reason});
 
   /// Stream of circles in a center (real-time).
   Stream<List<Circle>> watchCirclesByCenter(String centerId);

@@ -43,7 +43,8 @@ abstract class FirestoreDataSource {
   Future<Map<String, dynamic>?> getDoc(String path);
 
   /// Create/overwrite a document.
-  Future<void> setDoc(String path, Map<String, dynamic> data, {bool merge = false});
+  Future<void> setDoc(String path, Map<String, dynamic> data,
+      {bool merge = false});
 
   /// Update fields on an existing document.
   Future<void> updateDoc(String path, Map<String, dynamic> data);
@@ -171,9 +172,9 @@ class FirebaseFirestoreDataSource implements FirestoreDataSource {
       q = q.orderBy(orderBy, descending: descending);
     }
     return q.snapshots().map((snap) => snap.docs.map((d) {
-      final data = d.data();
-      return {...data, 'id': d.id};
-    }).toList());
+          final data = d.data();
+          return {...data, 'id': d.id};
+        }).toList());
   }
 }
 
@@ -191,7 +192,8 @@ class _FirebaseTx implements TxContext {
   }
 
   @override
-  void set(String path, Map<String, dynamic> data) => _ops.add(BatchOp.set(path, data));
+  void set(String path, Map<String, dynamic> data) =>
+      _ops.add(BatchOp.set(path, data));
 
   @override
   void update(String path, Map<String, dynamic> data) =>

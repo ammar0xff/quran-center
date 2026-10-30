@@ -44,17 +44,23 @@ TextStyle _label(Color c) => TextStyle(
     );
 
 final _filledStyle = ButtonStyle(
-  minimumSize: const WidgetStatePropertyAll(Size(64, DesignTokens.buttonHeight - _edge)),
-  padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 22, vertical: 12)),
+  minimumSize:
+      const WidgetStatePropertyAll(Size(64, DesignTokens.buttonHeight - _edge)),
+  padding: const WidgetStatePropertyAll(
+      EdgeInsets.symmetric(horizontal: 22, vertical: 12)),
   elevation: const WidgetStatePropertyAll(0),
   backgroundColor: const WidgetStatePropertyAll(Colors.transparent),
   surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
   overlayColor: const WidgetStatePropertyAll(Colors.transparent),
   shadowColor: const WidgetStatePropertyAll(Colors.transparent),
-  foregroundColor: WidgetStateProperty.resolveWith(
-      (s) => s.contains(WidgetState.disabled) ? const Color(0xFF8FA096) : Colors.white),
+  foregroundColor: WidgetStateProperty.resolveWith((s) =>
+      s.contains(WidgetState.disabled)
+          ? const Color(0xFF8FA096)
+          : Colors.white),
   textStyle: WidgetStatePropertyAll(_label(Colors.white)),
-  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusMedium)).asProperty,
+  shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusMedium))
+      .asProperty,
   backgroundBuilder: (context, states, child) => _chunky(
     states,
     child,
@@ -66,17 +72,23 @@ final _filledStyle = ButtonStyle(
 );
 
 final _outlinedStyle = ButtonStyle(
-  minimumSize: const WidgetStatePropertyAll(Size(64, DesignTokens.buttonHeight - _edge)),
-  padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
+  minimumSize:
+      const WidgetStatePropertyAll(Size(64, DesignTokens.buttonHeight - _edge)),
+  padding: const WidgetStatePropertyAll(
+      EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
   elevation: const WidgetStatePropertyAll(0),
   backgroundColor: const WidgetStatePropertyAll(Colors.transparent),
   surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
   overlayColor: const WidgetStatePropertyAll(Colors.transparent),
   side: const WidgetStatePropertyAll(BorderSide.none),
   foregroundColor: WidgetStateProperty.resolveWith((s) =>
-      s.contains(WidgetState.disabled) ? const Color(0xFF9AA9A0) : DesignTokens.primaryDarkGreen),
+      s.contains(WidgetState.disabled)
+          ? const Color(0xFF9AA9A0)
+          : DesignTokens.primaryDarkGreen),
   textStyle: WidgetStatePropertyAll(_label(DesignTokens.primaryDarkGreen)),
-  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusMedium)).asProperty,
+  shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusMedium))
+      .asProperty,
   backgroundBuilder: (context, states, child) => _chunky(
     states,
     child,
@@ -88,12 +100,29 @@ final _outlinedStyle = ButtonStyle(
   ),
 );
 
+/// White chunky button for use on the emerald header.
+final ButtonStyle onDarkButtonStyle = _filledStyle.copyWith(
+  foregroundColor: const WidgetStatePropertyAll(DesignTokens.primaryDarkGreen),
+  textStyle: WidgetStatePropertyAll(_label(DesignTokens.primaryDarkGreen)),
+  backgroundBuilder: (context, states, child) => _chunky(
+    states,
+    child,
+    face: Colors.white,
+    edge: const Color(0xFFBFD3C7),
+    disabledFace: const Color(0xFFD7E4DB),
+    disabledEdge: const Color(0xFFBFD3C7),
+  ),
+);
+
 extension on OutlinedBorder {
-  WidgetStateProperty<OutlinedBorder> get asProperty => WidgetStatePropertyAll(this);
+  WidgetStateProperty<OutlinedBorder> get asProperty =>
+      WidgetStatePropertyAll(this);
 }
 
 TextTheme _textTheme() {
-  TextStyle t(double size, FontWeight w, {Color c = DesignTokens.mainText, double h = 1.4}) => TextStyle(
+  TextStyle t(double size, FontWeight w,
+          {Color c = DesignTokens.mainText, double h = 1.4}) =>
+      TextStyle(
         fontFamily: DesignTokens.uiFont,
         fontSize: size,
         fontWeight: w,
@@ -107,7 +136,7 @@ TextTheme _textTheme() {
     titleLarge: t(18, FontWeight.w700),
     titleMedium: t(16, FontWeight.w600),
     bodyLarge: t(16, FontWeight.w400, h: 1.55),
-    bodyMedium: t(14, FontWeight.w400, c: DesignTokens.secondaryText, h: 1.5),
+    bodyMedium: t(14, FontWeight.w400, h: 1.5),
     bodySmall: t(12, FontWeight.w400, c: DesignTokens.secondaryText),
     labelLarge: t(14, FontWeight.w600),
   );
@@ -160,11 +189,18 @@ final ThemeData appLightTheme = ThemeData(
   listTileTheme: const ListTileThemeData(
     contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     titleTextStyle: TextStyle(
-        fontFamily: DesignTokens.uiFont, fontSize: 15, fontWeight: FontWeight.w600, color: DesignTokens.mainText),
+        fontFamily: DesignTokens.uiFont,
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+        color: DesignTokens.mainText),
     subtitleTextStyle: TextStyle(
-        fontFamily: DesignTokens.uiFont, fontSize: 13, color: DesignTokens.secondaryText, height: 1.5),
+        fontFamily: DesignTokens.uiFont,
+        fontSize: 13,
+        color: DesignTokens.secondaryText,
+        height: 1.5),
   ),
-  dividerTheme: const DividerThemeData(color: DesignTokens.borders, thickness: 1, space: 1),
+  dividerTheme: const DividerThemeData(
+      color: DesignTokens.borders, thickness: 1, space: 1),
   inputDecorationTheme: InputDecorationTheme(
     filled: true,
     fillColor: Colors.white,
@@ -175,7 +211,16 @@ final ThemeData appLightTheme = ThemeData(
     focusedErrorBorder: _field(DesignTokens.error, 2),
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     labelStyle: const TextStyle(color: DesignTokens.secondaryText),
-    floatingLabelStyle: const TextStyle(color: DesignTokens.primaryDarkGreen, fontWeight: FontWeight.w600),
+    floatingLabelStyle: const TextStyle(
+        color: DesignTokens.primaryDarkGreen, fontWeight: FontWeight.w600),
+  ),
+  floatingActionButtonTheme: FloatingActionButtonThemeData(
+    backgroundColor: DesignTokens.leaf,
+    foregroundColor: Colors.white,
+    elevation: 2,
+    extendedTextStyle: _label(Colors.white),
+    shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMedium)),
   ),
   filledButtonTheme: FilledButtonThemeData(style: _filledStyle),
   elevatedButtonTheme: ElevatedButtonThemeData(style: _filledStyle),
@@ -184,7 +229,8 @@ final ThemeData appLightTheme = ThemeData(
     style: TextButton.styleFrom(
       foregroundColor: DesignTokens.primaryDarkGreen,
       textStyle: _label(DesignTokens.primaryDarkGreen).copyWith(fontSize: 15),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusSmall)),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusSmall)),
     ),
   ),
   chipTheme: ChipThemeData(
@@ -192,11 +238,18 @@ final ThemeData appLightTheme = ThemeData(
     selectedColor: DesignTokens.softMint,
     side: const BorderSide(color: DesignTokens.bordersStrong, width: 1.5),
     labelStyle: const TextStyle(
-        fontFamily: DesignTokens.uiFont, fontSize: 14, fontWeight: FontWeight.w600, color: DesignTokens.mainText),
+        fontFamily: DesignTokens.uiFont,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: DesignTokens.mainText),
     secondaryLabelStyle: const TextStyle(
-        fontFamily: DesignTokens.uiFont, fontSize: 14, fontWeight: FontWeight.w700, color: DesignTokens.primaryDarkGreen),
+        fontFamily: DesignTokens.uiFont,
+        fontSize: 14,
+        fontWeight: FontWeight.w700,
+        color: DesignTokens.primaryDarkGreen),
     checkmarkColor: DesignTokens.primaryDarkGreen,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusMedium)),
+    shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMedium)),
     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
     showCheckmark: false,
   ),
@@ -206,32 +259,48 @@ final ThemeData appLightTheme = ThemeData(
     indicatorColor: DesignTokens.primaryDarkGreen,
     indicatorSize: TabBarIndicatorSize.label,
     dividerColor: DesignTokens.borders,
-    labelStyle: TextStyle(fontFamily: DesignTokens.uiFont, fontSize: 14, fontWeight: FontWeight.w700),
-    unselectedLabelStyle: TextStyle(fontFamily: DesignTokens.uiFont, fontSize: 14, fontWeight: FontWeight.w500),
+    labelStyle: TextStyle(
+        fontFamily: DesignTokens.uiFont,
+        fontSize: 14,
+        fontWeight: FontWeight.w700),
+    unselectedLabelStyle: TextStyle(
+        fontFamily: DesignTokens.uiFont,
+        fontSize: 14,
+        fontWeight: FontWeight.w500),
   ),
   dialogTheme: DialogThemeData(
     backgroundColor: Colors.white,
     surfaceTintColor: Colors.transparent,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusFull)),
+    shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(DesignTokens.radiusFull)),
     titleTextStyle: _textTheme().titleLarge,
   ),
   bottomSheetTheme: const BottomSheetThemeData(
     backgroundColor: Colors.white,
     surfaceTintColor: Colors.transparent,
     showDragHandle: true,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+    shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
   ),
   snackBarTheme: SnackBarThemeData(
     behavior: SnackBarBehavior.floating,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(DesignTokens.radiusMedium)),
+    shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(DesignTokens.radiusMedium)),
     contentTextStyle: const TextStyle(
-        fontFamily: DesignTokens.uiFont, fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
+        fontFamily: DesignTokens.uiFont,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: Colors.white),
   ),
   switchTheme: SwitchThemeData(
-    thumbColor: WidgetStateProperty.resolveWith(
-        (s) => s.contains(WidgetState.selected) ? Colors.white : const Color(0xFF9AA9A0)),
-    trackColor: WidgetStateProperty.resolveWith(
-        (s) => s.contains(WidgetState.selected) ? DesignTokens.leaf : const Color(0xFFE3EAE5)),
+    thumbColor: WidgetStateProperty.resolveWith((s) =>
+        s.contains(WidgetState.selected)
+            ? Colors.white
+            : const Color(0xFF9AA9A0)),
+    trackColor: WidgetStateProperty.resolveWith((s) =>
+        s.contains(WidgetState.selected)
+            ? DesignTokens.leaf
+            : const Color(0xFFE3EAE5)),
     trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
   ),
   progressIndicatorTheme: const ProgressIndicatorThemeData(

@@ -22,7 +22,8 @@ class CustomBottomNav extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: DesignTokens.borders, width: 1.5)),
+        border:
+            Border(top: BorderSide(color: DesignTokens.borders, width: 1.5)),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SafeArea(
@@ -33,7 +34,9 @@ class CustomBottomNav extends StatelessWidget {
             children: List.generate(items.length, (i) {
               final item = items[i];
               final active = i == currentIndex;
-              final color = active ? DesignTokens.primaryDarkGreen : DesignTokens.secondaryText;
+              final color = active
+                  ? DesignTokens.primaryDarkGreen
+                  : DesignTokens.secondaryText;
               return Expanded(
                 child: Semantics(
                   button: true,
@@ -50,20 +53,31 @@ class CustomBottomNav extends StatelessWidget {
                           width: 52,
                           height: 32,
                           decoration: BoxDecoration(
-                            color: active ? DesignTokens.softMint : Colors.transparent,
+                            color: active
+                                ? DesignTokens.softMint
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(16),
                             border: active
-                                ? Border.all(color: DesignTokens.primaryDarkGreen.withValues(alpha: 0.35), width: 1.5)
+                                ? Border.all(
+                                    color: DesignTokens.primaryDarkGreen
+                                        .withValues(alpha: 0.35),
+                                    width: 1.5)
                                 : null,
                           ),
-                          child: Icon(active ? (item.activeIcon ?? item.icon) : item.icon, size: 22, color: color),
+                          child: Icon(
+                              active
+                                  ? (item.activeIcon ?? item.icon)
+                                  : item.icon,
+                              size: 22,
+                              color: color),
                         ),
                         const SizedBox(height: 3),
                         Text(
                           item.label,
                           style: TextStyle(
                             fontSize: 11,
-                            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                            fontWeight:
+                                active ? FontWeight.w700 : FontWeight.w500,
                             color: color,
                           ),
                           overflow: TextOverflow.ellipsis,

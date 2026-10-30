@@ -23,7 +23,8 @@ class Notification extends AppModel {
   final String notificationId;
   final String recipientUserId;
   final String centerId;
-  final String type; // session_reminder | schedule_change | new_assignment | ...
+  final String
+      type; // session_reminder | schedule_change | new_assignment | ...
   final String title;
   final String message;
   final String? relatedEntityType;
@@ -31,7 +32,8 @@ class Notification extends AppModel {
   final DateTime createdAt;
   final bool read;
   final DateTime? readAt;
-  final Map<String, dynamic>? deliveryMetadata; // {sentVia, messageId?, status?}
+  final Map<String, dynamic>?
+      deliveryMetadata; // {sentVia, messageId?, status?}
 
   Notification copyWith({
     bool? read,

@@ -32,7 +32,10 @@ class KpiCard extends StatelessWidget {
           child: Row(
             children: [
               if (icon != null) ...[
-                Rosette(size: 44, color: accent, child: Icon(icon, color: Colors.white, size: 20)),
+                Rosette(
+                    size: 44,
+                    color: accent,
+                    child: Icon(icon, color: Colors.white, size: 20)),
                 const SizedBox(width: 12),
               ],
               Expanded(
@@ -42,10 +45,16 @@ class KpiCard extends StatelessWidget {
                   children: [
                     Text(value,
                         style: const TextStyle(
-                            fontSize: 26, fontWeight: FontWeight.w800, color: DesignTokens.mainText, height: 1.1)),
+                            fontSize: 26,
+                            fontWeight: FontWeight.w800,
+                            color: DesignTokens.mainText,
+                            height: 1.1)),
                     const SizedBox(height: 2),
                     Text(label,
-                        style: const TextStyle(fontSize: 13, color: DesignTokens.secondaryText, height: 1.3),
+                        style: const TextStyle(
+                            fontSize: 13,
+                            color: DesignTokens.secondaryText,
+                            height: 1.3),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis),
                   ],

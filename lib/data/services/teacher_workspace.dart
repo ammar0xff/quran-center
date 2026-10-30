@@ -22,7 +22,8 @@ class TeacherWorkspace {
       QueryFilter.equal('teacherId', teacherId),
     ]);
     return docs
-        .map((d) => Schedule.fromJson(d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
+        .map((d) => Schedule.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .toList();
   }
 
@@ -32,7 +33,8 @@ class TeacherWorkspace {
       QueryFilter.equal('assignedTeacherId', teacherId),
     ]);
     return docs
-        .map((d) => Circle.fromJson(d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
+        .map((d) => Circle.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .toList();
   }
 
@@ -42,18 +44,21 @@ class TeacherWorkspace {
       QueryFilter.arrayContains('assignedTeacherIds', teacherId),
     ]);
     return docs
-        .map((d) => Student.fromJson(d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
+        .map((d) => Student.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .toList();
   }
 
-  Future<List<Enrollment>> activeEnrollments(String centerId, String teacherId) async {
+  Future<List<Enrollment>> activeEnrollments(
+      String centerId, String teacherId) async {
     final docs = await _ds.query('enrollments', where: [
       QueryFilter.equal('centerId', centerId),
       QueryFilter.equal('teacherId', teacherId),
       QueryFilter.equal('status', 'active'),
     ]);
     return docs
-        .map((d) => Enrollment.fromJson(d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
+        .map((d) => Enrollment.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .toList();
   }
 
@@ -82,7 +87,9 @@ class TeacherWorkspace {
       QueryFilter.equal('teacherId', teacherId),
       QueryFilter.equal('studentId', studentId),
     ]);
-    return {for (final d in docs) d['id'] as String: (d['note'] ?? '') as String};
+    return {
+      for (final d in docs) d['id'] as String: (d['note'] ?? '') as String
+    };
   }
 
   /// Attendance this teacher recorded for one student.

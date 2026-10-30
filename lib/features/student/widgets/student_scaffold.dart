@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quran_center/design_system/components/q_app_bar.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/features/student/student_data.dart';
 import 'package:quran_center/features/student/widgets/student_bottom_nav.dart';
@@ -58,7 +59,7 @@ class StudentScaffold extends ConsumerWidget {
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
         appBar:
-            showAppBar ? AppBar(title: Text(title), centerTitle: false) : null,
+            showAppBar ? QAppBar(title: Text(title), centerTitle: false) : null,
         body: edgeToEdge ? body : SafeArea(child: body),
         bottomNavigationBar: StudentBottomNav(currentIndex: navIndex),
       ),

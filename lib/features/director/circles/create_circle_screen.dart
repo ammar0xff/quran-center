@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quran_center/design_system/components/q_app_bar.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/core/utils/circle_validation.dart';
@@ -132,7 +133,7 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
-        appBar: AppBar(title: const Text('إنشاء حلقة'), centerTitle: false),
+        appBar: QAppBar(title: const Text('إنشاء حلقة'), centerTitle: false),
         body: ListView(
           padding: const EdgeInsets.all(DesignTokens.space20),
           children: [

@@ -39,14 +39,16 @@ Map<String, dynamic> notificationDoc({
     };
 
 /// Unique per notification, so sending never overwrites an earlier one.
-String newNotificationId(DateTime now, String recipientUserId, [String tag = 'n']) =>
+String newNotificationId(DateTime now, String recipientUserId,
+        [String tag = 'n']) =>
     '${tag}_${now.microsecondsSinceEpoch}_$recipientUserId';
 
 /// The signed-in user's inbox, and the director's announcement publishing.
 ///
 /// Push delivery (FCM) is not wired: notifications are delivered in the app.
 class NotificationService {
-  NotificationService(this._ds, {DateTime Function()? clock}) : _now = clock ?? DateTime.now;
+  NotificationService(this._ds, {DateTime Function()? clock})
+      : _now = clock ?? DateTime.now;
 
   final FirestoreDataSource _ds;
   final DateTime Function() _now;
@@ -61,7 +63,8 @@ class NotificationService {
       QueryFilter.equal('recipientUserId', uid),
     ]);
     return docs
-        .map((d) => Notification.fromJson(d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
+        .map((d) => Notification.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
@@ -97,9 +100,12 @@ class NotificationService {
     final m = message.trim();
     if (t.isEmpty) throw NotificationException('العنوان مطلوب.');
     if (m.isEmpty) throw NotificationException('نص الإعلان مطلوب.');
-    if (t.length > 120) throw NotificationException('العنوان طويل جدًا (الحد 120 حرفًا).');
-    if (m.length > 2000) throw NotificationException('النص طويل جدًا (الحد 2000 حرف).');
-    if ((audience == AudienceType.selectedCircles || audience == AudienceType.selectedUsers) &&
+    if (t.length > 120)
+      throw NotificationException('العنوان طويل جدًا (الحد 120 حرفًا).');
+    if (m.length > 2000)
+      throw NotificationException('النص طويل جدًا (الحد 2000 حرف).');
+    if ((audience == AudienceType.selectedCircles ||
+            audience == AudienceType.selectedUsers) &&
         targetIds.isEmpty) {
       throw NotificationException('اختر الجهة المستهدفة.');
     }
@@ -113,7 +119,8 @@ class NotificationService {
       circles: circles,
     );
     if (recipients.isEmpty) {
-      throw NotificationException('لا يوجد مستلمون لهذا الإعلان (لا حسابات مفعّلة في هذه الجهة).');
+      throw NotificationException(
+          'لا يوجد مستلمون لهذا الإعلان (لا حسابات مفعّلة في هذه الجهة).');
     }
     if (recipients.length > maxRecipients) {
       throw NotificationException(
@@ -148,14 +155,18 @@ class NotificationService {
             now: now,
           ),
         ),
-      BatchOp.set('audit_logs/aud_${now.microsecondsSinceEpoch}_$announcementId', {
+      BatchOp.set(
+          'audit_logs/aud_${now.microsecondsSinceEpoch}_$announcementId', {
         'centerId': centerId,
         'actorUserId': senderId,
         'actorRole': senderRole,
         'action': 'publish_announcement',
         'entityType': 'announcement',
         'entityId': announcementId,
-        'newValue': {'audience': audience.toJson(), 'recipients': recipients.length},
+        'newValue': {
+          'audience': audience.toJson(),
+          'recipients': recipients.length
+        },
         'createdAt': now.millisecondsSinceEpoch,
       }),
     ]);
@@ -163,12 +174,15 @@ class NotificationService {
   }
 
   Future<List<Map<String, dynamic>>> announcements(String centerId) async {
-    final docs = await _ds.query('announcements', where: [QueryFilter.equal('centerId', centerId)]);
+    final docs = await _ds.query('announcements',
+        where: [QueryFilter.equal('centerId', centerId)]);
     docs.sort((a, b) {
       final x = firestoreConverter.decodeFromRead(a)['createdAt'];
       final y = firestoreConverter.decodeFromRead(b)['createdAt'];
       return (y is DateTime && x is DateTime) ? y.compareTo(x) : 0;
     });
-    return docs.map((d) => firestoreConverter.decodeFromRead(d)..['id'] = d['id']).toList();
+    return docs
+        .map((d) => firestoreConverter.decodeFromRead(d)..['id'] = d['id'])
+        .toList();
   }
 }

@@ -33,7 +33,8 @@ class OutboxOp {
 
   bool get failed => error != null;
 
-  OutboxOp copyWith({int? attempts, String? error, bool clearError = false}) => OutboxOp(
+  OutboxOp copyWith({int? attempts, String? error, bool clearError = false}) =>
+      OutboxOp(
         key: key,
         type: type,
         payload: payload,
@@ -98,7 +99,8 @@ class OutboxSnapshot {
   int get pending => ops.where((o) => !o.failed).length;
   int get failed => ops.where((o) => o.failed).length;
   bool get isEmpty => ops.isEmpty;
-  Iterable<OutboxOp> inScope(String scope) => ops.where((o) => o.scope == scope);
+  Iterable<OutboxOp> inScope(String scope) =>
+      ops.where((o) => o.scope == scope);
 }
 
 /// A durable, ordered queue of changes for ONE owner (one signed-in user).
@@ -129,7 +131,8 @@ class Outbox {
   bool _flushAgain = false;
 
   Stream<OutboxSnapshot> get changes => _changes.stream;
-  OutboxSnapshot get snapshot => OutboxSnapshot(List.unmodifiable(_ops), syncing: _flushing);
+  OutboxSnapshot get snapshot =>
+      OutboxSnapshot(List.unmodifiable(_ops), syncing: _flushing);
 
   Future<void> load() async {
     if (_loaded) return;
@@ -137,8 +140,8 @@ class Outbox {
     final raw = await storage.read(owner);
     if (raw != null && raw.isNotEmpty) {
       try {
-        _ops.addAll((jsonDecode(raw) as List)
-            .map((e) => OutboxOp.fromJson(Map<String, dynamic>.from(e as Map))));
+        _ops.addAll((jsonDecode(raw) as List).map(
+            (e) => OutboxOp.fromJson(Map<String, dynamic>.from(e as Map))));
       } catch (_) {
         // A corrupt queue must not brick the app; start empty.
       }
@@ -206,14 +209,17 @@ class Outbox {
           await _persist();
           _emit();
         } else if (latest != null) {
-          _flushAgain = true; // a newer intent arrived while this one was sending
+          _flushAgain =
+              true; // a newer intent arrived while this one was sending
         }
       } on PermanentOutboxFailure catch (e) {
-        await _replace(current, current.copyWith(attempts: current.attempts + 1, error: e.message));
+        await _replace(current,
+            current.copyWith(attempts: current.attempts + 1, error: e.message));
       } catch (_) {
         // Temporary (offline, timeout, server busy): keep it and stop here so
         // the order of later changes is preserved.
-        await _replace(current, current.copyWith(attempts: current.attempts + 1));
+        await _replace(
+            current, current.copyWith(attempts: current.attempts + 1));
         return;
       }
     }

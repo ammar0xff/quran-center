@@ -4,7 +4,12 @@ import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/data/models/student.dart';
 
 /// Why a student cannot be assigned to a circle.
-enum AssignmentError { studentNotActive, circleNotActive, circleFull, alreadyInCircle }
+enum AssignmentError {
+  studentNotActive,
+  circleNotActive,
+  circleFull,
+  alreadyInCircle
+}
 
 /// What assigning a student to a circle will do.
 class AssignmentPlan {
@@ -20,7 +25,8 @@ class AssignmentPlan {
 
   /// The student's `assignedTeacherIds` after the change. Security Rules use
   /// this field to decide which teacher may read the student.
-  List<String> get studentTeacherIds => teacherId == null ? const [] : [teacherId!];
+  List<String> get studentTeacherIds =>
+      teacherId == null ? const [] : [teacherId!];
 }
 
 class AssignmentResult {

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quran_center/design_system/components/app_hero.dart';
+import 'package:quran_center/design_system/components/q_app_bar.dart';
 import 'package:quran_center/core/auth/auth_gateway.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
@@ -105,10 +107,12 @@ class TeacherMoreScreen extends ConsumerWidget {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
-        appBar: AppBar(title: const Text('حسابي'), centerTitle: false),
+        appBar: QAppBar(title: const Text('حسابي'), centerTitle: false),
         body: ListView(
           padding: const EdgeInsets.all(DesignTokens.space20),
           children: [
+            ProfileBanner(name: profile?.fullName ?? '', subtitle: 'معلمة'),
+            const SizedBox(height: DesignTokens.space12),
             Card(
               child: Column(children: [
                 row('الاسم', profile?.fullName ?? '—'),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quran_center/design_system/components/q_app_bar.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/core/utils/csv.dart';
@@ -96,7 +97,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
-        appBar: AppBar(title: const Text('التقارير'), centerTitle: false),
+        appBar: QAppBar(title: const Text('التقارير'), centerTitle: false),
         body: async.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => Center(

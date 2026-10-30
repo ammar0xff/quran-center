@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+import 'package:quran_center/design_system/components/marks.dart';
+import 'package:quran_center/design_system/components/empty_state.dart';
+import 'package:quran_center/design_system/components/q_app_bar.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/finance/finance_rules.dart';
 import 'package:quran_center/core/finance/money.dart';
@@ -129,7 +132,7 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
         length: 4,
         child: Scaffold(
           backgroundColor: DesignTokens.warmOffWhite,
-          appBar: AppBar(
+          appBar: QAppBar(
             title: const Text('المالية'),
             centerTitle: false,
             bottom: PreferredSize(
@@ -138,22 +141,32 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   IconButton(
                       tooltip: 'الشهر السابق',
+                      color: Colors.white,
                       onPressed: () => _shift(-1),
-                      icon: const Icon(Icons.chevron_right)),
+                      icon: const Icon(Icons.chevron_right_rounded)),
                   Text(monthLabel(_month),
                       style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w700)),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white)),
                   IconButton(
                       tooltip: 'الشهر التالي',
+                      color: Colors.white,
                       onPressed: () => _shift(1),
-                      icon: const Icon(Icons.chevron_left)),
+                      icon: const Icon(Icons.chevron_left_rounded)),
                 ]),
-                const TabBar(tabs: [
-                  Tab(text: 'الاشتراكات'),
-                  Tab(text: 'المصروفات'),
-                  Tab(text: 'الأجور'),
-                  Tab(text: 'الملخص'),
-                ]),
+                const TabBar(
+                    labelColor: Colors.white,
+                    unselectedLabelColor: Color(0xB3FFFFFF),
+                    indicatorColor: DesignTokens.gold,
+                    indicatorWeight: 3,
+                    dividerColor: Colors.transparent,
+                    tabs: [
+                      Tab(text: 'الاشتراكات'),
+                      Tab(text: 'المصروفات'),
+                      Tab(text: 'الأجور'),
+                      Tab(text: 'الملخص'),
+                    ]),
               ]),
             ),
           ),
@@ -223,12 +236,7 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
                     const TextStyle(fontSize: 12, color: DesignTokens.warning)),
           ),
         const SizedBox(height: DesignTokens.space12),
-        if (subs.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(DesignTokens.space24),
-            child: Text('لا توجد اشتراكات لهذا الشهر بعد.',
-                textAlign: TextAlign.center),
-          ),
+        if (subs.isEmpty) EmptyState('لا توجد اشتراكات لهذا الشهر بعد.'),
         for (final s in subs)
           Card(
             child: ListTile(
@@ -269,9 +277,7 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
               shrinkWrap: true,
               padding: const EdgeInsets.all(DesignTokens.space16),
               children: [
-                const Text('الرسوم الشهرية لكل طالب',
-                    style:
-                        TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+                const SectionTitle('الرسوم الشهرية لكل طالب'),
                 for (final s in b.students)
                   ListTile(
                     title: Text(s.name),
@@ -496,12 +502,7 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
         Text('إجمالي المصروفات: ${formatAmount(total)}',
             style: const TextStyle(fontWeight: FontWeight.w700)),
         const SizedBox(height: DesignTokens.space8),
-        if (items.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(DesignTokens.space24),
-            child: Text('لا توجد مصروفات في هذا الشهر.',
-                textAlign: TextAlign.center),
-          ),
+        if (items.isEmpty) EmptyState('لا توجد مصروفات في هذا الشهر.'),
         for (final e in items)
           Card(
             child: ListTile(
@@ -649,12 +650,7 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
               child: const Text('الأجر المتفق عليه')),
         ]),
         const SizedBox(height: DesignTokens.space12),
-        if (items.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(DesignTokens.space24),
-            child: Text('لا توجد أجور لهذا الشهر بعد.',
-                textAlign: TextAlign.center),
-          ),
+        if (items.isEmpty) EmptyState('لا توجد أجور لهذا الشهر بعد.'),
         for (final w in items)
           Card(
             child: ListTile(
@@ -698,9 +694,7 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
               shrinkWrap: true,
               padding: const EdgeInsets.all(DesignTokens.space16),
               children: [
-                const Text('الأجر الشهري المتفق عليه',
-                    style:
-                        TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+                const SectionTitle('الأجر الشهري المتفق عليه'),
                 if (b.teachers.isEmpty) const Text('لا يوجد معلمون نشطون.'),
                 for (final t in b.teachers)
                   ListTile(

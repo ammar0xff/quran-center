@@ -198,7 +198,8 @@ void main() {
       expect(find.text('المعلمة فاطمة'), findsOneWidget);
       expect(find.text('المعلمة خديجة'), findsOneWidget);
       // t1 heard 2 graded wirds (excellent 5, repeat 1) -> gave 3.0.
-      expect(find.text('متوسط ما أعطته: 3.0 (جيد)'), findsWidgets);
+      expect(find.text('3.0 (جيد)'), findsWidgets);
+      expect(find.text('متوسط ما أعطته'), findsWidgets);
     });
 
     testWidgets('a student opens from the list to their profile level tab', (tester) async {

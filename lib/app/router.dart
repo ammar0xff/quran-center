@@ -95,8 +95,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/director/students/:id',
-        builder: (_, state) =>
-            DirectorStudentProfileScreen(studentId: state.pathParameters['id']!),
+        builder: (_, state) => DirectorStudentProfileScreen(
+            studentId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/director/teachers',
@@ -202,7 +202,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/teacher/students/:id/tasks/new',
-        builder: (_, state) => NewTaskScreen(studentId: state.pathParameters['id']!),
+        builder: (_, state) =>
+            NewTaskScreen(studentId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/teacher/circles',

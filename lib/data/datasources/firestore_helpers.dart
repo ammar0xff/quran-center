@@ -10,13 +10,15 @@ class FirestoreConverter {
   /// they are queryable and stored with proper type.
   ///
   /// [timestampKeys] are the map keys holding DateTime/milliseconds values.
-  JsonMap encodeForWrite(JsonMap data, {Iterable<String> timestampKeys = const []}) {
+  JsonMap encodeForWrite(JsonMap data,
+      {Iterable<String> timestampKeys = const []}) {
     final result = <String, dynamic>{};
     final tsKeys = timestampKeys.toSet();
     data.forEach((key, value) {
       if (tsKeys.contains(key)) {
         if (value is DateTime) {
-          result[key] = Timestamp.fromMillisecondsSinceEpoch(value.millisecondsSinceEpoch);
+          result[key] = Timestamp.fromMillisecondsSinceEpoch(
+              value.millisecondsSinceEpoch);
         } else if (value is int) {
           result[key] = Timestamp.fromMillisecondsSinceEpoch(value);
         } else {

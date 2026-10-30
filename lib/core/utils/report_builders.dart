@@ -124,10 +124,12 @@ List<TeacherActivityRow> teacherActivity(ReportData d, ReportPeriod period) {
             .length,
         attendanceRecorded: d.attendance
             .where((a) =>
-                a.recordedBy == t.teacherId && period.contains(attendanceDay(a, sessions)))
+                a.recordedBy == t.teacherId &&
+                period.contains(attendanceDay(a, sessions)))
             .length,
         assessments: d.assessments
-            .where((m) => m.teacherId == t.teacherId && period.contains(m.assessedAt))
+            .where((m) =>
+                m.teacherId == t.teacherId && period.contains(m.assessedAt))
             .length,
         tasksAwaitingVerification: d.tasks
             .where((k) =>
@@ -190,7 +192,9 @@ List<CircleRow> circleOverview(ReportData d, ReportPeriod period) {
               .length,
           summary: AttendanceSummary.from(d.attendance.where((a) {
             final s = sessions[a.sessionId];
-            return s != null && s.circleId == c.circleId && period.contains(s.date);
+            return s != null &&
+                s.circleId == c.circleId &&
+                period.contains(s.date);
           })),
         ),
   ]..sort((a, b) => a.name.compareTo(b.name));

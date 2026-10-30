@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quran_center/design_system/components/q_app_bar.dart';
 import 'package:quran_center/core/auth/app_session.dart';
 import 'package:quran_center/core/auth/auth_gateway.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
@@ -53,7 +54,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
-        appBar: AppBar(title: const Text('استعادة كلمة المرور')),
+        appBar: QAppBar(title: const Text('استعادة كلمة المرور')),
         body: Padding(
           padding: const EdgeInsets.all(DesignTokens.space24),
           child: _sent ? _confirmation(context) : _form(),

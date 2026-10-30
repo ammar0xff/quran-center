@@ -353,7 +353,6 @@ extension PlanStatusJson on PlanStatus {
 
 /// Task type alias for learning tasks (uses TaskType directly).
 
-
 /// The mark a teacher gives to ONE wird (what a student recited).
 /// ممتاز / جيد جدًا / جيد / مقبول / إعادة.
 enum WirdGrade { excellent, veryGood, good, acceptable, repeat }

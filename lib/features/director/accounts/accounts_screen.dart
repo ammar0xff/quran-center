@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quran_center/design_system/components/rosette.dart';
+import 'package:quran_center/design_system/components/empty_state.dart';
+import 'package:quran_center/design_system/components/q_app_bar.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/data/models/enums.dart';
@@ -96,7 +99,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
-        appBar: AppBar(title: const Text('الحسابات'), centerTitle: false),
+        appBar: QAppBar(title: const Text('الحسابات'), centerTitle: false),
         body: async.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => Center(
@@ -158,7 +161,7 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                 ),
                 Expanded(
                   child: items.isEmpty
-                      ? const Center(child: Text('لا توجد حسابات مطابقة'))
+                      ? EmptyState('لا توجد حسابات مطابقة')
                       : ListView(
                           padding: const EdgeInsets.symmetric(
                               horizontal: DesignTokens.space16),
@@ -166,6 +169,15 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                             for (final u in items)
                               Card(
                                 child: ListTile(
+                                  leading: Rosette(
+                                      size: 42,
+                                      color: DesignTokens.primaryDarkGreen,
+                                      child: Text(
+                                          u.fullName.characters.firstOrNull ??
+                                              '',
+                                          style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w800))),
                                   title: Text(u.fullName,
                                       style: const TextStyle(
                                           fontWeight: FontWeight.w600)),

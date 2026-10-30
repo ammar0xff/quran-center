@@ -24,7 +24,8 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
   Future<Schedule?> getSchedule(String scheduleId) async {
     final data = await _ds.getDoc('$_collectionPath/$scheduleId');
     if (data == null) return null;
-    return Schedule.fromJson(scheduleId, firestoreConverter.decodeFromRead(data));
+    return Schedule.fromJson(
+        scheduleId, firestoreConverter.decodeFromRead(data));
   }
 
   @override
@@ -62,7 +63,8 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
   }
 
   @override
-  Future<List<Schedule>> getSchedulesByCenter(String centerId, {
+  Future<List<Schedule>> getSchedulesByCenter(
+    String centerId, {
     String? circleId,
     String? teacherId,
     DateTime? date,
@@ -76,14 +78,15 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
     }
     final docs = await _ds.query(_collectionPath, where: where);
     return docs
-        .map((d) => Schedule.fromJson(d['id'] ?? '',
-            firestoreConverter.decodeFromRead(d)))
+        .map((d) => Schedule.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .where((s) => date == null || s.date.isSameDate(date))
         .toList();
   }
 
   @override
-  Stream<List<Schedule>> watchSchedulesByCenter(String centerId, {
+  Stream<List<Schedule>> watchSchedulesByCenter(
+    String centerId, {
     String? circleId,
     String? teacherId,
     DateTime? date,
@@ -96,8 +99,8 @@ class ScheduleRepositoryImpl implements ScheduleRepository {
       where.add(QueryFilter.equal('teacherId', teacherId));
     }
     yield* _ds.watchQuery(_collectionPath, where: where).map((docs) => docs
-        .map((d) => Schedule.fromJson(d['id'] ?? '',
-            firestoreConverter.decodeFromRead(d)))
+        .map((d) => Schedule.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .where((s) => date == null || s.date.isSameDate(date))
         .toList());
   }

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quran_center/design_system/components/marks.dart';
+import 'package:quran_center/design_system/components/rosette.dart';
+import 'package:quran_center/design_system/components/empty_state.dart';
+import 'package:quran_center/design_system/components/q_app_bar.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/data/models/enums.dart';
@@ -79,7 +83,7 @@ class CircleDetailScreen extends ConsumerWidget {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
-        appBar: AppBar(
+        appBar: QAppBar(
           title: const Text('تفاصيل الحلقة'),
           centerTitle: false,
           actions: [
@@ -110,8 +114,7 @@ class CircleDetailScreen extends ConsumerWidget {
             ),
           ),
           data: (d) {
-            if (d == null)
-              return const Center(child: Text('الحلقة غير موجودة'));
+            if (d == null) return EmptyState('الحلقة غير موجودة');
             final c = d.circle;
             return ListView(
               padding: const EdgeInsets.all(DesignTokens.space20),
@@ -162,9 +165,7 @@ class CircleDetailScreen extends ConsumerWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: Text('الطلاب (${d.roster.length})',
-                          style: const TextStyle(
-                              fontSize: 17, fontWeight: FontWeight.w700)),
+                      child: SectionTitle('الطلاب (${d.roster.length})'),
                     ),
                     if (active)
                       TextButton.icon(
@@ -189,6 +190,15 @@ class CircleDetailScreen extends ConsumerWidget {
                   for (final r in d.roster)
                     Card(
                       child: ListTile(
+                        leading: Rosette(
+                            size: 40,
+                            color: DesignTokens.primaryDarkGreen,
+                            child: Text(
+                                r.student?.displayName.characters.firstOrNull ??
+                                    '?',
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800))),
                         title: Text(r.student?.displayName ?? 'طالب غير معروف'),
                         trailing: const Icon(Icons.chevron_left),
                         onTap: r.student == null
