@@ -2,7 +2,8 @@
   "name": "quran-center-rules-tests",
   "private": true,
   "scripts": {
-    "test": "firebase emulators:exec --only firestore --project demo-quran-center --config ../firebase.json \"node --test --test-concurrency=1 firestore.rules.test.mjs\""
+    "test": "firebase emulators:exec --only firestore --project demo-quran-center --config ../firebase.json \"node --test --test-concurrency=1 firestore.rules.test.mjs\"",
+    "test:functions": "firebase emulators:exec --only auth,firestore,functions --project demo-quran-center --config ../firebase.json \"node --test --test-concurrency=1 functions.integration.test.mjs\""
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^4.0.0",

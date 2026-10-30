@@ -3,8 +3,21 @@
     "rules": "firestore.rules"
   },
   "emulators": {
-    "firestore": { "port": 8189 },
-    "ui": { "enabled": false },
-    "singleProjectMode": true
+    "firestore": {
+      "port": 8189
+    },
+    "ui": {
+      "enabled": false
+    },
+    "singleProjectMode": true,
+    "auth": {
+      "port": 9099
+    },
+    "functions": {
+      "port": 5001
+    }
+  },
+  "functions": {
+    "source": "functions"
   }
 }

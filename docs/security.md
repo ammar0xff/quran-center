@@ -120,10 +120,10 @@ Key design points:
    update and its audit entry in one atomic batch, but rules cannot force the
    audit write. A modified client could skip it. Moving corrections into a
    Cloud Function would close this.
-3. **Cloud Functions are type-checked and their rule logic is unit-tested, but
-   they have not been run against the Auth/Firestore emulators or deployed.**
-4. **Director provisioning** (setting the `role`/`centerId` custom claims and the
-   `users/{uid}` profile for the first director) is not implemented.
+3. **Cloud Functions are tested end to end against the Auth, Firestore and
+   Functions emulators** (`npm run test:functions`), but have not been deployed.
+4. **Director provisioning** is an operator CLI (`docs/operations.md`); there is
+   no in-app way to create a director, by design.
 5. **App Check, rate limiting, Storage rules** are not configured.
 6. `assertFails` in rules tests also passes when a rule *errors*. The emulator
    evaluates both `create` and `update` for a `set()` on a new document, and the
