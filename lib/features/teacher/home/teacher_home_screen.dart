@@ -120,6 +120,31 @@ class _Content extends StatelessWidget {
           ],
         ),
         const SizedBox(height: DesignTokens.space24),
+        const Text('المتابعة',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+        const SizedBox(height: DesignTokens.space8),
+        Card(
+          child: Column(
+            children: [
+              ListTile(
+                title: const Text('مهام بانتظار تحققك'),
+                subtitle: const Text('أبلغ الطالب أنه تدرّب عليها ولم تعتمدها بعد'),
+                trailing: Text('${data.awaitingVerification}',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                onTap: () => context.go('/teacher/students'),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                title: const Text('مهام متأخرة'),
+                subtitle: const Text('تجاوزت موعد تسليمها ولم تكتمل'),
+                trailing: Text('${data.overdueTasks}',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                onTap: () => context.go('/teacher/students'),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: DesignTokens.space24),
         const Text('جلسات اليوم',
             style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
         const SizedBox(height: DesignTokens.space8),

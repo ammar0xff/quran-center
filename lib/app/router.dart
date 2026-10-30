@@ -27,6 +27,9 @@ import 'package:quran_center/features/shared/role_home_placeholder.dart';
 import 'package:quran_center/features/teacher/circles/teacher_circles_screen.dart';
 import 'package:quran_center/features/teacher/home/teacher_home_screen.dart';
 import 'package:quran_center/features/teacher/more/teacher_more_screen.dart';
+import 'package:quran_center/features/teacher/students/new_task_screen.dart';
+import 'package:quran_center/features/teacher/students/teacher_student_profile_screen.dart';
+import 'package:quran_center/features/teacher/students/teacher_students_screen.dart';
 import 'package:quran_center/features/teacher/sessions/assessment_screen.dart';
 import 'package:quran_center/features/teacher/sessions/teacher_session_screen.dart';
 
@@ -130,6 +133,19 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.teacherHome,
         builder: (_, __) => const TeacherHomeScreen(),
+      ),
+      GoRoute(
+        path: '/teacher/students',
+        builder: (_, __) => const TeacherStudentsScreen(),
+      ),
+      GoRoute(
+        path: '/teacher/students/:id',
+        builder: (_, state) =>
+            TeacherStudentProfileScreen(studentId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/teacher/students/:id/tasks/new',
+        builder: (_, state) => NewTaskScreen(studentId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/teacher/circles',

@@ -266,7 +266,89 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // learning_plans, learning_tasks, notifications,
+    // ---------- learning plans & tasks ----------
+    // One plan document per (student, teacher) -- "plan_<studentId>_<teacherId>"
+    // -- groups the tasks a teacher gives a student, so a change of teacher
+    // never needs to edit another teacher's plan.
+    function studentOf(studentId) {
+      return get(/databases/$(database)/documents/students/$(studentId)).data;
+    }
+
+    function validAyahRange(d) {
+      return d.surah is int && d.surah >= 1 && d.surah <= 114
+        && d.startAyah is int && d.startAyah >= 1
+        && d.endAyah is int && d.endAyah >= d.startAyah;
+    }
+
+    match /learning_plans/{planId} {
+      allow read: if isDirector(resource.data.centerId)
+        || (isTeacher(resource.data.centerId)
+            && resource.data.responsibleTeacherId == request.auth.uid)
+        || ownsStudent(resource.data.centerId, resource.data.studentId);
+      allow create: if isTeacher(request.resource.data.centerId)
+        && request.resource.data.responsibleTeacherId == request.auth.uid
+        && planId == 'plan_' + request.resource.data.studentId + '_' + request.auth.uid
+        && request.auth.uid in studentOf(request.resource.data.studentId).assignedTeacherIds
+        && studentOf(request.resource.data.studentId).centerId == request.resource.data.centerId;
+      allow update: if isTeacher(resource.data.centerId)
+        && resource.data.responsibleTeacherId == request.auth.uid
+        && unchanged(['centerId', 'studentId', 'responsibleTeacherId']);
+      allow delete: if false;
+    }
+
+    function openTask(status) {
+      return status in ['upcoming', 'inProgress', 'practiceReported', 'submittedForReview', 'needsReview'];
+    }
+
+    match /learning_tasks/{taskId} {
+      allow read: if isDirector(resource.data.centerId)
+        || (isTeacher(resource.data.centerId)
+            && resource.data.teacherId == request.auth.uid)
+        || ownsStudent(resource.data.centerId, resource.data.studentId);
+
+      // Assigned by a teacher to one of their students: always starts as
+      // 'upcoming' with no practice claim and no verification.
+      allow create: if isTeacher(request.resource.data.centerId)
+        && request.resource.data.teacherId == request.auth.uid
+        && request.resource.data.status == 'upcoming'
+        && request.resource.data.get('selfReportedPractice', null) == null
+        && request.resource.data.get('teacherVerification', null) == null
+        && request.resource.data.planId == 'plan_' + request.resource.data.studentId + '_' + request.auth.uid
+        && request.auth.uid in studentOf(request.resource.data.studentId).assignedTeacherIds
+        && studentOf(request.resource.data.studentId).centerId == request.resource.data.centerId
+        && validAyahRange(request.resource.data)
+        && request.resource.data.dueDate >= request.resource.data.assignedDate;
+
+      allow update: if isTeacher(resource.data.centerId)
+        && resource.data.teacherId == request.auth.uid
+        && (
+          // edit the assignment before the student has started
+          (resource.data.status == 'upcoming'
+            && request.resource.data.status == 'upcoming'
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['teacherInstructions', 'dueDate', 'priority', 'updatedAt']))
+          // official verification: only the teacher can complete a task
+          || (openTask(resource.data.status)
+            && request.resource.data.status in ['completed', 'needsReview']
+            && request.resource.data.status != resource.data.status
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['status', 'teacherVerification', 'completionMetadata', 'updatedAt'])
+            && request.resource.data.teacherVerification.verifiedBy == request.auth.uid
+            && ((request.resource.data.status == 'completed'
+                  && request.resource.data.teacherVerification.result == 'passed')
+                || (request.resource.data.status == 'needsReview'
+                  && request.resource.data.teacherVerification.result == 'needs_improvement')))
+          // cancellation, with its reason kept in completionMetadata
+          || (openTask(resource.data.status)
+            && request.resource.data.status == 'cancelled'
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['status', 'completionMetadata', 'updatedAt'])
+            && request.resource.data.completionMetadata.reason is string)
+        );
+      allow delete: if false;
+    }
+
+    // notifications,
     // announcements, ... are intentionally NOT opened yet. They fall through
     // to default deny until their feature is implemented and tested.
     match /{document=**} {

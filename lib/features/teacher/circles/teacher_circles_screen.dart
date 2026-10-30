@@ -90,7 +90,7 @@ class TeacherCirclesScreen extends ConsumerWidget {
             );
           },
         ),
-        bottomNavigationBar: const TeacherBottomNav(currentIndex: 1),
+        bottomNavigationBar: const TeacherBottomNav(currentIndex: 2),
       ),
     );
   }

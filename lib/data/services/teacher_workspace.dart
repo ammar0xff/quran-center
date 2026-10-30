@@ -1,7 +1,9 @@
 import 'package:quran_center/data/datasources/firestore_datasource.dart';
 import 'package:quran_center/data/datasources/firestore_helpers.dart';
+import 'package:quran_center/data/models/attendance.dart';
 import 'package:quran_center/data/models/circle.dart';
 import 'package:quran_center/data/models/enrollment.dart';
+import 'package:quran_center/data/models/memorization_record.dart';
 import 'package:quran_center/data/models/schedule.dart';
 import 'package:quran_center/data/models/student.dart';
 
@@ -52,6 +54,47 @@ class TeacherWorkspace {
     ]);
     return docs
         .map((d) => Enrollment.fromJson(d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
+        .toList();
+  }
+
+  /// This teacher's assessments of one student, newest first.
+  Future<List<MemorizationRecord>> assessments(
+      String centerId, String teacherId, String studentId) async {
+    final docs = await _ds.query('memorization_records', where: [
+      QueryFilter.equal('centerId', centerId),
+      QueryFilter.equal('teacherId', teacherId),
+      QueryFilter.equal('studentId', studentId),
+    ]);
+    final list = docs
+        .map((d) => MemorizationRecord.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
+        .toList();
+    list.sort((a, b) => b.assessedAt.compareTo(a.assessedAt));
+    return list;
+  }
+
+  /// The teacher's private notes about one student, keyed by assessment id.
+  Future<Map<String, String>> privateNotes(
+      String centerId, String teacherId, String studentId) async {
+    final docs = await _ds.query('private_teacher_notes', where: [
+      QueryFilter.equal('centerId', centerId),
+      QueryFilter.equal('teacherId', teacherId),
+      QueryFilter.equal('studentId', studentId),
+    ]);
+    return {for (final d in docs) d['id'] as String: (d['note'] ?? '') as String};
+  }
+
+  /// Attendance this teacher recorded for one student.
+  Future<List<Attendance>> attendance(
+      String centerId, String teacherId, String studentId) async {
+    final docs = await _ds.query('attendance', where: [
+      QueryFilter.equal('centerId', centerId),
+      QueryFilter.equal('recordedBy', teacherId),
+      QueryFilter.equal('studentId', studentId),
+    ]);
+    return docs
+        .map((d) => Attendance.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .toList();
   }
 }

@@ -36,17 +36,18 @@ class FirestoreConverter {
   /// [Timestamp] values are converted to [DateTime] (for model fromJson).
   JsonMap decodeFromRead(Map<String, dynamic>? data) {
     if (data == null) return {};
-    final result = <String, dynamic>{};
-    data.forEach((key, value) {
-      if (value is Timestamp) {
-        result[key] = value.toDate();
-      } else if (value is DateTime) {
-        result[key] = value;
-      } else {
-        result[key] = value;
-      }
-    });
-    return result;
+    return {for (final e in data.entries) e.key: _decode(e.value)};
+  }
+
+  /// Converts [Timestamp]s to [DateTime] at any depth, so nested values (for
+  /// example a task's `teacherVerification.verifiedAt`) are read correctly.
+  dynamic _decode(dynamic value) {
+    if (value is Timestamp) return value.toDate();
+    if (value is Map) {
+      return {for (final e in value.entries) e.key as String: _decode(e.value)};
+    }
+    if (value is List) return [for (final v in value) _decode(v)];
+    return value;
   }
 }
 

@@ -44,6 +44,13 @@ const att = (over = {}) => ({
   ...over,
 });
 
+const task = (over = {}) => ({
+  centerId: C1, planId: "plan_s1_tA", studentId: "s1", teacherId: "tA",
+  taskType: "newMemorization", surah: 2, startAyah: 1, endAyah: 5,
+  assignedDate: new Date("2026-01-05"), dueDate: new Date("2026-01-12"),
+  teacherInstructions: "راجع", status: "upcoming", ...over,
+});
+
 const rec = (over = {}) => ({
   centerId: C1, studentId: "s1", teacherId: "tA", sessionId: "sess9", circleId: "circle1",
   assessmentType: "newMemorization", surah: 2, startAyah: 1, endAyah: 5,
@@ -71,6 +78,10 @@ async function seed() {
     await setDoc(doc(db, "circles/circle1"), { centerId: C1, name: "A", assignedTeacherId: "tA" });
     await setDoc(doc(db, "circles/circle2"), { centerId: C1, name: "B", assignedTeacherId: "tB" });
     await setDoc(doc(db, "memorization_records/m1"), rec({ sessionId: "sess9" }));
+    await setDoc(doc(db, "learning_plans/plan_s1_tA"), { centerId: C1, studentId: "s1", responsibleTeacherId: "tA", status: "active" });
+    await setDoc(doc(db, "learning_tasks/t1"), task());
+    await setDoc(doc(db, "learning_tasks/tReported"), task({ status: "practiceReported", selfReportedPractice: { reportedAt: new Date() } }));
+    await setDoc(doc(db, "learning_tasks/tDone"), task({ status: "completed" }));
     await setDoc(doc(db, "private_teacher_notes/m1"), { centerId: C1, studentId: "s1", teacherId: "tA", note: "secret" });
   });
 }
@@ -546,9 +557,82 @@ describe("memorization assessments and private notes", () => {
   });
 });
 
+describe("learning plans and tasks", () => {
+  const verification = (over = {}) => ({ verifiedAt: new Date(), verifiedBy: "tA", result: "passed", ...over });
+
+  it("readable by the student, the owning teacher and the director only", async () => {
+    await assertSucceeds(getDoc(doc(as("uS1"), "learning_tasks/t1")));
+    await assertSucceeds(getDoc(doc(as("tA"), "learning_tasks/t1")));
+    await assertSucceeds(getDoc(doc(as("dir1"), "learning_tasks/t1")));
+    await assertFails(getDoc(doc(as("uS2"), "learning_tasks/t1")));
+    await assertFails(getDoc(doc(as("tB"), "learning_tasks/t1")));
+    await assertFails(getDoc(doc(as("dir2"), "learning_tasks/t1")));
+    await assertSucceeds(getDoc(doc(as("uS1"), "learning_plans/plan_s1_tA")));
+    await assertFails(getDoc(doc(as("uS2"), "learning_plans/plan_s1_tA")));
+  });
+  it("a student's own task query works when scoped", async () => {
+    const db = as("uS1");
+    await assertSucceeds(getDocs(query(collection(db, "learning_tasks"), where("centerId", "==", C1), where("studentId", "==", "s1"))));
+    await assertFails(getDocs(query(collection(db, "learning_tasks"), where("centerId", "==", C1))));
+  });
+  it("a teacher assigns a task to their own student", async () => {
+    await assertSucceeds(setDoc(doc(as("tA"), "learning_tasks/new1"), task({ studentId: "s3", planId: "plan_s3_tA" })));
+  });
+  it("refused: others' students, wrong plan, non-upcoming start, pre-filled claims, bad range or dates", async () => {
+    const t = (over) => setDoc(doc(as("tA"), "learning_tasks/bad"), task({ studentId: "s3", planId: "plan_s3_tA", ...over }));
+    await assertFails(setDoc(doc(as("tA"), "learning_tasks/bad"), task({ studentId: "s2", planId: "plan_s2_tB" }))); // tB's student
+    await assertFails(t({ planId: "plan_s3" }));            // not the (student, teacher) plan id
+    await assertFails(t({ planId: "plan_s3_tB" }));
+    await assertFails(t({ status: "completed" }));
+    await assertFails(t({ selfReportedPractice: { reportedAt: new Date() } }));
+    await assertFails(t({ teacherVerification: verification() }));
+    await assertFails(t({ teacherId: "tB" }));
+    await assertFails(t({ surah: 115 }));
+    await assertFails(t({ startAyah: 6, endAyah: 5 }));
+    await assertFails(t({ dueDate: new Date("2026-01-01") })); // before assignment
+    await assertFails(setDoc(doc(as("uS1"), "learning_tasks/self"), task({ teacherId: "uS1" })));
+  });
+  it("the teacher can edit instructions and due date only before work starts", async () => {
+    await assertSucceeds(updateDoc(doc(as("tA"), "learning_tasks/t1"), { teacherInstructions: "جديد", dueDate: new Date("2026-02-01") }));
+    await assertFails(updateDoc(doc(as("tA"), "learning_tasks/t1"), { surah: 3 }));
+    await assertFails(updateDoc(doc(as("tA"), "learning_tasks/t1"), { studentId: "s3" }));
+    await assertFails(updateDoc(doc(as("tA"), "learning_tasks/tReported"), { teacherInstructions: "x" })); // already reported
+  });
+  it("only a teacher verification completes a task, and it must say so truthfully", async () => {
+    await assertSucceeds(updateDoc(doc(as("tA"), "learning_tasks/tReported"), { status: "completed", teacherVerification: verification() }));
+    await assertFails(updateDoc(doc(as("tA"), "learning_tasks/t1"), { status: "completed" }));                                    // no verification
+    await assertFails(updateDoc(doc(as("tA"), "learning_tasks/t1"), { status: "completed", teacherVerification: verification({ verifiedBy: "tB" }) }));
+    await assertFails(updateDoc(doc(as("tA"), "learning_tasks/t1"), { status: "completed", teacherVerification: verification({ result: "needs_improvement" }) }));
+    await assertFails(updateDoc(doc(as("tA"), "learning_tasks/t1"), { status: "needsReview", teacherVerification: verification({ result: "passed" }) }));
+    await assertSucceeds(updateDoc(doc(as("tA"), "learning_tasks/t1"), { status: "needsReview", teacherVerification: verification({ result: "needs_improvement" }) }));
+  });
+  it("a completed task is final; students and other teachers cannot change anything", async () => {
+    await assertFails(updateDoc(doc(as("tA"), "learning_tasks/tDone"), { status: "needsReview", teacherVerification: verification({ result: "needs_improvement" }) }));
+    await assertFails(updateDoc(doc(as("uS1"), "learning_tasks/t1"), { status: "completed" }));
+    await assertFails(updateDoc(doc(as("uS1"), "learning_tasks/t1"), { status: "practiceReported" })); // student path arrives with Phase 6
+    await assertFails(updateDoc(doc(as("tB"), "learning_tasks/t1"), { teacherInstructions: "x" }));
+    await assertFails(updateDoc(doc(as("dir1"), "learning_tasks/t1"), { status: "completed" }));
+  });
+  it("cancelling needs a reason; closed tasks cannot be cancelled; nothing is deleted", async () => {
+    await assertFails(updateDoc(doc(as("tA"), "learning_tasks/t1"), { status: "cancelled" }));
+    await assertSucceeds(updateDoc(doc(as("tA"), "learning_tasks/t1"), { status: "cancelled", completionMetadata: { reason: "تغيير الخطة", cancelledBy: "tA" } }));
+    await assertFails(updateDoc(doc(as("tA"), "learning_tasks/tDone"), { status: "cancelled", completionMetadata: { reason: "x" } }));
+    await assertFails(deleteDoc(doc(as("tA"), "learning_tasks/t1")));
+    await assertFails(deleteDoc(doc(as("dir1"), "learning_tasks/t1")));
+  });
+  it("the plan is created once per student by an assigned teacher", async () => {
+    const plan = (over = {}) => ({ centerId: C1, studentId: "s3", responsibleTeacherId: "tA", status: "active", ...over });
+    await assertSucceeds(setDoc(doc(as("tA"), "learning_plans/plan_s3_tA"), plan()));
+    await assertFails(setDoc(doc(as("tA"), "learning_plans/other"), plan()));                       // id convention
+    await assertFails(setDoc(doc(as("tB"), "learning_plans/plan_s3_tB"), plan({ responsibleTeacherId: "tB" }))); // not assigned
+    await assertFails(setDoc(doc(as("uS1"), "learning_plans/plan_s1x_uS1"), plan({ studentId: "s1x" })));
+    await assertFails(deleteDoc(doc(as("tA"), "learning_plans/plan_s1_tA")));
+  });
+});
+
 describe("default deny for features not built yet", () => {
-  it("learning plans and notifications stay closed", async () => {
-    await assertFails(getDoc(doc(as("dir1"), "learning_plans/p1")));
+  it("notifications and announcements stay closed", async () => {
     await assertFails(setDoc(doc(as("dir1"), "notifications/n1"), { centerId: C1 }));
+    await assertFails(setDoc(doc(as("dir1"), "announcements/a1"), { centerId: C1 }));
   });
 });

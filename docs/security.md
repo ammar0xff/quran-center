@@ -47,7 +47,7 @@ Authorization enforced by the backend (Firestore Security Rules + Cloud Function
 ## Enforced and tested
 
 Firestore Security Rules (`firebase/firestore.rules`) are tested against the
-real Firestore emulator (`firebase/rules-tests`, 80 tests) and cover:
+real Firestore emulator (`firebase/rules-tests`, 89 tests) and cover:
 users, centers, students, teachers, circles, enrollments, schedules,
 attendance and audit_logs, including the enrollment-assignment batch and the
 rule that director list queries must filter by `centerId`. Everything else is **default deny**.
@@ -75,6 +75,13 @@ Assessments: the session's teacher may record one for their own student while
 the session is in progress, with a valid surah (1-114) and ayah range, and may
 amend it until the session completes; afterwards it is frozen. Nothing is
 deleted.
+
+Learning tasks: a teacher assigns a task to their own student (always created
+as `upcoming`, with no practice claim or verification). Only a teacher
+verification can complete a task, and it must carry `verifiedBy == auth.uid`
+and a truthful result; `completed` and `cancelled` are final; cancelling needs
+a reason. `overdue` is derived from the due date and never stored. The
+student's own transitions (report practice) are added with the student app.
 
 Key design points:
 * `users/{uid}` is written only by the Admin SDK. Role and status are read from

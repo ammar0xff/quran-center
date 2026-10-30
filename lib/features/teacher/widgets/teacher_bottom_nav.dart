@@ -11,6 +11,7 @@ class TeacherBottomNav extends StatelessWidget {
 
   static const paths = <String>[
     Routes.teacherHome,
+    '/teacher/students',
     '/teacher/circles',
     '/teacher/more',
   ];
@@ -22,6 +23,7 @@ class TeacherBottomNav extends StatelessWidget {
       child: CustomBottomNav(
         items: const [
           BottomNavItem(label: 'الرئيسية', icon: Icons.home),
+          BottomNavItem(label: 'طلابي', icon: Icons.people),
           BottomNavItem(label: 'حلقاتي', icon: Icons.school),
           BottomNavItem(label: 'المزيد', icon: Icons.menu),
         ],

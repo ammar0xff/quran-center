@@ -32,7 +32,7 @@ class TeacherMoreScreen extends ConsumerWidget {
             ),
           ],
         ),
-        bottomNavigationBar: const TeacherBottomNav(currentIndex: 2),
+        bottomNavigationBar: const TeacherBottomNav(currentIndex: 3),
       ),
     );
   }

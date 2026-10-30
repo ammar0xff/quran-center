@@ -13,6 +13,8 @@ class TeacherHomeData {
     required this.todaySessions,
     required this.circleNames,
     required this.upcoming,
+    this.awaitingVerification = 0,
+    this.overdueTasks = 0,
   });
 
   final int studentCount;
@@ -24,6 +26,12 @@ class TeacherHomeData {
 
   /// The next few future scheduled sessions.
   final List<Schedule> upcoming;
+
+  /// Tasks the student reported practicing that the teacher has not verified.
+  final int awaitingVerification;
+
+  /// Open tasks past their due date.
+  final int overdueTasks;
 
   bool get hasAssignments => circles.isNotEmpty || studentCount > 0;
 }
@@ -37,10 +45,11 @@ final teacherHomeProvider =
   final ws = ref.read(teacherWorkspaceProvider);
   final now = DateTime.now();
 
-  final (sessions, circles, students) = await (
+  final (sessions, circles, students, tasks) = await (
     ws.sessions(centerId, teacherId),
     ws.circles(centerId, teacherId),
     ws.students(centerId, teacherId),
+    ref.read(taskServiceProvider).tasksForTeacher(centerId, teacherId),
   ).wait;
 
   final activeStudents =
@@ -63,6 +72,12 @@ final teacherHomeProvider =
     todaySessions: today,
     circleNames: {for (final c in circles) c.circleId: c.name},
     upcoming: upcoming.take(3).toList(),
+    awaitingVerification: tasks
+        .where((t) =>
+            t.status == TaskStatus.practiceReported ||
+            t.status == TaskStatus.submittedForReview)
+        .length,
+    overdueTasks: tasks.where((t) => t.isOverdue).length,
   );
 });
 
