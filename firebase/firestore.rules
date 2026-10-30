@@ -80,6 +80,36 @@ service cloud.firestore {
         && request.resource.data.status in ['present', 'absent', 'late', 'excused'];
     }
 
+    // The teacher may work with this student in this session: the student is
+    // one of their own, or was added to the session as a visiting student.
+    function mayTeachStudent(sessionId, studentId, centerId) {
+      return (request.auth.uid in studentOf(studentId).assignedTeacherIds
+              && studentOf(studentId).centerId == centerId)
+        || studentId in sessionDoc(sessionId).get('guestStudentIds', []);
+    }
+
+    function validGrade(d) {
+      return d.get('grade', '') in ['excellent', 'veryGood', 'good', 'acceptable', 'repeat'];
+    }
+
+    // The session's teacher adds ONE visiting student (a student of the same
+    // center, taken from the directory) while the session is in progress.
+    function teacherMayAddGuest() {
+      return isTeacher(resource.data.centerId)
+        && resource.data.teacherId == request.auth.uid
+        && resource.data.status == 'inProgress'
+        && request.resource.data.status == 'inProgress'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['guestStudentIds', 'updatedAt'])
+        && request.resource.data.guestStudentIds.size() == resource.data.get('guestStudentIds', []).size() + 1
+        && request.resource.data.guestStudentIds.hasAll(resource.data.get('guestStudentIds', []))
+        && directoryEntry(request.resource.data.guestStudentIds[request.resource.data.guestStudentIds.size() - 1]).centerId == resource.data.centerId
+        && directoryEntry(request.resource.data.guestStudentIds[request.resource.data.guestStudentIds.size() - 1]).active == true;
+    }
+
+    function directoryEntry(studentId) {
+      return get(/databases/$(database)/documents/student_directory/$(studentId)).data;
+    }
+
     function sessionDoc(sessionId) {
       return get(/databases/$(database)/documents/schedules/$(sessionId)).data;
     }
@@ -177,7 +207,8 @@ service cloud.firestore {
         || studentInCircle(resource.data.centerId, resource.data.circleId);
       allow create: if isDirector(request.resource.data.centerId);
       allow update: if (isDirector(resource.data.centerId) && unchanged(['centerId']))
-        || teacherMaySetSessionStatus();
+        || teacherMaySetSessionStatus()
+        || teacherMayAddGuest();
       allow delete: if false;
     }
 
@@ -200,8 +231,7 @@ service cloud.firestore {
         && sessionDoc(request.resource.data.sessionId).teacherId == request.auth.uid
         && sessionDoc(request.resource.data.sessionId).centerId == request.resource.data.centerId
         && sessionDoc(request.resource.data.sessionId).status == 'inProgress'
-        && request.auth.uid in get(/databases/$(database)/documents/students/$(request.resource.data.studentId)).data.assignedTeacherIds
-        && get(/databases/$(database)/documents/students/$(request.resource.data.studentId)).data.centerId == request.resource.data.centerId;
+        && mayTeachStudent(request.resource.data.sessionId, request.resource.data.studentId, request.resource.data.centerId);
 
       // Only a director may change a recorded value, and only as an explicit,
       // attributed correction. Teachers and students cannot alter records.
@@ -229,7 +259,10 @@ service cloud.firestore {
     match /memorization_records/{recordId} {
       allow read: if isDirector(resource.data.centerId)
         || (isTeacher(resource.data.centerId)
-            && resource.data.teacherId == request.auth.uid)
+            && (resource.data.teacherId == request.auth.uid
+                // a student's own teacher sees every wird of that student, also
+                // those heard by a visiting teacher
+                || request.auth.uid in studentOf(resource.data.studentId).assignedTeacherIds))
         || ownsStudent(resource.data.centerId, resource.data.studentId);
 
       // Recorded by the session's teacher, for one of their students, while the
@@ -241,8 +274,9 @@ service cloud.firestore {
         && sessionDoc(request.resource.data.sessionId).teacherId == request.auth.uid
         && sessionDoc(request.resource.data.sessionId).centerId == request.resource.data.centerId
         && sessionDoc(request.resource.data.sessionId).status == 'inProgress'
-        && request.auth.uid in get(/databases/$(database)/documents/students/$(request.resource.data.studentId)).data.assignedTeacherIds
-        && get(/databases/$(database)/documents/students/$(request.resource.data.studentId)).data.centerId == request.resource.data.centerId
+        && mayTeachStudent(request.resource.data.sessionId, request.resource.data.studentId, request.resource.data.centerId)
+        && request.resource.data.assessmentType in ['newMemorization', 'recentRevision', 'longTermRevision', 'generalRecitation', 'newAssignment']
+        && (request.resource.data.assessmentType == 'newAssignment' || validGrade(request.resource.data))
         && request.resource.data.surah is int
         && request.resource.data.surah >= 1 && request.resource.data.surah <= 114
         && request.resource.data.startAyah is int && request.resource.data.startAyah >= 1
@@ -254,7 +288,8 @@ service cloud.firestore {
         && resource.data.teacherId == request.auth.uid
         && sessionDoc(resource.data.sessionId).status == 'inProgress'
         && !('privateTeacherNote' in request.resource.data)
-        && unchanged(['centerId', 'studentId', 'teacherId', 'sessionId', 'circleId', 'assessedAt', 'createdAt'])
+        && unchanged(['centerId', 'studentId', 'teacherId', 'sessionId', 'circleId', 'assessedAt', 'createdAt', 'assessmentType', 'visitId'])
+        && (resource.data.assessmentType == 'newAssignment' || validGrade(request.resource.data))
         && request.resource.data.surah is int
         && request.resource.data.surah >= 1 && request.resource.data.surah <= 114
         && request.resource.data.startAyah >= 1
@@ -396,6 +431,111 @@ service cloud.firestore {
             && request.resource.data.completionMetadata.reason is string)
         )
         || studentMayReportProgress();
+      allow delete: if false;
+    }
+
+    // ---------- finance (director only) ----------
+    // Subscriptions, payments, expenses and wages are visible to the director
+    // alone; a teacher may read only their OWN wage record. Money is a whole
+    // number of minor units. Nothing is deleted: mistakes are voided with a
+    // reason, so the books keep their history.
+    function money(v) { return v is int && v >= 0 && v <= 100000000000; }
+
+    match /student_fees/{studentId} {
+      allow read: if isDirector(resource.data.centerId);
+      allow create: if isDirector(request.resource.data.centerId)
+        && studentId == request.resource.data.studentId
+        && money(request.resource.data.monthlyFee)
+        && getAfter(/databases/$(database)/documents/students/$(studentId)).data.centerId == request.resource.data.centerId;
+      allow update: if isDirector(resource.data.centerId)
+        && unchanged(['centerId', 'studentId']) && money(request.resource.data.monthlyFee);
+      allow delete: if false;
+    }
+
+    match /subscriptions/{subId} {
+      allow read: if isDirector(resource.data.centerId);
+      allow create: if isDirector(request.resource.data.centerId)
+        && subId == request.resource.data.studentId + '_' + request.resource.data.month
+        && request.resource.data.month.matches('^[0-9]{4}-(0[1-9]|1[0-2])$')
+        && money(request.resource.data.amountDue)
+        && request.resource.data.amountPaid == 0
+        && getAfter(/databases/$(database)/documents/students/$(request.resource.data.studentId)).data.centerId == request.resource.data.centerId;
+      allow update: if isDirector(resource.data.centerId)
+        && unchanged(['centerId', 'studentId', 'month'])
+        && money(request.resource.data.amountDue) && money(request.resource.data.amountPaid);
+      allow delete: if false;
+    }
+
+    match /payments/{paymentId} {
+      allow read: if isDirector(resource.data.centerId);
+      allow create: if isDirector(request.resource.data.centerId)
+        && request.resource.data.amount is int && request.resource.data.amount > 0
+        && request.resource.data.amount <= 100000000000
+        && request.resource.data.voided == false
+        && request.resource.data.receivedBy == request.auth.uid
+        && request.resource.data.method in ['cash', 'transfer', 'other']
+        && getAfter(/databases/$(database)/documents/subscriptions/$(request.resource.data.subscriptionId)).data.centerId == request.resource.data.centerId;
+      // Only voiding is allowed: the amount, the subscription and the date never change.
+      allow update: if isDirector(resource.data.centerId)
+        && resource.data.voided == false && request.resource.data.voided == true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['voided', 'voidReason', 'voidedBy', 'voidedAt'])
+        && request.resource.data.voidedBy == request.auth.uid;
+      allow delete: if false;
+    }
+
+    match /expenses/{expenseId} {
+      allow read: if isDirector(resource.data.centerId);
+      allow create: if isDirector(request.resource.data.centerId)
+        && request.resource.data.amount is int && request.resource.data.amount > 0
+        && request.resource.data.amount <= 100000000000
+        && request.resource.data.voided == false
+        && request.resource.data.recordedBy == request.auth.uid
+        && request.resource.data.category in ['rent', 'utilities', 'supplies', 'maintenance', 'events', 'other'];
+      allow update: if isDirector(resource.data.centerId)
+        && resource.data.voided == false && request.resource.data.voided == true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['voided', 'voidReason', 'voidedBy', 'voidedAt'])
+        && request.resource.data.voidedBy == request.auth.uid;
+      allow delete: if false;
+    }
+
+    match /wage_rates/{teacherId} {
+      allow read: if isDirector(resource.data.centerId);
+      allow create: if isDirector(request.resource.data.centerId)
+        && teacherId == request.resource.data.teacherId && money(request.resource.data.monthlyAmount)
+        && getAfter(/databases/$(database)/documents/teachers/$(teacherId)).data.centerId == request.resource.data.centerId;
+      allow update: if isDirector(resource.data.centerId)
+        && unchanged(['centerId', 'teacherId']) && money(request.resource.data.monthlyAmount);
+      allow delete: if false;
+    }
+
+    match /wages/{wageId} {
+      allow read: if isDirector(resource.data.centerId)
+        || (isTeacher(resource.data.centerId) && resource.data.teacherId == request.auth.uid);
+      allow create: if isDirector(request.resource.data.centerId)
+        && wageId == request.resource.data.teacherId + '_' + request.resource.data.month
+        && request.resource.data.month.matches('^[0-9]{4}-(0[1-9]|1[0-2])$')
+        && request.resource.data.status == 'due'
+        && request.resource.data.amount is int && request.resource.data.amount >= 0
+        && getAfter(/databases/$(database)/documents/teachers/$(request.resource.data.teacherId)).data.centerId == request.resource.data.centerId;
+      // Adjust the amount while due; mark paid once (then it is frozen).
+      allow update: if isDirector(resource.data.centerId)
+        && resource.data.status == 'due'
+        && unchanged(['centerId', 'teacherId', 'month'])
+        && request.resource.data.status in ['due', 'paid']
+        && request.resource.data.amount is int && request.resource.data.amount >= 0
+        && (request.resource.data.status == 'due' || request.resource.data.paidBy == request.auth.uid);
+      allow delete: if false;
+    }
+
+    // ---------- student directory ----------
+    // A minimal public card per student (name only) so a teacher can find a
+    // student of another circle to hear as a visiting student. The student
+    // document itself stays private to the student's own teachers.
+    match /student_directory/{studentId} {
+      allow read: if isDirector(resource.data.centerId) || isTeacher(resource.data.centerId);
+      allow create: if isDirector(request.resource.data.centerId)
+        && getAfter(/databases/$(database)/documents/students/$(studentId)).data.centerId == request.resource.data.centerId;
+      allow update: if isDirector(resource.data.centerId) && unchanged(['centerId']);
       allow delete: if false;
     }
 

@@ -175,6 +175,7 @@ void main() {
           draft: draft ??
               const AssessmentDraft(
                 type: AssessmentType.newMemorization,
+                grade: WirdGrade.veryGood,
                 surah: 2,
                 startAyah: 1,
                 endAyah: 5,
@@ -210,7 +211,7 @@ void main() {
     test('no private note document is written when there is no private note', () async {
       await save('live', 's1',
           draft: const AssessmentDraft(
-              type: AssessmentType.recentRevision, surah: 1, startAyah: 1, endAyah: 7, privateNote: '   '));
+              type: AssessmentType.recentRevision, grade: WirdGrade.good, surah: 1, startAyah: 1, endAyah: 7, privateNote: '   '));
       expect(await store.query('private_teacher_notes', where: []), isEmpty);
       expect(await store.getDoc('memorization_records/rec1'), isNotNull);
     });
@@ -231,15 +232,50 @@ void main() {
 
     test('invalid ranges are refused before anything is written', () async {
       for (final bad in [
-        const AssessmentDraft(type: AssessmentType.newMemorization, surah: 1, startAyah: 1, endAyah: 8),
-        const AssessmentDraft(type: AssessmentType.newMemorization, surah: 2, startAyah: 6, endAyah: 5),
-        const AssessmentDraft(type: AssessmentType.newMemorization, surah: 200, startAyah: 1, endAyah: 1),
-        const AssessmentDraft(type: AssessmentType.newMemorization, surah: 2, startAyah: 1, endAyah: 5, mistakesCount: -1),
-        const AssessmentDraft(type: AssessmentType.newMemorization, surah: 2, startAyah: 1, endAyah: 5, scores: {'accuracy': 9}),
+        const AssessmentDraft(type: AssessmentType.newMemorization, grade: WirdGrade.good, surah: 1, startAyah: 1, endAyah: 8),
+        const AssessmentDraft(type: AssessmentType.newMemorization, grade: WirdGrade.good, surah: 2, startAyah: 6, endAyah: 5),
+        const AssessmentDraft(type: AssessmentType.newMemorization, grade: WirdGrade.good, surah: 200, startAyah: 1, endAyah: 1),
+        const AssessmentDraft(type: AssessmentType.newMemorization, grade: WirdGrade.good, surah: 2, startAyah: 1, endAyah: 5, mistakesCount: -1),
+        const AssessmentDraft(type: AssessmentType.newMemorization, grade: WirdGrade.good, surah: 2, startAyah: 1, endAyah: 5, scores: {'accuracy': 9}),
       ]) {
         await expectLater(save('live', 's1', draft: bad), throwsA(isA<SessionException>()));
       }
       expect(await store.query('memorization_records', where: []), isEmpty);
+    });
+
+    test('the grade is stored, and every graded wird needs one', () async {
+      await save('live', 's1');
+      expect((await store.getDoc('memorization_records/rec1'))!['grade'], 'veryGood');
+      await expectLater(
+        save('live', 's1',
+            id: 'nograde',
+            draft: const AssessmentDraft(
+                type: AssessmentType.recentRevision, surah: 1, startAyah: 1, endAyah: 7)),
+        throwsA(isA<SessionException>()),
+      );
+      expect(await store.getDoc('memorization_records/nograde'), isNull);
+    });
+
+    test('the new assignment is not graded, and any grade given to it is dropped', () async {
+      await save('live', 's1',
+          id: 'next',
+          draft: const AssessmentDraft(
+              type: AssessmentType.newAssignment, grade: WirdGrade.excellent, surah: 2, startAyah: 6, endAyah: 10));
+      final r = (await store.getDoc('memorization_records/next'))!;
+      expect(r['assessmentType'], 'newAssignment');
+      expect(r.containsKey('grade'), isFalse);
+    });
+
+    test('a visit groups its wirds under one visit id', () async {
+      for (final t in [AssessmentType.newMemorization, AssessmentType.recentRevision]) {
+        await save('live', 's1',
+            id: 'v1_${t.name}',
+            draft: AssessmentDraft(
+                type: t, grade: WirdGrade.good, visitId: 'v1', surah: 1, startAyah: 1, endAyah: 3));
+      }
+      final all = await store.query('memorization_records', where: []);
+      expect(all.map((r) => r['visitId']).toSet(), {'v1'});
+      expect(all, hasLength(2));
     });
 
     test('only for the teacher\'s own in-progress session and own students', () async {
@@ -249,6 +285,60 @@ void main() {
       await expectLater(save('live', 's3'), throwsA(isA<SessionException>()));
       await expectLater(save('live', 's4'), throwsA(isA<SessionException>()));
       expect(await store.query('memorization_records', where: []), isEmpty);
+    });
+  });
+
+  group('visiting students', () {
+    setUp(() async {
+      await store.setDoc('student_directory/s3', {'centerId': 'c1', 'fullName': 'ليس طالبي', 'active': true});
+      await store.setDoc('student_directory/s1', {'centerId': 'c1', 'fullName': 'بسمة', 'active': true});
+      await store.setDoc('student_directory/s2', {'centerId': 'c1', 'fullName': 'أحمد', 'active': true});
+      await store.setDoc('student_directory/gone', {'centerId': 'c1', 'fullName': 'مؤرشف', 'active': false});
+      await store.setDoc('student_directory/other', {'centerId': 'c2', 'fullName': 'مركز آخر', 'active': true});
+    });
+
+    test('lists active students of the center who are not already in the circle', () async {
+      final names = (await svc.findableStudents('c1', 't1', 'live')).map((g) => g.name);
+      expect(names, ['ليس طالبي']); // s1/s2 are in the circle; archived and other-center are out
+    });
+
+    test('a guest can be added to a running session only, once, and must be a real active student', () async {
+      await svc.addGuest(centerId: 'c1', teacherId: 't1', sessionId: 'live', studentId: 's3');
+      await svc.addGuest(centerId: 'c1', teacherId: 't1', sessionId: 'live', studentId: 's3'); // idempotent
+      expect(((await store.getDoc('schedules/live'))!['guestStudentIds'] as List), ['s3']);
+      for (final bad in ['gone', 'other', 'ghost']) {
+        await expectLater(
+            svc.addGuest(centerId: 'c1', teacherId: 't1', sessionId: 'live', studentId: bad),
+            throwsA(isA<SessionException>()),
+            reason: bad);
+      }
+      await expectLater(
+          svc.addGuest(centerId: 'c1', teacherId: 't1', sessionId: 'sched', studentId: 's3'),
+          throwsA(isA<SessionException>()));
+      await expectLater(
+          svc.addGuest(centerId: 'c1', teacherId: 't2', sessionId: 'live', studentId: 's3'),
+          throwsA(isA<SessionException>()));
+    });
+
+    test('once added, attendance and a graded wird can be recorded for the guest; before, not', () async {
+      await expectLater(record('live', 's3', AttendanceStatus.present), throwsA(isA<SessionException>()));
+      await svc.addGuest(centerId: 'c1', teacherId: 't1', sessionId: 'live', studentId: 's3');
+      await record('live', 's3', AttendanceStatus.present);
+      await svc.saveAssessment(
+        centerId: 'c1', teacherId: 't1', sessionId: 'live', studentId: 's3', recordId: 'g1',
+        assessedAt: DateTime(2026, 11, 10),
+        draft: const AssessmentDraft(
+            type: AssessmentType.newMemorization, grade: WirdGrade.excellent, surah: 1, startAyah: 1, endAyah: 7),
+      );
+      expect((await store.getDoc('memorization_records/g1'))!['studentId'], 's3');
+      expect((await store.getDoc('attendance/live_s3'))!['recordedBy'], 't1');
+    });
+
+    test('the roster lists guests by name only', () async {
+      await svc.addGuest(centerId: 'c1', teacherId: 't1', sessionId: 'live', studentId: 's3');
+      final r = await svc.loadRoster(centerId: 'c1', teacherId: 't1', sessionId: 'live');
+      expect(r.guests.map((g) => g.name), ['ليس طالبي']);
+      expect(r.students.map((s) => s.studentId), isNot(contains('s3')));
     });
   });
 }

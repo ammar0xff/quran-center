@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+import 'package:quran_center/core/quran/surahs.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
+import 'package:quran_center/core/utils/wird_level.dart';
+import 'package:quran_center/features/shared/level_summary.dart';
+import 'package:quran_center/features/teacher/sessions/assessment_screen.dart' show assessmentTypeLabel;
 import 'package:quran_center/data/models/audit_log.dart';
 import 'package:quran_center/data/models/enrollment.dart';
 import 'package:quran_center/data/models/enums.dart';
@@ -68,7 +72,7 @@ class DirectorStudentProfileScreen extends ConsumerWidget {
           data: (d) {
             if (d == null) return const Center(child: Text('الطالب غير موجود'));
             return DefaultTabController(
-              length: 5,
+              length: 6,
               child: Column(
                 children: [
                   _Header(student: d.student),
@@ -76,6 +80,7 @@ class DirectorStudentProfileScreen extends ConsumerWidget {
                     isScrollable: true,
                     tabs: [
                       Tab(text: 'نظرة عامة'),
+                      Tab(text: 'المستوى'),
                       Tab(text: 'التسجيل'),
                       Tab(text: 'الحضور'),
                       Tab(text: 'الدخول'),
@@ -86,6 +91,7 @@ class DirectorStudentProfileScreen extends ConsumerWidget {
                     child: TabBarView(
                       children: [
                         _OverviewTab(data: d),
+                        _LevelTab(data: d),
                         _EnrollmentTab(data: d),
                         _AttendanceTab(data: d),
                         AccountAccessTab(
@@ -288,6 +294,43 @@ String _enrollmentStatusText(EnrollmentStatus s) {
       return 'منسحب';
     case EnrollmentStatus.archived:
       return 'مؤرشف';
+  }
+}
+
+class _LevelTab extends StatelessWidget {
+  const _LevelTab({required this.data});
+  final StudentProfileData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final level = computeLevel(data.wirds);
+    return ListView(
+      padding: const EdgeInsets.all(DesignTokens.space16),
+      children: [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(DesignTokens.space16),
+            child: LevelSummary(level: level),
+          ),
+        ),
+        if (data.wirds.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(DesignTokens.space24),
+            child: Text('لم يُسجَّل لهذا الطالب تسميع بعد.', textAlign: TextAlign.center),
+          ),
+        for (final w in data.wirds)
+          ListTile(
+            title: Text(
+                '${assessmentTypeLabel(w.assessmentType)} • ${surahByNumber(w.surah)?.name ?? w.surah}: ${w.startAyah}–${w.endAyah}'),
+            subtitle: Text(
+                '${_date(w.assessedAt)} • ${data.teacherNames[w.teacherId] ?? 'معلمة'}'),
+            trailing: w.grade == null
+                ? null
+                : Text(w.grade!.label,
+                    style: TextStyle(fontWeight: FontWeight.w800, color: gradeColor(w.grade!))),
+          ),
+      ],
+    );
   }
 }
 

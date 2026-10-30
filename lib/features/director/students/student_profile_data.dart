@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/utils/attendance_rules.dart';
+import 'package:quran_center/data/datasources/firestore_datasource.dart';
+import 'package:quran_center/data/datasources/firestore_helpers.dart';
 import 'package:quran_center/data/models/attendance.dart';
+import 'package:quran_center/data/models/memorization_record.dart';
 import 'package:quran_center/data/models/audit_log.dart';
 import 'package:quran_center/data/models/enrollment.dart';
 import 'package:quran_center/data/models/enums.dart';
@@ -20,6 +23,7 @@ class StudentProfileData {
     required this.audit,
     required this.userNames,
     this.adminNote,
+    this.wirds = const [],
   });
 
   final Student student;
@@ -39,6 +43,9 @@ class StudentProfileData {
 
   /// Staff-only note (separate document; never visible to the student).
   final String? adminNote;
+
+  /// Every wird heard for this student, newest first.
+  final List<MemorizationRecord> wirds;
 
   Enrollment? get currentEnrollment {
     for (final e in enrollments) {
@@ -61,7 +68,7 @@ final studentProfileProvider = FutureProvider.autoDispose
   final student = await ref.read(studentRepositoryProvider).getStudent(studentId);
   if (student == null || student.centerId != centerId) return null;
 
-  final (enrollments, circles, teachers, records, schedules, audit, users, note) = await (
+  final (enrollments, circles, teachers, records, schedules, audit, users, note, wirdDocs) = await (
     ref.read(enrollmentRepositoryProvider).getHistoryForStudent(studentId, centerId: centerId),
     ref.read(circleRepositoryProvider).getCirclesByCenter(centerId),
     ref.read(teacherRepositoryProvider).getTeachersByCenter(centerId),
@@ -70,6 +77,10 @@ final studentProfileProvider = FutureProvider.autoDispose
     ref.read(auditRepositoryProvider).getForEntity('student', studentId, centerId: centerId),
     ref.read(userRepositoryProvider).getUsersByCenter(centerId),
     ref.read(studentRepositoryProvider).getAdminNote(studentId, centerId: centerId),
+    ref.read(firestoreDataSourceProvider).query('memorization_records', where: [
+      QueryFilter.equal('centerId', centerId),
+      QueryFilter.equal('studentId', studentId),
+    ]),
   ).wait;
 
   final sessionDates = {for (final s in schedules) s.scheduleId: s.date};
@@ -89,6 +100,10 @@ final studentProfileProvider = FutureProvider.autoDispose
     audit: audit,
     userNames: {for (final u in users) u.uid: u.fullName},
     adminNote: note,
+    wirds: ([
+      for (final d in wirdDocs)
+        MemorizationRecord.fromJson(d['id'] ?? '', firestoreConverter.decodeFromRead(d))
+    ]..sort((a, b) => b.assessedAt.compareTo(a.assessedAt))),
   );
 });
 

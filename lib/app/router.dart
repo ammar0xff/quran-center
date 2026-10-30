@@ -10,6 +10,7 @@ import 'package:quran_center/features/authentication/screens/login_screen.dart';
 import 'package:quran_center/features/authentication/screens/splash_screen.dart';
 import 'package:quran_center/features/director/accounts/accounts_screen.dart';
 import 'package:quran_center/features/director/announcements/announcements_screen.dart';
+import 'package:quran_center/features/director/levels/levels_screen.dart';
 import 'package:quran_center/features/director/reports/reports_screen.dart';
 import 'package:quran_center/features/director/supervision/supervision_screen.dart';
 import 'package:quran_center/features/director/widgets/director_bottom_nav.dart';
@@ -136,6 +137,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/director/attendance',
         builder: (_, __) => const AttendanceAdministrationScreen(),
+      ),
+      GoRoute(
+        path: '/director/levels',
+        builder: (_, __) => const LevelsScreen(),
       ),
       GoRoute(
         path: '/director/supervision',

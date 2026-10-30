@@ -21,6 +21,7 @@ class Student extends AppModel {
     required this.educationalLevel,
     this.accessibilityPreferences,
     this.currentCircleId,
+    this.assignedTeacherIds = const [],
     this.createdBy,
     this.updatedBy,
     required this.createdAt,
@@ -40,6 +41,10 @@ class Student extends AppModel {
   final String educationalLevel;
   final String? accessibilityPreferences;
   final String? currentCircleId; // maintained by enrolment changes
+
+  /// The teachers who may see this student (set from the circle's teacher by
+  /// enrolment changes; the Security Rules use it).
+  final List<String> assignedTeacherIds;
   final String? createdBy;
   final String? updatedBy;
   final DateTime createdAt;
@@ -77,6 +82,7 @@ class Student extends AppModel {
       educationalLevel: educationalLevel ?? this.educationalLevel,
       accessibilityPreferences: accessibilityPreferences ?? this.accessibilityPreferences,
       currentCircleId: currentCircleId ?? this.currentCircleId,
+      assignedTeacherIds: assignedTeacherIds,
       createdBy: createdBy,
       updatedBy: updatedBy ?? this.updatedBy,
       createdAt: createdAt,
@@ -100,6 +106,7 @@ class Student extends AppModel {
       educationalLevel: json['educationalLevel'] as String? ?? '',
       accessibilityPreferences: json['accessibilityPreferences'] as String?,
       currentCircleId: json['currentCircleId'] as String?,
+      assignedTeacherIds: [for (final t in (json['assignedTeacherIds'] as List? ?? const [])) t as String],
       createdBy: json['createdBy'] as String?,
       updatedBy: json['updatedBy'] as String?,
       createdAt: AppModel.parseDateTime(json['createdAt']) ?? DateTime.now(),
@@ -123,6 +130,7 @@ class Student extends AppModel {
       if (accessibilityPreferences != null)
         'accessibilityPreferences': accessibilityPreferences,
       if (currentCircleId != null) 'currentCircleId': currentCircleId,
+      'assignedTeacherIds': assignedTeacherIds,
       if (createdBy != null) 'createdBy': createdBy,
       if (updatedBy != null) 'updatedBy': updatedBy,
       'createdAt': AppModel.encodeDateTime(createdAt),

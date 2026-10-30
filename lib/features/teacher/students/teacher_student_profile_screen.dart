@@ -5,8 +5,9 @@ import 'package:intl/intl.dart' hide TextDirection;
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/quran/surahs.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
-import 'package:quran_center/core/utils/assessment_validation.dart';
 import 'package:quran_center/core/utils/task_state.dart';
+import 'package:quran_center/core/utils/wird_level.dart';
+import 'package:quran_center/features/shared/level_summary.dart';
 import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/data/models/learning_task.dart';
 import 'package:quran_center/data/models/memorization_record.dart';
@@ -82,6 +83,8 @@ class TeacherStudentProfileScreen extends ConsumerWidget {
                           ].join(' • '),
                           style: const TextStyle(color: DesignTokens.secondaryText),
                         ),
+                        const SizedBox(height: DesignTokens.space8),
+                        LevelSummary(level: computeLevel(d.assessments)),
                       ],
                     ),
                   ),
@@ -138,38 +141,48 @@ class _AssessmentsTab extends StatelessWidget {
     if (data.assessments.isEmpty) return _empty('لم تُسجَّل تسميعات لهذا الطالب بعد.');
     return ListView(
       padding: const EdgeInsets.all(DesignTokens.space16),
-      children: [for (final a in data.assessments) _AssessmentCard(a, data.privateNotes[a.recordId])],
+      children: [
+        for (final a in data.assessments)
+          _AssessmentCard(a, data.privateNotes[a.recordId], a.teacherId == data.teacherId)
+      ],
     );
   }
 }
 
 class _AssessmentCard extends StatelessWidget {
-  const _AssessmentCard(this.a, this.privateNote);
+  const _AssessmentCard(this.a, this.privateNote, this.mine);
   final MemorizationRecord a;
   final String? privateNote;
 
+  /// False when a visiting teacher (not this student's usual one) heard it.
+  final bool mine;
+
   @override
   Widget build(BuildContext context) {
-    final scores = [
-      for (final c in assessmentCriteria)
-        if (a.criteriaScores[c.id] != null)
-          '${c.label} ${a.criteriaScores[c.id]!.toStringAsFixed(0)}/$criterionMaxScore'
-    ];
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(DesignTokens.space12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${assessmentTypeLabel(a.assessmentType)} • ${ayahRangeText(a.surah, a.startAyah, a.endAyah)}',
-                style: const TextStyle(fontWeight: FontWeight.w700)),
+            Row(children: [
+              Expanded(
+                child: Text(
+                    '${assessmentTypeLabel(a.assessmentType)} • ${ayahRangeText(a.surah, a.startAyah, a.endAyah)}',
+                    style: const TextStyle(fontWeight: FontWeight.w700)),
+              ),
+              if (a.grade != null)
+                Text(a.grade!.label,
+                    style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: gradeColor(a.grade!))),
+            ]),
             const SizedBox(height: DesignTokens.space4),
-            Text('${_date(a.assessedAt)} • الأخطاء: ${a.mistakesCount}'
+            Text(
+                '${_date(a.assessedAt)}${mine ? '' : ' • سمعتها معلمة أخرى'}'
                 '${a.requiresFollowUp ? ' • يحتاج متابعة' : ''}',
                 style: const TextStyle(color: DesignTokens.secondaryText)),
-            if (scores.isNotEmpty) Text(scores.join(' • ')),
-            if (a.studentVisibleFeedback != null)
-              Text('للطالب: ${a.studentVisibleFeedback}'),
+            if (a.studentVisibleFeedback != null) Text('للطالب: ${a.studentVisibleFeedback}'),
             if (privateNote != null)
               Container(
                 margin: const EdgeInsets.only(top: DesignTokens.space8),

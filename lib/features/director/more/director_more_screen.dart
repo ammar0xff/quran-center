@@ -42,6 +42,7 @@ class DirectorMoreScreen extends ConsumerWidget {
             tile(Icons.fact_check, 'إدارة الحضور', '/director/attendance'),
             tile(Icons.assignment_ind, 'تعيين طالب لحلقة',
                 '/director/enrollments/assign'),
+            tile(Icons.trending_up, 'المستويات', '/director/levels'),
             tile(Icons.visibility, 'المتابعة التعليمية', '/director/supervision'),
             tile(Icons.bar_chart, 'التقارير', '/director/reports'),
             tile(Icons.campaign, 'الإعلانات', '/director/announcements'),

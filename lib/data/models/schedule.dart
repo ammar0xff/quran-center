@@ -16,6 +16,7 @@ class Schedule extends AppModel {
     this.cancellationReason,
     this.cancelledBy,
     this.cancelledAt,
+    this.guestStudentIds = const [],
     required this.createdAt,
     required this.updatedAt,
   });
@@ -32,6 +33,9 @@ class Schedule extends AppModel {
   final String? cancellationReason;
   final String? cancelledBy;
   final DateTime? cancelledAt;
+
+  /// Students of other circles heard in this session by this teacher.
+  final List<String> guestStudentIds;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -55,6 +59,7 @@ class Schedule extends AppModel {
       cancellationReason: cancellationReason ?? this.cancellationReason,
       cancelledBy: cancelledBy ?? this.cancelledBy,
       cancelledAt: cancelledAt ?? this.cancelledAt,
+      guestStudentIds: guestStudentIds,
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
     );
@@ -74,6 +79,7 @@ class Schedule extends AppModel {
       cancellationReason: json['cancellationReason'] as String?,
       cancelledBy: json['cancelledBy'] as String?,
       cancelledAt: AppModel.parseDateTime(json['cancelledAt']),
+      guestStudentIds: [for (final g in (json['guestStudentIds'] as List? ?? const [])) g as String],
       createdAt: AppModel.parseDateTime(json['createdAt']) ?? DateTime.now(),
       updatedAt: AppModel.parseDateTime(json['updatedAt']) ?? DateTime.now(),
     );
@@ -93,6 +99,7 @@ class Schedule extends AppModel {
       if (cancellationReason != null) 'cancellationReason': cancellationReason,
       if (cancelledBy != null) 'cancelledBy': cancelledBy,
       if (cancelledAt != null) 'cancelledAt': AppModel.encodeDateTime(cancelledAt),
+      if (guestStudentIds.isNotEmpty) 'guestStudentIds': guestStudentIds,
       'createdAt': AppModel.encodeDateTime(createdAt),
       'updatedAt': AppModel.encodeDateTime(updatedAt),
     };

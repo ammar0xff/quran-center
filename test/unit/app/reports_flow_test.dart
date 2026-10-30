@@ -47,6 +47,16 @@ Future<void> _seed(FakeFirestoreDataSource s) async {
       });
   await session('recent', 'cA', 't1', -2, 'completed');
   await session('old', 'cA', 't1', -60, 'completed');
+  Future<void> wird(String id, String student, String teacher, String grade, int daysAgo, {String type = 'newMemorization'}) =>
+      s.setDoc('memorization_records/$id', {
+        'centerId': 'center-1', 'studentId': student, 'teacherId': teacher, 'sessionId': 'recent',
+        'assessmentType': type, 'schemaVersion': 1, 'surah': 1, 'startAyah': 1, 'endAyah': 2,
+        'criteriaScores': {}, 'mistakesCount': 0, 'grade': grade, 'requiresFollowUp': false,
+        'assessedAt': _day(daysAgo), 'createdAt': _day(daysAgo), 'updatedAt': _day(daysAgo),
+      });
+  await wird('w1', 's1', 't1', 'excellent', -2);
+  await wird('w2', 's1', 't2', 'veryGood', -1, type: 'recentRevision'); // a visiting teacher
+  await wird('w3', 's2', 't1', 'repeat', -1);
   Future<void> att(String sess, String student, String status) => s.setDoc('attendance/${sess}_$student', {
         'centerId': 'center-1', 'sessionId': sess, 'studentId': student, 'status': status,
         'recordedBy': 't1', 'createdAt': _day(-1), 'updatedAt': _day(-1),
@@ -159,5 +169,48 @@ void main() {
     await tester.tap(find.text('أحمد علي'));
     await tester.pumpAndSettle();
     expect(find.text('ملف الطالب'), findsOneWidget);
+  });
+
+  group('levels', () {
+    testWidgets('students: weakest first, with their level in words; no marks means no level',
+        (tester) async {
+      final app = await bootApp(tester, accounts: _accounts, seed: _seed);
+      await app.signIn('dir@x.com', 'pw');
+      await app.go('/director/levels');
+      expect(find.textContaining('المستوى: ممتاز (4.5 من 5)'), findsOneWidget);   // s1: excellent + very good, two teachers
+      expect(find.textContaining('المستوى: يحتاج إعادة (1.0 من 5)'), findsOneWidget); // s2
+      expect(find.textContaining('لا يوجد مستوى بعد'), findsOneWidget);                // s3
+      // Weakest first: بسمة (s2) above أحمد (s1) above جميلة (s3, no level).
+      double y(String n) => tester.getTopLeft(find.text(n)).dy;
+      expect(y('بسمة خالد'), lessThan(y('أحمد علي')));
+      expect(y('أحمد علي'), lessThan(y('جميلة')));
+      expect(find.text('طالب مركز آخر'), findsNothing);
+    });
+
+    testWidgets('teachers: their students\' level and what they gave, kept apart, with a caveat',
+        (tester) async {
+      final app = await bootApp(tester, accounts: _accounts, seed: _seed);
+      await app.signIn('dir@x.com', 'pw');
+      await app.go('/director/levels');
+      await tester.tap(find.widgetWithText(Tab, 'المعلمون'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('ليسا حكمًا على جودة التدريس'), findsOneWidget);
+      expect(find.text('المعلمة فاطمة'), findsOneWidget);
+      expect(find.text('المعلمة خديجة'), findsOneWidget);
+      // t1 heard 2 graded wirds (excellent 5, repeat 1) -> gave 3.0.
+      expect(find.text('متوسط ما أعطته: 3.0 (جيد)'), findsWidgets);
+    });
+
+    testWidgets('a student opens from the list to their profile level tab', (tester) async {
+      final app = await bootApp(tester, accounts: _accounts, seed: _seed);
+      await app.signIn('dir@x.com', 'pw');
+      await app.go('/director/levels');
+      await tester.tap(find.text('أحمد علي'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(Tab, 'المستوى'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('المستوى: ممتاز'), findsWidgets);
+      expect(find.text('جيد جدًا'), findsOneWidget); // the visiting teacher's mark is listed
+    });
   });
 }

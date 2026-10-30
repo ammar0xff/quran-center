@@ -59,7 +59,7 @@ const notif = (over = {}) => ({
 
 const rec = (over = {}) => ({
   centerId: C1, studentId: "s1", teacherId: "tA", sessionId: "sess9", circleId: "circle1",
-  assessmentType: "newMemorization", surah: 2, startAyah: 1, endAyah: 5,
+  assessmentType: "newMemorization", grade: "good", surah: 2, startAyah: 1, endAyah: 5,
   criteriaScores: { accuracy: 4 }, mistakesCount: 0, requiresFollowUp: false, ...over,
 });
 
@@ -813,6 +813,190 @@ describe("notifications and announcements", () => {
     await assertFails(setDoc(doc(as("tA"), "announcements/a2"), { ...ann, authorId: "tA" }));
     await assertFails(setDoc(doc(as("dir1"), "announcements/a3"), { ...ann, authorId: "someoneElse" }));
     await assertFails(deleteDoc(doc(as("dir1"), "announcements/a1")));
+  });
+});
+
+describe("wird grades, visiting students and levels", () => {
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, "student_directory/s1"), { centerId: C1, fullName: "طالب ١", active: true });
+      await setDoc(doc(db, "student_directory/s2"), { centerId: C1, fullName: "طالب ٢", active: true });
+      await setDoc(doc(db, "student_directory/sOld"), { centerId: C1, fullName: "مؤرشف", active: false });
+      await setDoc(doc(db, "student_directory/sx"), { centerId: C2, fullName: "مركز آخر", active: true });
+      // tB heard s1 (tA's student) as a visiting teacher in tB's session.
+      await setDoc(doc(db, "schedules/sessB"), { centerId: C1, circleId: "circle2", teacherId: "tB", date: new Date("2026-01-05"), status: "inProgress", guestStudentIds: ["s1"] });
+      await setDoc(doc(db, "memorization_records/visit1"), rec({ teacherId: "tB", studentId: "s1", sessionId: "sessB", grade: "excellent" }));
+    });
+  });
+
+  it("every graded wird needs one of the five marks; the new assignment needs none", async () => {
+    const mk = (id, over) => setDoc(doc(as("tA"), `memorization_records/${id}`), rec({ studentId: "s3", ...over }));
+    for (const g of ["excellent", "veryGood", "good", "acceptable", "repeat"]) await assertSucceeds(mk(`g_${g}`, { grade: g }));
+    const noGrade = rec({ studentId: "s3" });
+    delete noGrade.grade;
+    await assertFails(setDoc(doc(as("tA"), "memorization_records/ng"), noGrade));
+    await assertFails(mk("bad1", { grade: "fantastic" }));
+    await assertFails(mk("bad2", { grade: 5 }));
+    await assertFails(mk("bad3", { assessmentType: "recentRevision", grade: undefined === 1 ? 1 : "" }));
+    const next = rec({ studentId: "s3", assessmentType: "newAssignment" });
+    delete next.grade;
+    await assertSucceeds(setDoc(doc(as("tA"), "memorization_records/next1"), next));
+    await assertFails(mk("badtype", { assessmentType: "bogus" }));
+  });
+
+  it("a student's own teacher sees every wird of that student, including a visiting teacher's", async () => {
+    await assertSucceeds(getDoc(doc(as("tA"), "memorization_records/visit1")));   // tA teaches s1
+    await assertSucceeds(getDoc(doc(as("tB"), "memorization_records/visit1")));   // tB wrote it
+    await assertSucceeds(getDoc(doc(as("uS1"), "memorization_records/visit1")));  // the student
+    await assertSucceeds(getDoc(doc(as("dir1"), "memorization_records/visit1")));
+    await assertFails(getDoc(doc(as("uS2"), "memorization_records/visit1")));
+    const q = (uid, student) => getDocs(query(collection(as(uid), "memorization_records"), where("centerId", "==", C1), where("studentId", "==", student)));
+    await assertSucceeds(q("tA", "s1"));       // level query for my student
+    await assertFails(q("tB", "s3"));          // tB neither teaches s3 nor wrote anything for them
+    await assertFails(q("tSusp", "s1"));
+  });
+
+  it("a visiting teacher can add one student of the same center to their running session", async () => {
+    await assertSucceeds(updateDoc(doc(as("tB"), "schedules/sessB"), { guestStudentIds: ["s1", "s2"] }));
+  });
+
+  it("guests: only one at a time, only real active students of this center, only by the session's teacher, only while running", async () => {
+    const add = (uid, sess, ids) => updateDoc(doc(as(uid), `schedules/${sess}`), { guestStudentIds: ids });
+    await assertFails(add("tB", "sessB", ["s1", "s2", "s3"]));         // two at once
+    await assertFails(add("tB", "sessB", ["s1", "sx"]));               // other center
+    await assertFails(add("tB", "sessB", ["s1", "sOld"]));             // archived
+    await assertFails(add("tB", "sessB", ["s1", "ghost"]));            // not in the directory
+    await assertFails(add("tB", "sessB", ["s2"]));                     // drops s1
+    await assertFails(add("tA", "sessB", ["s1", "s2"]));               // not their session
+    await assertFails(add("tA", "sessSched", ["s1"]));                 // not started
+    await assertFails(updateDoc(doc(as("tB"), "schedules/sessB"), { guestStudentIds: ["s1", "s2"], teacherId: "tB", status: "completed" }));
+    await assertFails(add("uS1", "sessB", ["s1", "s2"]));
+  });
+
+  it("with a visiting student added, that teacher records attendance and grades for them; without it, not", async () => {
+    await assertFails(setDoc(doc(as("tB"), "attendance/sessB_s3"), att({ sessionId: "sessB", studentId: "s3", recordedBy: "tB" })));
+    await assertSucceeds(setDoc(doc(as("tB"), "attendance/sessB_s1"), att({ sessionId: "sessB", studentId: "s1", recordedBy: "tB" })));
+    await assertSucceeds(setDoc(doc(as("tB"), "memorization_records/guest2"), rec({ teacherId: "tB", studentId: "s1", sessionId: "sessB" })));
+    await assertFails(setDoc(doc(as("tB"), "memorization_records/guest3"), rec({ teacherId: "tB", studentId: "s3", sessionId: "sessB" })));
+  });
+
+  it("the directory is readable by teachers and the director only, writable by the director only", async () => {
+    await assertSucceeds(getDoc(doc(as("tA"), "student_directory/s2")));
+    await assertSucceeds(getDoc(doc(as("dir1"), "student_directory/s2")));
+    await assertFails(getDoc(doc(as("uS1"), "student_directory/s1")));
+    await assertFails(getDoc(doc(as("dir2"), "student_directory/s1")));
+    await assertSucceeds(setDoc(doc(as("dir1"), "student_directory/s3"), { centerId: C1, fullName: "طالب ٣", active: true }));
+    await assertFails(setDoc(doc(as("dir1"), "student_directory/sx2"), { centerId: C1, fullName: "x", active: true })); // no such student here
+    await assertFails(setDoc(doc(as("tA"), "student_directory/s3"), { centerId: C1, fullName: "x", active: true }));
+    await assertSucceeds(updateDoc(doc(as("dir1"), "student_directory/s1"), { active: false }));
+    await assertFails(deleteDoc(doc(as("dir1"), "student_directory/s1")));
+  });
+});
+
+describe("finance is the director's alone", () => {
+  const sub = (over = {}) => ({ centerId: C1, studentId: "s1", month: "2026-11", amountDue: 10000, amountPaid: 0, ...over });
+  const pay = (over = {}) => ({ centerId: C1, subscriptionId: "s1_2026-11", studentId: "s1", amount: 5000, method: "cash", receivedBy: "dir1", voided: false, paidAt: new Date(), ...over });
+  const exp = (over = {}) => ({ centerId: C1, category: "rent", amount: 100000, recordedBy: "dir1", voided: false, date: new Date(), ...over });
+  const wage = (over = {}) => ({ centerId: C1, teacherId: "tA", month: "2026-11", amount: 300000, status: "due", ...over });
+
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, "subscriptions/s1_2026-11"), sub());
+      await setDoc(doc(db, "payments/p1"), pay());
+      await setDoc(doc(db, "expenses/e1"), exp());
+      await setDoc(doc(db, "wages/tA_2026-11"), wage());
+      await setDoc(doc(db, "wages/tB_2026-11"), wage({ teacherId: "tB" }));
+      await setDoc(doc(db, "teachers/tA"), { centerId: C1, userId: "tA", fullName: "المعلم أ", status: "active" });
+      await setDoc(doc(db, "teachers/tB"), { centerId: C1, userId: "tB", fullName: "المعلم ب", status: "active" });
+      await setDoc(doc(db, "wage_rates/tA"), { centerId: C1, teacherId: "tA", monthlyAmount: 300000 });
+      await setDoc(doc(db, "student_fees/s1"), { centerId: C1, studentId: "s1", monthlyFee: 10000 });
+    });
+  });
+
+  it("only the director of the center reads the books; teachers and students never do", async () => {
+    for (const path of ["subscriptions/s1_2026-11", "payments/p1", "expenses/e1", "wage_rates/tA", "student_fees/s1"]) {
+      await assertSucceeds(getDoc(doc(as("dir1"), path)));
+      await assertFails(getDoc(doc(as("tA"), path)));
+      await assertFails(getDoc(doc(as("uS1"), path)));
+      await assertFails(getDoc(doc(as("dir2"), path)));
+    }
+  });
+  it("a teacher reads their own wage record only", async () => {
+    await assertSucceeds(getDoc(doc(as("tA"), "wages/tA_2026-11")));
+    await assertFails(getDoc(doc(as("tA"), "wages/tB_2026-11")));
+    await assertFails(getDoc(doc(as("uS1"), "wages/tA_2026-11")));
+    await assertSucceeds(getDoc(doc(as("dir1"), "wages/tB_2026-11")));
+  });
+  it("nobody but the director writes anything", async () => {
+    for (const [path, data] of [
+      ["subscriptions/s3_2026-11", sub({ studentId: "s3" })], ["payments/p9", pay()], ["expenses/e9", exp()],
+      ["wages/tB_2026-12", wage({ teacherId: "tB", month: "2026-12" })], ["student_fees/s3", { centerId: C1, studentId: "s3", monthlyFee: 1 }],
+    ]) {
+      await assertFails(setDoc(doc(as("tA"), path), data));
+      await assertFails(setDoc(doc(as("uS1"), path), data));
+    }
+    await assertFails(updateDoc(doc(as("tA"), "wages/tA_2026-11"), { amount: 999999999 })); // a teacher cannot raise their own pay
+  });
+  it("a subscription is issued once per student and month, unpaid, in a valid month", async () => {
+    await assertSucceeds(setDoc(doc(as("dir1"), "subscriptions/s3_2026-11"), sub({ studentId: "s3" })));
+    await assertFails(setDoc(doc(as("dir1"), "subscriptions/random"), sub({ studentId: "s3" })));            // id convention
+    await assertFails(setDoc(doc(as("dir1"), "subscriptions/s3_2026-13"), sub({ studentId: "s3", month: "2026-13" })));
+    await assertFails(setDoc(doc(as("dir1"), "subscriptions/s3_2026-12"), sub({ studentId: "s3", month: "2026-12", amountPaid: 500 })));
+    await assertFails(setDoc(doc(as("dir1"), "subscriptions/s3_2026-12"), sub({ studentId: "s3", month: "2026-12", amountDue: 10.5 })));
+    await assertFails(setDoc(doc(as("dir1"), "subscriptions/sx_2026-11"), sub({ studentId: "sx" })));         // another center's student
+  });
+  it("a payment is recorded as the acting director with a whole positive amount; money cannot be faked", async () => {
+    await assertSucceeds(setDoc(doc(as("dir1"), "payments/p2"), pay()));
+    await assertFails(setDoc(doc(as("dir1"), "payments/p3"), pay({ receivedBy: "someoneElse" })));
+    await assertFails(setDoc(doc(as("dir1"), "payments/p4"), pay({ amount: 0 })));
+    await assertFails(setDoc(doc(as("dir1"), "payments/p5"), pay({ amount: -100 })));
+    await assertFails(setDoc(doc(as("dir1"), "payments/p6"), pay({ amount: 12.5 })));
+    await assertFails(setDoc(doc(as("dir1"), "payments/p7"), pay({ voided: true })));
+    await assertFails(setDoc(doc(as("dir1"), "payments/p8"), pay({ method: "bitcoin" })));
+    await assertFails(setDoc(doc(as("dir1"), "payments/p10"), pay({ subscriptionId: "ghost_2026-11" })));
+  });
+  it("a payment or expense can only be voided with attribution; amounts never change; nothing is deleted", async () => {
+    await assertFails(updateDoc(doc(as("dir1"), "payments/p1"), { amount: 1 }));
+    await assertFails(updateDoc(doc(as("dir1"), "payments/p1"), { voided: true, voidedBy: "other" }));
+    await assertFails(updateDoc(doc(as("dir1"), "payments/p1"), { voided: true, voidedBy: "dir1", amount: 1 }));
+    await assertSucceeds(updateDoc(doc(as("dir1"), "payments/p1"), { voided: true, voidedBy: "dir1", voidReason: "خطأ إدخال", voidedAt: new Date() }));
+    await assertFails(updateDoc(doc(as("dir1"), "payments/p1"), { voided: false })); // cannot be un-voided
+    await assertSucceeds(updateDoc(doc(as("dir1"), "expenses/e1"), { voided: true, voidedBy: "dir1", voidReason: "مكرر" }));
+    await assertFails(updateDoc(doc(as("dir1"), "expenses/e1"), { amount: 5 }));
+    await assertFails(deleteDoc(doc(as("dir1"), "payments/p1")));
+    await assertFails(deleteDoc(doc(as("dir1"), "expenses/e1")));
+    await assertFails(deleteDoc(doc(as("dir1"), "subscriptions/s1_2026-11")));
+    await assertFails(deleteDoc(doc(as("dir1"), "wages/tA_2026-11")));
+  });
+  it("expenses need a known category, a whole positive amount and the acting director", async () => {
+    await assertSucceeds(setDoc(doc(as("dir1"), "expenses/e2"), exp()));
+    await assertFails(setDoc(doc(as("dir1"), "expenses/e3"), exp({ category: "bribes" })));
+    await assertFails(setDoc(doc(as("dir1"), "expenses/e4"), exp({ amount: 0 })));
+    await assertFails(setDoc(doc(as("dir1"), "expenses/e5"), exp({ recordedBy: "x" })));
+    await assertFails(setDoc(doc(as("dir2"), "expenses/e6"), exp()));
+  });
+  it("wages: one per teacher and month, adjustable while due, paid once and then frozen", async () => {
+    await assertSucceeds(setDoc(doc(as("dir1"), "wages/tB_2026-12"), wage({ teacherId: "tB", month: "2026-12" })));
+    await assertFails(setDoc(doc(as("dir1"), "wages/x"), wage({ teacherId: "tB", month: "2026-12" })));
+    await assertFails(setDoc(doc(as("dir1"), "wages/tB_2027-01"), wage({ teacherId: "tB", month: "2027-01", status: "paid" })));
+    await assertFails(setDoc(doc(as("dir1"), "wages/ghost_2027-01"), wage({ teacherId: "ghost", month: "2027-01" }))); // not a teacher here
+    await assertSucceeds(updateDoc(doc(as("dir1"), "wages/tA_2026-11"), { amount: 280000, adjustment: -20000 }));
+    await assertFails(updateDoc(doc(as("dir1"), "wages/tA_2026-11"), { teacherId: "tB" }));
+    await assertFails(updateDoc(doc(as("dir1"), "wages/tA_2026-11"), { status: "paid" })); // paid needs paidBy
+    await assertSucceeds(updateDoc(doc(as("dir1"), "wages/tA_2026-11"), { status: "paid", paidBy: "dir1", paidAt: new Date(), method: "cash" }));
+    await assertFails(updateDoc(doc(as("dir1"), "wages/tA_2026-11"), { amount: 1 })); // frozen once paid
+    await assertFails(updateDoc(doc(as("dir1"), "wages/tA_2026-11"), { status: "due" }));
+  });
+  it("fees and wage rates are director-only, whole numbers, for this center's own people", async () => {
+    await assertSucceeds(setDoc(doc(as("dir1"), "student_fees/s3"), { centerId: C1, studentId: "s3", monthlyFee: 15000 }));
+    await assertFails(setDoc(doc(as("dir1"), "student_fees/sx"), { centerId: C1, studentId: "sx", monthlyFee: 15000 }));
+    await assertFails(setDoc(doc(as("dir1"), "student_fees/s3"), { centerId: C1, studentId: "s3", monthlyFee: 1.5 }));
+    await assertSucceeds(updateDoc(doc(as("dir1"), "student_fees/s1"), { monthlyFee: 12000 }));
+    await assertFails(updateDoc(doc(as("dir1"), "wage_rates/tA"), { teacherId: "tB" }));
+    await assertSucceeds(updateDoc(doc(as("dir1"), "wage_rates/tA"), { monthlyAmount: 320000 }));
+    await assertFails(updateDoc(doc(as("tA"), "wage_rates/tA"), { monthlyAmount: 99999999 }));
   });
 });
 

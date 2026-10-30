@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/utils/attendance_rules.dart';
+import 'package:quran_center/core/utils/wird_level.dart';
 import 'package:quran_center/data/models/attendance.dart';
 import 'package:quran_center/data/models/circle.dart';
 import 'package:quran_center/data/models/enums.dart';
@@ -10,7 +11,8 @@ import 'package:quran_center/data/models/student.dart';
 import 'package:quran_center/data/providers/repositories.dart';
 
 class TeacherStudentList {
-  const TeacherStudentList(this.students, this.circleNameOf, this.openTasks);
+  const TeacherStudentList(this.students, this.circleNameOf, this.openTasks,
+      [this.levels = const {}]);
   final List<Student> students;
 
   /// studentId -> name of the circle the student attends with this teacher.
@@ -18,6 +20,9 @@ class TeacherStudentList {
 
   /// studentId -> number of open (not completed/cancelled) tasks.
   final Map<String, int> openTasks;
+
+  /// studentId -> level from every graded wird heard for that student.
+  final Map<String, WirdLevel> levels;
 }
 
 /// The signed-in teacher's active students.
@@ -47,7 +52,16 @@ final teacherStudentsProvider =
       open[t.studentId] = (open[t.studentId] ?? 0) + 1;
     }
   }
-  return TeacherStudentList(active, byStudent, open);
+  // One query per student: the rules allow a teacher to read the wirds of
+  // their own students only when the query names the student.
+  final levels = <String, WirdLevel>{};
+  await Future.wait([
+    for (final s in active)
+      ws.assessments(centerId, teacherId, s.studentId).then((rs) {
+        levels[s.studentId] = computeLevel(rs);
+      }),
+  ]);
+  return TeacherStudentList(active, byStudent, open, levels);
 });
 
 class TeacherStudentProfile {
@@ -59,6 +73,7 @@ class TeacherStudentProfile {
     required this.tasks,
     required this.attendance,
     required this.sessionDates,
+    required this.teacherId,
   });
 
   final Student student;
@@ -68,6 +83,7 @@ class TeacherStudentProfile {
   final List<LearningTask> tasks;
   final List<Attendance> attendance;
   final Map<String, DateTime> sessionDates;
+  final String teacherId;
 
   AttendanceSummary get attendanceSummary => AttendanceSummary.from(attendance);
 }
@@ -103,5 +119,6 @@ final teacherStudentProfileProvider = FutureProvider.autoDispose
     tasks: tasks,
     attendance: attendance,
     sessionDates: {for (final s in sessions) s.scheduleId: s.date},
+    teacherId: teacherId,
   );
 });

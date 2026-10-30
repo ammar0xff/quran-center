@@ -136,10 +136,18 @@ extension AttendanceStatusJson on AttendanceStatus {
 
 /// Memorization / assessment type.
 enum AssessmentType {
+  /// ورد الحفظ: reciting what was memorised since last time.
   newMemorization,
+
+  /// المراجعة: ماضي قريب.
   recentRevision,
+
+  /// المراجعة: ماضي بعيد.
   longTermRevision,
   generalRecitation,
+
+  /// الجديد: what the student takes to memorise next. Not graded.
+  newAssignment,
 }
 
 extension AssessmentTypeJson on AssessmentType {
@@ -155,6 +163,8 @@ extension AssessmentTypeJson on AssessmentType {
         return AssessmentType.longTermRevision;
       case 'generalRecitation':
         return AssessmentType.generalRecitation;
+      case 'newAssignment':
+        return AssessmentType.newAssignment;
       default:
         throw ArgumentError('Unknown AssessmentType: $json');
     }
@@ -342,3 +352,46 @@ extension PlanStatusJson on PlanStatus {
 }
 
 /// Task type alias for learning tasks (uses TaskType directly).
+
+
+/// The mark a teacher gives to ONE wird (what a student recited).
+/// ممتاز / جيد جدًا / جيد / مقبول / إعادة.
+enum WirdGrade { excellent, veryGood, good, acceptable, repeat }
+
+extension WirdGradeJson on WirdGrade {
+  String toJson() => toString().split('.').last;
+
+  static WirdGrade fromJson(String? json) {
+    switch (json) {
+      case 'excellent':
+        return WirdGrade.excellent;
+      case 'veryGood':
+        return WirdGrade.veryGood;
+      case 'good':
+        return WirdGrade.good;
+      case 'acceptable':
+        return WirdGrade.acceptable;
+      case 'repeat':
+        return WirdGrade.repeat;
+      default:
+        throw ArgumentError('Unknown WirdGrade: $json');
+    }
+  }
+
+  /// 5 (ممتاز) down to 1 (إعادة). Used only to summarise a level.
+  int get score => switch (this) {
+        WirdGrade.excellent => 5,
+        WirdGrade.veryGood => 4,
+        WirdGrade.good => 3,
+        WirdGrade.acceptable => 2,
+        WirdGrade.repeat => 1,
+      };
+
+  String get label => switch (this) {
+        WirdGrade.excellent => 'ممتاز',
+        WirdGrade.veryGood => 'جيد جدًا',
+        WirdGrade.good => 'جيد',
+        WirdGrade.acceptable => 'مقبول',
+        WirdGrade.repeat => 'إعادة',
+      };
+}

@@ -6,6 +6,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:quran_center/data/datasources/fake_firestore_datasource.dart';
 import 'package:quran_center/core/sync/outbox.dart';
 import 'package:quran_center/data/datasources/firestore_datasource.dart';
+import 'package:quran_center/data/models/enums.dart';
 
 import '../../support/app_harness.dart';
 
@@ -314,12 +315,35 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    Future<void> pickSurah(WidgetTester tester, String name) async {
-      await tester.tap(find.widgetWithText(DropdownButtonFormField<int>, 'السورة *'));
+    Future<void> include(WidgetTester tester, String wird) async {
+      final sw = find.widgetWithText(SwitchListTile, wird);
+      await tester.dragUntilVisible(sw, find.byType(Scrollable).first, const Offset(0, -150));
+      await tester.tap(sw);
       await tester.pumpAndSettle();
-      await tester.dragUntilVisible(find.textContaining(name),
-          find.byType(Scrollable).last, const Offset(0, -300));
-      await tester.tap(find.textContaining(name));
+    }
+
+    Future<void> fill(WidgetTester tester, AssessmentType t, int surah, String from, String to,
+        {WirdGrade? grade}) async {
+      final dd = find.byKey(ValueKey('surah_${t.name}'));
+      await tester.dragUntilVisible(dd, find.byType(Scrollable).first, const Offset(0, -150));
+      // Choose the surah as the dropdown's own callback would (the long menu is
+      // exercised separately); then fill the ayah range.
+      tester.widget<DropdownButtonFormField<int>>(dd).onChanged!(surah);
+      await tester.pumpAndSettle();
+      final card = find.ancestor(of: dd, matching: find.byType(Card));
+      await tester.enterText(find.descendant(of: card, matching: find.widgetWithText(TextField, 'من آية *')), from);
+      await tester.enterText(find.descendant(of: card, matching: find.widgetWithText(TextField, 'إلى آية *')), to);
+      if (grade != null) {
+        final chip = find.byKey(ValueKey('grade_${t.name}_${grade.name}'));
+        await tester.ensureVisible(chip);
+        await tester.tap(chip);
+        await tester.pumpAndSettle();
+      }
+    }
+
+    Future<void> save(WidgetTester tester) async {
+      await tester.dragUntilVisible(find.text('حفظ التسميع'), find.byType(Scrollable).first, const Offset(0, -300));
+      await tester.tap(find.text('حفظ التسميع'));
       await tester.pumpAndSettle();
     }
 
@@ -328,69 +352,66 @@ void main() {
       expect(find.text('تسميع'), findsNothing);
     });
 
-    testWidgets('validation explains each problem and writes nothing', (tester) async {
+    testWidgets('saving with no wird chosen, or a wird without a mark, writes nothing', (tester) async {
       final app = await openLive(tester);
       await openForm(tester, 'بسمة خالد');
-      await tester.tap(find.text('حفظ التسميع'));
-      await tester.pumpAndSettle();
-      expect(find.text('اختر السورة'), findsOneWidget);
+      await save(tester);
+      expect(find.text('اختر ورد واحدًا على الأقل مما سمعته.'), findsOneWidget);
+
+      await include(tester, 'ورد الحفظ');
+      await fill(tester, AssessmentType.newMemorization, 1, '1', '7'); // no mark
+      await save(tester);
+      expect(find.text('اختر التقدير'), findsWidgets);
       expect(await app.store.query('memorization_records', where: []), isEmpty);
 
-      await pickSurah(tester, 'الفاتحة');
-      await tester.enterText(find.widgetWithText(TextField, 'من آية *'), '1');
-      await tester.enterText(find.widgetWithText(TextField, 'إلى آية *'), '9');
-      await tester.tap(find.text('حفظ التسميع'));
-      await tester.pumpAndSettle();
+      // The range is checked against the real surah length.
+      await fill(tester, AssessmentType.newMemorization, 1, '1', '9', grade: WirdGrade.good);
+      await save(tester);
       expect(find.text('آية النهاية بين 1 و 7'), findsOneWidget);
-      expect(find.text('عدد آيات الفاتحة: 7'), findsOneWidget);
       expect(await app.store.query('memorization_records', where: []), isEmpty);
     });
 
-    testWidgets('saves the assessment, the private note separately, and shows the count',
+    testWidgets('one visit: three marked wirds and the new portion, saved together under one visit',
         (tester) async {
       final app = await openLive(tester);
       await openForm(tester, 'بسمة خالد');
-      await pickSurah(tester, 'الفاتحة');
-      await tester.enterText(find.widgetWithText(TextField, 'من آية *'), '1');
-      await tester.enterText(find.widgetWithText(TextField, 'إلى آية *'), '7');
-      await tester.enterText(find.widgetWithText(TextField, 'عدد الأخطاء *'), '2');
-      await tester.tap(find.widgetWithText(ChoiceChip, '4').first);
+
+      await include(tester, 'ورد الحفظ');
+      await fill(tester, AssessmentType.newMemorization, 1, '1', '7', grade: WirdGrade.excellent);
+      await include(tester, 'مراجعة: ماضي قريب');
+      await fill(tester, AssessmentType.recentRevision, 112, '1', '4', grade: WirdGrade.veryGood);
+      await include(tester, 'مراجعة: ماضي بعيد');
+      await fill(tester, AssessmentType.longTermRevision, 113, '1', '5', grade: WirdGrade.repeat);
+      await include(tester, 'الجديد');
+      await fill(tester, AssessmentType.newAssignment, 114, '1', '6'); // no mark for the new portion
       await tester.enterText(find.widgetWithText(TextField, 'ملاحظة تراها الطالبة/الطالب'), 'أحسنتِ');
-      await tester.enterText(find.widgetWithText(TextField, 'ملاحظة خاصة بالمعلم'), 'تحتاج متابعة سرية');
-      await tester.dragUntilVisible(
-          find.text('حفظ التسميع'), find.byType(Scrollable).first, const Offset(0, -300));
-      await tester.tap(find.text('حفظ التسميع'));
-      await tester.pumpAndSettle();
+      await tester.enterText(find.widgetWithText(TextField, 'ملاحظة خاصة بالمعلم'), 'سرية');
+      await save(tester);
 
-      final records = await app.store.query('memorization_records', where: []);
-      expect(records, hasLength(1));
-      final r = records.single;
-      expect(r['studentId'], 's1');
-      expect(r['teacherId'], 'tea-1');
-      expect(r['sessionId'], 'today');
-      expect(r['surah'], 1);
-      expect(r['endAyah'], 7);
-      expect(r['mistakesCount'], 2);
-      expect((r['criteriaScores'] as Map)['accuracy'], 4.0);
-      expect(r['studentVisibleFeedback'], 'أحسنتِ');
-      expect('$r', isNot(contains('تحتاج متابعة سرية')));
-
-      final notes = await app.store.query('private_teacher_notes', where: []);
-      expect(notes.single['note'], 'تحتاج متابعة سرية');
-      expect(notes.single['studentId'], 's1');
-
-      // Back on the session with a visible count.
+      final recs = await app.store.query('memorization_records', where: []);
+      expect(recs, hasLength(4));
+      expect({for (final r in recs) r['assessmentType'] as String: r['grade']}, {
+        'newMemorization': 'excellent',
+        'recentRevision': 'veryGood',
+        'longTermRevision': 'repeat',
+        'newAssignment': null,
+      });
+      expect(recs.map((r) => r['visitId']).toSet(), hasLength(1));
+      expect(recs.every((r) => r['studentId'] == 's1' && r['teacherId'] == 'tea-1'), isTrue);
+      // Notes belong to the visit and are stored once; the private one never in the student-readable record.
+      expect(recs.where((r) => r['studentVisibleFeedback'] == 'أحسنتِ'), hasLength(1));
+      expect('$recs', isNot(contains('سرية')));
+      expect((await app.store.query('private_teacher_notes', where: [])).single['note'], 'سرية');
       expect(find.text('تم حفظ التسميع'), findsOneWidget);
-      expect(find.text('تسميعات اليوم: 1'), findsOneWidget);
+      expect(find.text('تسميعات اليوم: 4'), findsOneWidget);
     });
 
     testWidgets('leaving with unsaved input asks first; keeping editing stays', (tester) async {
       final app = await openLive(tester);
       await openForm(tester, 'بسمة خالد');
-      await tester.enterText(find.widgetWithText(TextField, 'عدد الأخطاء *'), '3');
-      await tester.pump();
+      await include(tester, 'ورد الحفظ');
 
-      await Navigator.of(tester.element(find.text('حفظ التسميع'))).maybePop(); // like the back button
+      await Navigator.of(tester.element(find.text('حفظ التسميع'))).maybePop();
       await tester.pumpAndSettle();
       expect(find.text('تجاهل التسميع؟'), findsOneWidget);
       await tester.tap(find.text('متابعة التعديل'));
@@ -405,8 +426,7 @@ void main() {
       expect(await app.store.query('memorization_records', where: []), isEmpty);
     });
 
-    testWidgets('an assessment saved offline is kept and written exactly once when back online',
-        (tester) async {
+    testWidgets('a wird saved offline is kept and written exactly once when back online', (tester) async {
       final store = _OfflineStore();
       final net = StreamController<void>.broadcast();
       addTearDown(net.close);
@@ -417,18 +437,12 @@ void main() {
       await tester.tap(find.text('بدء الجلسة'));
       await tester.pumpAndSettle();
       await openForm(tester, 'أحمد علي');
-      await pickSurah(tester, 'الإخلاص');
-      await tester.enterText(find.widgetWithText(TextField, 'من آية *'), '1');
-      await tester.enterText(find.widgetWithText(TextField, 'إلى آية *'), '4');
+      await include(tester, 'ورد الحفظ');
+      await fill(tester, AssessmentType.newMemorization, 112, '1', '4', grade: WirdGrade.good);
       await tester.enterText(find.widgetWithText(TextField, 'ملاحظة خاصة بالمعلم'), 'سرية');
-      await tester.dragUntilVisible(
-          find.text('حفظ التسميع'), find.byType(Scrollable).first, const Offset(0, -300));
 
       store.offline = true;
-      await tester.tap(find.text('حفظ التسميع'));
-      await tester.pumpAndSettle();
-
-      // The form closed (nothing to retype) and the count already shows it.
+      await save(tester);
       expect(find.text('حفظ التسميع'), findsNothing);
       expect(find.text('تسميعات اليوم: 1'), findsOneWidget);
       expect(find.textContaining('بانتظار المزامنة'), findsWidgets);
@@ -437,14 +451,48 @@ void main() {
       store.offline = false;
       net.add(null);
       await tester.pumpAndSettle();
-      net.add(null); // a second signal must not duplicate anything
+      net.add(null);
       await tester.pumpAndSettle();
 
       final records = await store.peekAll('memorization_records');
       expect(records, hasLength(1));
-      expect(records.single['studentId'], 's2');
+      expect(records.single['grade'], 'good');
       expect((await store.peekAll('private_teacher_notes')).single['note'], 'سرية');
       expect(find.textContaining('بانتظار المزامنة'), findsNothing);
+    });
+  });
+
+  group('visiting students', () {
+    testWidgets('a teacher adds a student from another circle, marks attendance and grades a wird',
+        (tester) async {
+      final app = await bootApp(tester, accounts: _accounts, seed: (s) async {
+        await _seed(s);
+        for (final (id, name, active) in [
+          ('s1', 'بسمة خالد', true), ('s2', 'أحمد علي', true), ('s9', 'طالب معلمة أخرى', true), ('sOld', 'مؤرشف', false),
+        ]) {
+          await s.setDoc('student_directory/$id', {'centerId': 'center-1', 'fullName': name, 'active': active});
+        }
+      });
+      await app.signIn('tea@x.com', 'pw');
+      await app.go('/teacher/sessions/today');
+      expect(find.text('إضافة طالب زائر من حلقة أخرى'), findsNothing); // not before the session starts
+      await tester.tap(find.text('بدء الجلسة'));
+      await tester.pumpAndSettle();
+
+      await tester.dragUntilVisible(find.text('إضافة طالب زائر من حلقة أخرى'), find.byType(ListView), const Offset(0, -200));
+      await tester.tap(find.text('إضافة طالب زائر من حلقة أخرى'));
+      await tester.pumpAndSettle();
+      expect(find.text('طالب معلمة أخرى'), findsOneWidget);
+      expect(find.text('مؤرشف'), findsNothing);   // archived are not offered
+      expect(find.text('بسمة خالد'), findsOneWidget); // only in the roster behind, not as an option
+      await tester.tap(find.text('طالب معلمة أخرى'));
+      await tester.pumpAndSettle();
+
+      expect(((await app.store.getDoc('schedules/today'))!['guestStudentIds'] as List), ['s9']);
+      expect(find.text('طالب معلمة أخرى (زائر)'), findsOneWidget);
+      await tester.tap(_chip('طالب معلمة أخرى (زائر)', 'حاضر'));
+      await tester.pumpAndSettle();
+      expect((await app.store.getDoc('attendance/today_s9'))!['recordedBy'], 'tea-1');
     });
   });
 

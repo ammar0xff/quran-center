@@ -57,12 +57,13 @@ class TeacherWorkspace {
         .toList();
   }
 
-  /// This teacher's assessments of one student, newest first.
+  /// EVERY wird heard for one of the teacher's own students, newest first,
+  /// including those heard by a visiting teacher. Only call it for a student
+  /// assigned to this teacher: the Security Rules refuse it otherwise.
   Future<List<MemorizationRecord>> assessments(
       String centerId, String teacherId, String studentId) async {
     final docs = await _ds.query('memorization_records', where: [
       QueryFilter.equal('centerId', centerId),
-      QueryFilter.equal('teacherId', teacherId),
       QueryFilter.equal('studentId', studentId),
     ]);
     final list = docs

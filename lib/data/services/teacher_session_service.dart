@@ -22,6 +22,8 @@ class SessionException implements Exception {
 class AssessmentDraft {
   const AssessmentDraft({
     required this.type,
+    this.grade,
+    this.visitId,
     required this.surah,
     required this.startAyah,
     required this.endAyah,
@@ -40,6 +42,12 @@ class AssessmentDraft {
   });
 
   final AssessmentType type;
+
+  /// ممتاز..إعادة. Required for every wird except the ungraded "new assignment".
+  final WirdGrade? grade;
+
+  /// Groups the wirds heard in one visit of one student.
+  final String? visitId;
   final int surah;
   final int startAyah;
   final int endAyah;
@@ -60,6 +68,8 @@ class AssessmentDraft {
 
   Map<String, dynamic> toJson() => {
         'type': type.toJson(),
+        'grade': grade?.toJson(),
+        'visitId': visitId,
         'surah': surah,
         'startAyah': startAyah,
         'endAyah': endAyah,
@@ -79,6 +89,8 @@ class AssessmentDraft {
 
   factory AssessmentDraft.fromJson(Map<String, dynamic> j) => AssessmentDraft(
         type: AssessmentTypeJson.fromJson(j['type'] as String?),
+        grade: j['grade'] == null ? null : WirdGradeJson.fromJson(j['grade'] as String?),
+        visitId: j['visitId'] as String?,
         surah: j['surah'] as int,
         startAyah: j['startAyah'] as int,
         endAyah: j['endAyah'] as int,
@@ -108,6 +120,7 @@ class SessionRoster {
     required this.students,
     required this.records,
     this.assessmentCounts = const {},
+    this.guests = const [],
   });
 
   final Schedule session;
@@ -122,8 +135,18 @@ class SessionRoster {
   /// How many assessments this teacher has recorded in this session, by student.
   final Map<String, int> assessmentCounts;
 
+  /// Students of other circles added to this session (id and name only: their
+  /// full record stays private to their own teachers).
+  final List<GuestStudent> guests;
+
   List<Student> get missing =>
       students.where((s) => !records.containsKey(s.studentId)).toList();
+}
+
+class GuestStudent {
+  const GuestStudent(this.studentId, this.name);
+  final String studentId;
+  final String name;
 }
 
 /// A teacher's operations on their own teaching sessions.
@@ -147,6 +170,71 @@ class TeacherSessionService {
       throw SessionException('لم يتم العثور على الجلسة.');
     }
     return Schedule.fromJson(sessionId, firestoreConverter.decodeFromRead(raw));
+  }
+
+
+  /// Own student of the session's circle, or a visiting student added to it.
+  Future<void> _requireInSession(
+      String centerId, String teacherId, Schedule session, String studentId) async {
+    if (session.guestStudentIds.contains(studentId)) return;
+    final inCircle = await _ds.query('enrollments', where: [
+      QueryFilter.equal('centerId', centerId),
+      QueryFilter.equal('circleId', session.circleId),
+      QueryFilter.equal('studentId', studentId),
+      QueryFilter.equal('status', 'active'),
+      QueryFilter.equal('teacherId', teacherId),
+    ]);
+    if (inCircle.isEmpty) {
+      throw SessionException('هذا الطالب ليس ضمن طلاب هذه الجلسة.');
+    }
+  }
+
+  /// Students the teacher can add as visitors: active students of the center
+  /// who are not already in this session. Names only.
+  Future<List<GuestStudent>> findableStudents(
+      String centerId, String teacherId, String sessionId) async {
+    final session = await _session(centerId, teacherId, sessionId);
+    final own = {
+      for (final e in await _ds.query('enrollments', where: [
+        QueryFilter.equal('centerId', centerId),
+        QueryFilter.equal('circleId', session.circleId),
+        QueryFilter.equal('teacherId', teacherId),
+        QueryFilter.equal('status', 'active'),
+      ]))
+        e['studentId'] as String
+    };
+    final cards = await _ds.query('student_directory', where: [
+      QueryFilter.equal('centerId', centerId),
+      QueryFilter.equal('active', true),
+    ]);
+    return [
+      for (final c in cards)
+        if (!own.contains(c['id']) && !session.guestStudentIds.contains(c['id']))
+          GuestStudent(c['id'] as String, (c['fullName'] as String?) ?? '')
+    ]..sort((a, b) => a.name.compareTo(b.name));
+  }
+
+  /// Adds one visiting student to a running session (a student may sit with a
+  /// different teacher now and then).
+  Future<void> addGuest({
+    required String centerId,
+    required String teacherId,
+    required String sessionId,
+    required String studentId,
+  }) async {
+    final session = await _session(centerId, teacherId, sessionId);
+    if (session.status != SessionStatus.inProgress) {
+      throw SessionException('ابدأ الجلسة أولًا لإضافة طالب زائر.');
+    }
+    if (session.guestStudentIds.contains(studentId)) return;
+    final card = await _ds.getDoc('student_directory/$studentId');
+    if (card == null || card['centerId'] != centerId || card['active'] != true) {
+      throw SessionException('لم يتم العثور على الطالب.');
+    }
+    await _ds.updateDoc('schedules/$sessionId', {
+      'guestStudentIds': [...session.guestStudentIds, studentId],
+      'updatedAt': firestoreConverter.serverTimestamp(),
+    });
   }
 
   Future<void> start({
@@ -211,12 +299,20 @@ class TeacherSessionService {
     for (final a in await _assessments(centerId, teacherId, sessionId)) {
       counts[a.studentId] = (counts[a.studentId] ?? 0) + 1;
     }
+    final guests = <GuestStudent>[];
+    for (final id in session.guestStudentIds) {
+      final card = await _ds.getDoc('student_directory/$id');
+      if (card != null && card['centerId'] == centerId) {
+        guests.add(GuestStudent(id, (card['fullName'] as String?) ?? ''));
+      }
+    }
     return SessionRoster(
       session: session,
       circleName: circleName,
       students: students,
       records: records,
       assessmentCounts: counts,
+      guests: guests,
     );
   }
 
@@ -249,16 +345,7 @@ class TeacherSessionService {
     final block = checkRecord(session);
     if (block != null) throw SessionException(sessionBlockMessage(block));
 
-    final inCircle = await _ds.query('enrollments', where: [
-      QueryFilter.equal('centerId', centerId),
-      QueryFilter.equal('circleId', session.circleId),
-      QueryFilter.equal('studentId', studentId),
-      QueryFilter.equal('status', 'active'),
-      QueryFilter.equal('teacherId', teacherId),
-    ]);
-    if (inCircle.isEmpty) {
-      throw SessionException('هذا الطالب ليس ضمن طلاب هذه الجلسة.');
-    }
+    await _requireInSession(centerId, teacherId, session, studentId);
 
     final trimmed = note?.trim();
     final cleanNote = (trimmed == null || trimmed.isEmpty) ? null : trimmed;
@@ -342,15 +429,10 @@ class TeacherSessionService {
       throw SessionException(bad.mistakes ?? bad.scores ?? bad.range ?? 'بيانات غير صالحة.');
     }
 
-    final inCircle = await _ds.query('enrollments', where: [
-      QueryFilter.equal('centerId', centerId),
-      QueryFilter.equal('circleId', session.circleId),
-      QueryFilter.equal('studentId', studentId),
-      QueryFilter.equal('status', 'active'),
-      QueryFilter.equal('teacherId', teacherId),
-    ]);
-    if (inCircle.isEmpty) {
-      throw SessionException('هذا الطالب ليس ضمن طلاب هذه الجلسة.');
+    await _requireInSession(centerId, teacherId, session, studentId);
+
+    if (draft.type != AssessmentType.newAssignment && draft.grade == null) {
+      throw SessionException('اختر تقدير الورد.');
     }
 
     String? clean(String? v) {
@@ -367,6 +449,8 @@ class TeacherSessionService {
       sessionId: sessionId,
       circleId: session.circleId,
       assessmentType: draft.type,
+      grade: draft.type == AssessmentType.newAssignment ? null : draft.grade,
+      visitId: draft.visitId,
       schemaVersion: assessmentSchemaVersion,
       surah: draft.surah,
       startAyah: draft.startAyah,

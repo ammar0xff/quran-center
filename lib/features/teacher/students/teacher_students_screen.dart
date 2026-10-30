@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
+import 'package:quran_center/core/utils/wird_level.dart';
+import 'package:quran_center/features/shared/level_summary.dart';
 import 'package:quran_center/features/teacher/students/teacher_student_data.dart';
 import 'package:quran_center/features/teacher/widgets/teacher_bottom_nav.dart';
 
@@ -86,12 +88,21 @@ class _TeacherStudentsScreenState extends ConsumerState<TeacherStudentsScreen> {
                                   ),
                                   title: Text(s.displayName,
                                       style: const TextStyle(fontWeight: FontWeight.w600)),
-                                  subtitle: Text([
-                                    if ((d.circleNameOf[s.studentId] ?? '').isNotEmpty)
-                                      d.circleNameOf[s.studentId]!,
-                                    if ((d.openTasks[s.studentId] ?? 0) > 0)
-                                      '${d.openTasks[s.studentId]} مهام مفتوحة',
-                                  ].join(' • ')),
+                                  subtitle: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text([
+                                        if ((d.circleNameOf[s.studentId] ?? '').isNotEmpty)
+                                          d.circleNameOf[s.studentId]!,
+                                        if ((d.openTasks[s.studentId] ?? 0) > 0)
+                                          '${d.openTasks[s.studentId]} مهام مفتوحة',
+                                      ].join(' • ')),
+                                      LevelSummary(
+                                        level: d.levels[s.studentId] ?? computeLevel(const []),
+                                        compact: true,
+                                      ),
+                                    ],
+                                  ),
                                   trailing: const Icon(Icons.chevron_left),
                                   onTap: () => context.push('/teacher/students/${s.studentId}'),
                                 ),

@@ -173,6 +173,33 @@ class _TeacherSessionScreenState extends ConsumerState<TeacherSessionScreen> {
     }
   }
 
+  Future<void> _addGuest() async {
+    List<GuestStudent> options;
+    try {
+      options = await ref
+          .read(teacherSessionServiceProvider)
+          .findableStudents(_centerId, _teacherId, widget.sessionId);
+    } catch (_) {
+      if (mounted) _toast('تعذر تحميل قائمة الطلاب. تحقق من اتصالك.', error: true);
+      return;
+    }
+    if (!mounted) return;
+    final picked = await showModalBottomSheet<GuestStudent>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => _GuestPicker(options: options),
+    );
+    if (picked == null) return;
+    await _run(
+      () => ref.read(teacherSessionServiceProvider).addGuest(
+          centerId: _centerId,
+          teacherId: _teacherId,
+          sessionId: widget.sessionId,
+          studentId: picked.studentId),
+      'أُضيف ${picked.name} إلى الجلسة',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.watch(outboxSnapshotProvider); // rebuild as changes are sent or rejected
@@ -261,37 +288,42 @@ class _TeacherSessionScreenState extends ConsumerState<TeacherSessionScreen> {
         Text('الطلاب (${r.students.length})  •  سُجِّل $recorded',
             style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
         const SizedBox(height: DesignTokens.space8),
-        if (r.students.isEmpty)
+        if (r.students.isEmpty && r.guests.isEmpty)
           const Text('لا يوجد طلاب مسندون إليك في هذه الحلقة.',
-              style: TextStyle(color: DesignTokens.secondaryText))
-        else
-          for (final st in r.students)
-            _StudentRow(
-              key: ValueKey(st.studentId),
-              name: st.displayName,
-              current: pending[st.studentId] != null
-                  ? AttendanceStatusJson.fromJson(pending[st.studentId]!.payload['status'] as String?)
-                  : r.records[st.studentId]?.status,
-              editable: live,
-              saving: false,
-              syncNote: pending[st.studentId] == null
-                  ? null
-                  : (pending[st.studentId]!.failed
-                      ? 'رُفض: ${pending[st.studentId]!.error}'
-                      : 'بانتظار المزامنة'),
-              syncFailed: pending[st.studentId]?.failed ?? false,
-              assessments: (r.assessmentCounts[st.studentId] ?? 0) +
-                  (pendingAssessments[st.studentId] ?? 0),
-              onPick: (status) => _mark(st.studentId, st.displayName, status),
-              onAssess: live
-                  ? () async {
-                      final saved = await context.push<bool>(
-                          '/teacher/sessions/${widget.sessionId}/assess/${st.studentId}'
-                          '?name=${Uri.encodeQueryComponent(st.displayName)}');
-                      if (saved == true) await _load();
-                    }
-                  : null,
-            ),
+              style: TextStyle(color: DesignTokens.secondaryText)),
+        for (final (id, name, guest) in [
+          for (final st in r.students) (st.studentId, st.displayName, false),
+          for (final g in r.guests) (g.studentId, g.name, true),
+        ])
+          _StudentRow(
+            key: ValueKey(id),
+            name: guest ? '$name (زائر)' : name,
+            current: pending[id] != null
+                ? AttendanceStatusJson.fromJson(pending[id]!.payload['status'] as String?)
+                : r.records[id]?.status,
+            editable: live,
+            saving: false,
+            syncNote: pending[id] == null
+                ? null
+                : (pending[id]!.failed ? 'رُفض: ${pending[id]!.error}' : 'بانتظار المزامنة'),
+            syncFailed: pending[id]?.failed ?? false,
+            assessments: (r.assessmentCounts[id] ?? 0) + (pendingAssessments[id] ?? 0),
+            onPick: (status) => _mark(id, name, status),
+            onAssess: live
+                ? () async {
+                    final saved = await context.push<bool>(
+                        '/teacher/sessions/${widget.sessionId}/assess/$id'
+                        '?name=${Uri.encodeQueryComponent(name)}');
+                    if (saved == true) await _load();
+                  }
+                : null,
+          ),
+        if (live)
+          OutlinedButton.icon(
+            onPressed: _busy ? null : _addGuest,
+            icon: const Icon(Icons.person_add_alt),
+            label: const Text('إضافة طالب زائر من حلقة أخرى'),
+          ),
         if (live) ...[
           const SizedBox(height: DesignTokens.space24),
           FilledButton.icon(
@@ -389,6 +421,65 @@ class _StudentRow extends StatelessWidget {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GuestPicker extends StatefulWidget {
+  const _GuestPicker({required this.options});
+  final List<GuestStudent> options;
+
+  @override
+  State<_GuestPicker> createState() => _GuestPickerState();
+}
+
+class _GuestPickerState extends State<_GuestPicker> {
+  String _q = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final items = widget.options.where((g) => g.name.contains(_q.trim())).toList();
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              left: DesignTokens.space16,
+              right: DesignTokens.space16,
+              top: DesignTokens.space16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('طالب زائر',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+              const SizedBox(height: DesignTokens.space8),
+              TextField(
+                onChanged: (v) => setState(() => _q = v),
+                decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.search), hintText: 'ابحث بالاسم'),
+              ),
+              const SizedBox(height: DesignTokens.space8),
+              Flexible(
+                child: items.isEmpty
+                    ? const Padding(
+                        padding: EdgeInsets.all(DesignTokens.space24),
+                        child: Text('لا يوجد طلاب مطابقون'))
+                    : ListView(
+                        shrinkWrap: true,
+                        children: [
+                          for (final g in items)
+                            ListTile(
+                              title: Text(g.name),
+                              onTap: () => Navigator.of(context).pop(g),
+                            ),
+                        ],
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );

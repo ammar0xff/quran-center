@@ -35,6 +35,8 @@ class MemorizationRecord extends AppModel {
     this.studentVisibleFeedback,
     this.recommendedNextAssignment,
     this.suggestedNextReviewDate,
+    this.grade,
+    this.visitId,
     required this.assessedAt,
     required this.createdAt,
     required this.updatedAt,
@@ -63,6 +65,11 @@ class MemorizationRecord extends AppModel {
   final String? studentVisibleFeedback;
   final String? recommendedNextAssignment;
   final DateTime? suggestedNextReviewDate;
+  /// The mark for this wird. Null only for the ungraded "new assignment".
+  final WirdGrade? grade;
+
+  /// Groups the wirds heard in one visit (one student, one session).
+  final String? visitId;
   final DateTime assessedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -113,6 +120,8 @@ class MemorizationRecord extends AppModel {
           recommendedNextAssignment ?? this.recommendedNextAssignment,
       suggestedNextReviewDate:
           suggestedNextReviewDate ?? this.suggestedNextReviewDate,
+      grade: grade,
+      visitId: visitId,
       assessedAt: assessedAt ?? this.assessedAt,
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
@@ -147,6 +156,8 @@ class MemorizationRecord extends AppModel {
       studentVisibleFeedback: json['studentVisibleFeedback'] as String?,
       recommendedNextAssignment: json['recommendedNextAssignment'] as String?,
       suggestedNextReviewDate: AppModel.parseDateTime(json['suggestedNextReviewDate']),
+      grade: json['grade'] == null ? null : WirdGradeJson.fromJson(json['grade'] as String?),
+      visitId: json['visitId'] as String?,
       assessedAt: AppModel.parseDateTime(json['assessedAt']) ?? DateTime.now(),
       createdAt: AppModel.parseDateTime(json['createdAt']) ?? DateTime.now(),
       updatedAt: AppModel.parseDateTime(json['updatedAt']) ?? DateTime.now(),
@@ -181,6 +192,8 @@ class MemorizationRecord extends AppModel {
         'recommendedNextAssignment': recommendedNextAssignment,
       if (suggestedNextReviewDate != null)
         'suggestedNextReviewDate': AppModel.encodeDateTime(suggestedNextReviewDate),
+      if (grade != null) 'grade': grade!.toJson(),
+      if (visitId != null) 'visitId': visitId,
       'assessedAt': AppModel.encodeDateTime(assessedAt),
       'createdAt': AppModel.encodeDateTime(createdAt),
       'updatedAt': AppModel.encodeDateTime(updatedAt),

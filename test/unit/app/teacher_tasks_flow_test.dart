@@ -54,9 +54,15 @@ Future<void> _seed(FakeFirestoreDataSource s) async {
   await s.setDoc('memorization_records/m1', {
     'centerId': 'center-1', 'studentId': 's1', 'teacherId': 'tea-1', 'sessionId': 'x',
     'assessmentType': 'newMemorization', 'schemaVersion': 1, 'surah': 1, 'startAyah': 1,
-    'endAyah': 7, 'criteriaScores': {'accuracy': 4.0}, 'mistakesCount': 2,
+    'endAyah': 7, 'criteriaScores': {}, 'mistakesCount': 0, 'grade': 'veryGood',
     'requiresFollowUp': true, 'studentVisibleFeedback': 'أحسنتِ',
     'assessedAt': _day(-2), 'createdAt': _day(-2), 'updatedAt': _day(-2),
+  });
+  await s.setDoc('memorization_records/m-visit', {
+    'centerId': 'center-1', 'studentId': 's1', 'teacherId': 'tea-9', 'sessionId': 'y',
+    'assessmentType': 'recentRevision', 'schemaVersion': 1, 'surah': 112, 'startAyah': 1,
+    'endAyah': 4, 'criteriaScores': {}, 'mistakesCount': 0, 'grade': 'acceptable',
+    'requiresFollowUp': false, 'assessedAt': _day(-1), 'createdAt': _day(-1), 'updatedAt': _day(-1),
   });
   await s.setDoc('private_teacher_notes/m1', {
     'centerId': 'center-1', 'studentId': 's1', 'teacherId': 'tea-1', 'note': 'تحتاج دعمًا',
@@ -100,6 +106,22 @@ void main() {
     expect(find.text('بسمة خالد'), findsNothing);
   });
 
+  testWidgets('the profile shows the level from every wird, also those a visiting teacher heard',
+      (tester) async {
+    await open(tester, '/teacher/students/s1');
+    // (4 + 2) / 2 = 3.0 -> جيد
+    expect(find.textContaining('المستوى: جيد (3.0 من 5)'), findsOneWidget);
+    expect(find.textContaining('من آخر 2 أوراد'), findsOneWidget);
+    expect(find.textContaining('سمعتها معلمة أخرى'), findsOneWidget);
+  });
+
+  testWidgets('the student list shows each student\'s level, or says there is none',
+      (tester) async {
+    await open(tester, '/teacher/students');
+    expect(find.textContaining('المستوى: جيد (3.0 من 5)'), findsOneWidget);
+    expect(find.textContaining('لا يوجد مستوى بعد'), findsOneWidget); // s2 has no graded wird
+  });
+
   testWidgets('another teacher\'s student is not reachable by URL', (tester) async {
     await open(tester, '/teacher/students/s9');
     expect(find.text('الطالب غير موجود ضمن طلابك'), findsOneWidget);
@@ -110,8 +132,8 @@ void main() {
     testWidgets('assessments show criteria, student feedback, and the private note marked as private',
         (tester) async {
       await open(tester, '/teacher/students/s1');
-      expect(find.textContaining('حفظ جديد • الفاتحة: 1–7'), findsOneWidget);
-      expect(find.textContaining('الدقة 4/5'), findsOneWidget);
+      expect(find.textContaining('ورد الحفظ • الفاتحة: 1–7'), findsOneWidget);
+      expect(find.text('جيد جدًا'), findsOneWidget);
       expect(find.textContaining('للطالب: أحسنتِ'), findsOneWidget);
       expect(find.textContaining('ملاحظة خاصة (لا يراها الطالب): تحتاج دعمًا'), findsOneWidget);
       expect(find.textContaining('يحتاج متابعة'), findsOneWidget);

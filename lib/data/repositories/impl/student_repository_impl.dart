@@ -22,6 +22,10 @@ class StudentRepositoryImpl implements StudentRepository {
     return Student.fromJson(studentId, firestoreConverter.decodeFromRead(data));
   }
 
+  /// The minimal card teachers can search to find a visiting student.
+  Map<String, dynamic> _card(String centerId, String name, bool active) =>
+      {'centerId': centerId, 'fullName': name, 'active': active};
+
   @override
   Future<void> createStudent(Student student, {String? actorId, String? actorRole}) async {
     final data = firestoreConverter.encodeForWrite(
@@ -29,13 +33,19 @@ class StudentRepositoryImpl implements StudentRepository {
       timestampKeys: _timestampKeys,
     );
     final path = '$_collectionPath/${student.studentId}';
+    final card = _card(student.centerId, student.fullName,
+        student.enrollmentStatus == EnrollmentStatus.active);
     if (actorId == null || actorRole == null) {
-      await _ds.setDoc(path, data);
+      await _ds.commitBatch([
+        BatchOp.set(path, data),
+        BatchOp.set('student_directory/${student.studentId}', card),
+      ]);
       return;
     }
     final now = DateTime.now();
     await _ds.commitBatch([
       BatchOp.set(path, {...data, 'createdBy': actorId, 'updatedBy': actorId}),
+      BatchOp.set('student_directory/${student.studentId}', card),
       BatchOp.set('audit_logs/aud_${now.microsecondsSinceEpoch}_${student.studentId}', {
         'centerId': student.centerId,
         'actorUserId': actorId,
@@ -152,6 +162,8 @@ class StudentRepositoryImpl implements StudentRepository {
           'updatedBy': actorId,
           'updatedAt': firestoreConverter.serverTimestamp(),
         }),
+      if (next.containsKey('fullName'))
+        BatchOp.set('student_directory/$studentId', _card(centerId, name, current['enrollmentStatus'] == 'active')),
       if (noteChanged)
         BatchOp.set('student_admin_notes/$studentId', {
           'centerId': centerId,
@@ -237,6 +249,8 @@ class StudentRepositoryImpl implements StudentRepository {
         'updatedBy': actorId,
         'updatedAt': firestoreConverter.serverTimestamp(),
       }),
+      BatchOp.set('student_directory/$studentId',
+          _card(centerId, current['fullName'] as String, !archiving)),
       BatchOp.set('audit_logs/aud_${now.microsecondsSinceEpoch}_$studentId', {
         'centerId': centerId,
         'actorUserId': actorId,

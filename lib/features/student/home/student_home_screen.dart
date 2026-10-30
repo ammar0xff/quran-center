@@ -5,6 +5,8 @@ import 'package:intl/intl.dart' hide TextDirection;
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/core/utils/task_state.dart';
+import 'package:quran_center/core/utils/wird_level.dart';
+import 'package:quran_center/features/shared/level_summary.dart';
 import 'package:quran_center/features/director/circles/circle_detail_data.dart'
     show circleModeLabel;
 import 'package:quran_center/features/shared/notifications/notifications_screen.dart';
@@ -100,6 +102,14 @@ class StudentHomeScreen extends ConsumerWidget {
                     onTap: () => context.go('/student/tasks'),
                   ),
                 ],
+              ),
+            ),
+
+            _Section('مستواك في الأوراد'),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(DesignTokens.space16),
+                child: LevelSummary(level: computeLevel(d.feedback)),
               ),
             ),
 
