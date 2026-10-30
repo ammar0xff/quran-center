@@ -133,7 +133,9 @@ Key design points:
    project configured (`firebase_options.dart` is a placeholder).
 3. **Director provisioning** is an operator CLI (`docs/operations.md`); there is
    no in-app way to create a director, by design.
-4. **App Check, rate limiting and Storage rules** are not configured.
+4. **App Check** is activated in the app but not enforced (console step); there
+   is no rate limiting beyond Firebase defaults, and no Storage rules (the app
+   stores no files).
 5. **Atomic batch size.** Changing a circle's teacher is one atomic batch for a
    normal circle. A circle needing more than ~450 writes is applied in several
    batches with the circle itself last, so a failure part-way leaves the circle

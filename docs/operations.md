@@ -32,9 +32,17 @@ It creates the Auth account (no password), the `role`/`centerId` claims, the
 director to choose a password. It refuses an email that already has an account
 and a center id that already exists.
 
-## Still needed before real use
-* `flutterfire configure` (the checked-in `firebase_options.dart` is a placeholder).
-* Deploy rules and functions; enable App Check; set budget alerts.
+## Before real use (none of this has been done)
+1. `flutterfire configure` for the real project (the checked-in
+   `firebase_options.dart` is a placeholder).
+2. `firebase deploy --only firestore:rules,functions` (build `functions/` first).
+3. Create each center's first director with `provisionCli` (above).
+4. App Check: the app already activates it (Play Integrity / App Attest; debug
+   providers in debug builds). It protects nothing until you register the app
+   and turn on **enforcement** for Firestore, Functions and Auth in the console.
+5. Crashlytics is wired for release builds only.
+6. Push notifications (FCM) are not implemented: notifications are in-app.
+7. Set budget alerts; there is no rate limiting beyond Firebase's defaults.
 
 ## Working without a connection (teachers)
 
