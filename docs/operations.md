@@ -63,3 +63,14 @@ Not available offline: starting or finishing a session, and opening a session
 whose roster was never loaded on this device. The queue is checked with unit
 tests (12) and end-to-end widget tests; it has not been exercised on a real
 device or with a real network drop.
+
+## Trying the whole system locally
+
+`scripts/run-demo.sh` starts the Auth, Firestore and Functions emulators, fills
+them with a small demo center (a director, a teacher, three students, circles,
+a session today, tasks), builds the web app in emulator mode
+(`--dart-define=USE_EMULATORS=true`) and serves it on http://127.0.0.1:8765.
+Logins: `director@demo.test`, `teacher@demo.test`, `student@demo.test`, password
+`demo-pass-123` (emulator only). The page shows an "emulator mode" banner.
+This runs the real app against the real Security Rules and Cloud Functions, but
+with throwaway data; it is not a deployment.

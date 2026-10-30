@@ -24,6 +24,7 @@ void main() {
         ProviderScope(
           overrides: [
         centerIdProvider.overrideWithValue('center-1'),
+        firestoreDataSourceProvider.overrideWithValue(fake),
             teacherRepositoryProvider.overrideWithValue(
               TeacherRepositoryImpl(fake),
             ),
@@ -52,6 +53,7 @@ void main() {
         ProviderScope(
           overrides: [
         centerIdProvider.overrideWithValue('center-1'),
+        firestoreDataSourceProvider.overrideWithValue(fake),
             teacherRepositoryProvider.overrideWithValue(
               TeacherRepositoryImpl(fake),
             ),

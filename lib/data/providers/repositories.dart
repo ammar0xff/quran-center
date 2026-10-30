@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quran_center/data/datasources/fake_firestore_datasource.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:quran_center/data/datasources/firestore_datasource.dart';
 import 'package:quran_center/data/repositories/attendance_repository.dart';
 import 'package:quran_center/data/repositories/audit_repository.dart';
 import 'package:quran_center/data/repositories/circle_repository.dart';
@@ -25,12 +26,10 @@ import 'package:quran_center/data/services/account_access_service.dart';
 import 'package:quran_center/data/repositories/student_repository.dart';
 import 'package:quran_center/data/repositories/teacher_repository.dart';
 
-/// One shared in-memory datasource for the whole app until Firebase is
-/// configured (flutterfire configure). All repositories read and write the
-/// same store, so data created on one screen is visible on the others.
-/// Swap this single provider for [FirebaseFirestoreDataSource] to go live.
-final firestoreDataSourceProvider = Provider<FakeFirestoreDataSource>(
-  (ref) => FakeFirestoreDataSource(),
+/// The one data source every repository and service reads and writes: the real
+/// Firestore. Tests override this single provider with the in-memory fake.
+final firestoreDataSourceProvider = Provider<FirestoreDataSource>(
+  (ref) => FirebaseFirestoreDataSource(FirebaseFirestore.instance),
 );
 
 final studentRepositoryProvider = Provider<StudentRepository>(

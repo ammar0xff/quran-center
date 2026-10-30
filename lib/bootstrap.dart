@@ -1,4 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -6,12 +8,20 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:quran_center/firebase_options.dart';
 
+/// Run against the local Firebase emulators instead of a real project:
+/// `flutter run --dart-define=USE_EMULATORS=true` (see docs/operations.md).
+const bool useEmulators = bool.fromEnvironment('USE_EMULATORS');
+
 /// Initializes Firebase before the app starts.
 ///
 /// If Firebase is not configured yet (placeholder options from
 /// `flutterfire configure` not run), the app still starts; sign-in then fails
 /// with a generic message instead of crashing.
 Future<void> bootstrap() async {
+  if (useEmulators) {
+    await _bootstrapEmulators();
+    return;
+  }
   try {
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     // Keep documents already read available offline (the session roster, for
@@ -53,4 +63,23 @@ Future<void> bootstrap() async {
       // Crash reporting is optional.
     }
   }
+}
+
+/// Local development: a throwaway "demo-" project whose Auth, Firestore and
+/// Functions are the emulators on this machine. Nothing here can reach real
+/// data, and App Check / Crashlytics are skipped.
+Future<void> _bootstrapEmulators() async {
+  await Firebase.initializeApp(
+    options: const FirebaseOptions(
+      apiKey: 'demo-key',
+      appId: '1:1:web:demo',
+      messagingSenderId: '1',
+      projectId: 'demo-quran-center',
+    ),
+  );
+  const host = '127.0.0.1';
+  await FirebaseAuth.instance.useAuthEmulator(host, 9099);
+  FirebaseFirestore.instance.useFirestoreEmulator(host, 8189);
+  FirebaseFirestore.instance.settings = const Settings(persistenceEnabled: false);
+  FirebaseFunctions.instance.useFunctionsEmulator(host, 5001);
 }
