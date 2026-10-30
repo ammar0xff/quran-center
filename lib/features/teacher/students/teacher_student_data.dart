@@ -100,17 +100,28 @@ final teacherStudentProfileProvider = FutureProvider.autoDispose
   final student = students.where((s) => s.studentId == studentId).firstOrNull;
   if (student == null) return null;
 
-  final (assessments, notes, tasks, attendance, sessions, circles, enrollments) = await (
+  final (
+    assessments,
+    notes,
+    tasks,
+    attendance,
+    sessions,
+    circles,
+    enrollments
+  ) = await (
     ws.assessments(centerId, teacherId, studentId),
     ws.privateNotes(centerId, teacherId, studentId),
-    ref.read(taskServiceProvider).tasksForStudent(centerId, teacherId, studentId),
+    ref
+        .read(taskServiceProvider)
+        .tasksForStudent(centerId, teacherId, studentId),
     ws.attendance(centerId, teacherId, studentId),
     ws.sessions(centerId, teacherId),
     ws.circles(centerId, teacherId),
     ws.activeEnrollments(centerId, teacherId),
   ).wait;
 
-  final circleId = enrollments.where((e) => e.studentId == studentId).firstOrNull?.circleId;
+  final circleId =
+      enrollments.where((e) => e.studentId == studentId).firstOrNull?.circleId;
   return TeacherStudentProfile(
     student: student,
     circle: circles.where((c) => c.circleId == circleId).firstOrNull,

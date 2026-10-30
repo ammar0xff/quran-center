@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
+import 'package:quran_center/design_system/components/marks.dart';
+import 'package:quran_center/design_system/components/rosette.dart';
 import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/data/providers/repositories.dart';
 import 'package:quran_center/data/providers/sync_providers.dart';
@@ -25,7 +27,8 @@ class TeacherSessionScreen extends ConsumerStatefulWidget {
   final String sessionId;
 
   @override
-  ConsumerState<TeacherSessionScreen> createState() => _TeacherSessionScreenState();
+  ConsumerState<TeacherSessionScreen> createState() =>
+      _TeacherSessionScreenState();
 }
 
 class _TeacherSessionScreenState extends ConsumerState<TeacherSessionScreen> {
@@ -82,7 +85,8 @@ class _TeacherSessionScreenState extends ConsumerState<TeacherSessionScreen> {
       ));
   }
 
-  Future<void> _run(Future<void> Function() action, String successMessage) async {
+  Future<void> _run(
+      Future<void> Function() action, String successMessage) async {
     if (_busy) return;
     setState(() => _busy = true);
     try {
@@ -101,7 +105,9 @@ class _TeacherSessionScreenState extends ConsumerState<TeacherSessionScreen> {
 
   Future<void> _start() => _run(
         () => ref.read(teacherSessionServiceProvider).start(
-            centerId: _centerId, teacherId: _teacherId, sessionId: widget.sessionId),
+            centerId: _centerId,
+            teacherId: _teacherId,
+            sessionId: widget.sessionId),
         'بدأت الجلسة',
       );
 
@@ -126,7 +132,8 @@ class _TeacherSessionScreenState extends ConsumerState<TeacherSessionScreen> {
     }
     await _load();
     if (!mounted) return;
-    final missing = _roster?.missing.length ?? 0; // everything pending was sent above
+    final missing =
+        _roster?.missing.length ?? 0; // everything pending was sent above
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => Directionality(
@@ -151,14 +158,17 @@ class _TeacherSessionScreenState extends ConsumerState<TeacherSessionScreen> {
     if (ok != true) return;
     await _run(
       () => ref.read(teacherSessionServiceProvider).complete(
-          centerId: _centerId, teacherId: _teacherId, sessionId: widget.sessionId),
+          centerId: _centerId,
+          teacherId: _teacherId,
+          sessionId: widget.sessionId),
       'تم إنهاء الجلسة',
     );
   }
 
   /// Saved on the device at once and sent in the background, so a dropped
   /// connection never loses it or makes the teacher wait.
-  Future<void> _mark(String studentId, String name, AttendanceStatus status) async {
+  Future<void> _mark(
+      String studentId, String name, AttendanceStatus status) async {
     try {
       await ref.read(sessionWorkProvider).markAttendance(
             centerId: _centerId,
@@ -169,7 +179,8 @@ class _TeacherSessionScreenState extends ConsumerState<TeacherSessionScreen> {
             status: status,
           );
     } catch (_) {
-      if (mounted) _toast('تعذر حفظ الحضور على الجهاز. حاول مرة أخرى.', error: true);
+      if (mounted)
+        _toast('تعذر حفظ الحضور على الجهاز. حاول مرة أخرى.', error: true);
     }
   }
 
@@ -180,7 +191,8 @@ class _TeacherSessionScreenState extends ConsumerState<TeacherSessionScreen> {
           .read(teacherSessionServiceProvider)
           .findableStudents(_centerId, _teacherId, widget.sessionId);
     } catch (_) {
-      if (mounted) _toast('تعذر تحميل قائمة الطلاب. تحقق من اتصالك.', error: true);
+      if (mounted)
+        _toast('تعذر تحميل قائمة الطلاب. تحقق من اتصالك.', error: true);
       return;
     }
     if (!mounted) return;
@@ -202,11 +214,14 @@ class _TeacherSessionScreenState extends ConsumerState<TeacherSessionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    ref.watch(outboxSnapshotProvider); // rebuild as changes are sent or rejected
-    ref.listen<AsyncValue<OutboxSnapshot>>(outboxSnapshotProvider, (prev, next) {
+    ref.watch(
+        outboxSnapshotProvider); // rebuild as changes are sent or rejected
+    ref.listen<AsyncValue<OutboxSnapshot>>(outboxSnapshotProvider,
+        (prev, next) {
       final before = prev?.valueOrNull?.inScope(widget.sessionId).length ?? 0;
       final after = next.valueOrNull?.inScope(widget.sessionId).length ?? 0;
-      if (after < before) _load(); // something was sent: refresh the server's view
+      if (after < before)
+        _load(); // something was sent: refresh the server's view
     });
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -239,9 +254,11 @@ class _TeacherSessionScreenState extends ConsumerState<TeacherSessionScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(_loadError ?? 'الجلسة غير موجودة', textAlign: TextAlign.center),
+              Text(_loadError ?? 'الجلسة غير موجودة',
+                  textAlign: TextAlign.center),
               const SizedBox(height: DesignTokens.space12),
-              OutlinedButton(onPressed: _load, child: const Text('إعادة المحاولة')),
+              OutlinedButton(
+                  onPressed: _load, child: const Text('إعادة المحاولة')),
             ],
           ),
         ),
@@ -265,11 +282,42 @@ class _TeacherSessionScreenState extends ConsumerState<TeacherSessionScreen> {
     return ListView(
       padding: const EdgeInsets.all(DesignTokens.space20),
       children: [
-        Text(r.circleName ?? 'حلقة',
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
-        const SizedBox(height: DesignTokens.space4),
-        Text('${s.startTime}–${s.endTime} • ${sessionStatusLabel(s.status)}',
-            style: const TextStyle(color: DesignTokens.secondaryText)),
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: DesignTokens.primaryDarkGreen,
+            borderRadius: BorderRadius.circular(DesignTokens.radiusLarge),
+          ),
+          child: Row(children: [
+            Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(r.circleName ?? 'حلقة',
+                        style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white)),
+                    const SizedBox(height: 4),
+                    Text('${s.startTime}–${s.endTime}',
+                        style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.8))),
+                  ]),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(sessionStatusLabel(s.status),
+                  style: const TextStyle(
+                      color: Color(0xFFE9CF93),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13)),
+            ),
+          ]),
+        ),
         SyncStatusBar(scope: widget.sessionId),
         const SizedBox(height: DesignTokens.space16),
         if (scheduled)
@@ -285,9 +333,7 @@ class _TeacherSessionScreenState extends ConsumerState<TeacherSessionScreen> {
           const Text('هذه الجلسة ملغاة.',
               style: TextStyle(color: DesignTokens.error)),
         const SizedBox(height: DesignTokens.space16),
-        Text('الطلاب (${r.students.length})  •  سُجِّل $recorded',
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-        const SizedBox(height: DesignTokens.space8),
+        SectionTitle('الطلاب (${r.students.length})  •  سُجِّل $recorded'),
         if (r.students.isEmpty && r.guests.isEmpty)
           const Text('لا يوجد طلاب مسندون إليك في هذه الحلقة.',
               style: TextStyle(color: DesignTokens.secondaryText)),
@@ -299,15 +345,19 @@ class _TeacherSessionScreenState extends ConsumerState<TeacherSessionScreen> {
             key: ValueKey(id),
             name: guest ? '$name (زائر)' : name,
             current: pending[id] != null
-                ? AttendanceStatusJson.fromJson(pending[id]!.payload['status'] as String?)
+                ? AttendanceStatusJson.fromJson(
+                    pending[id]!.payload['status'] as String?)
                 : r.records[id]?.status,
             editable: live,
             saving: false,
             syncNote: pending[id] == null
                 ? null
-                : (pending[id]!.failed ? 'رُفض: ${pending[id]!.error}' : 'بانتظار المزامنة'),
+                : (pending[id]!.failed
+                    ? 'رُفض: ${pending[id]!.error}'
+                    : 'بانتظار المزامنة'),
             syncFailed: pending[id]?.failed ?? false,
-            assessments: (r.assessmentCounts[id] ?? 0) + (pendingAssessments[id] ?? 0),
+            assessments:
+                (r.assessmentCounts[id] ?? 0) + (pendingAssessments[id] ?? 0),
             onPick: (status) => _mark(id, name, status),
             onAssess: live
                 ? () async {
@@ -336,6 +386,13 @@ class _TeacherSessionScreenState extends ConsumerState<TeacherSessionScreen> {
     );
   }
 }
+
+Color _statusColor(AttendanceStatus s) => switch (s) {
+      AttendanceStatus.present => DesignTokens.success,
+      AttendanceStatus.absent => DesignTokens.error,
+      AttendanceStatus.late => DesignTokens.gradeAcceptable,
+      AttendanceStatus.excused => DesignTokens.informational,
+    };
 
 class _StudentRow extends StatelessWidget {
   const _StudentRow({
@@ -371,9 +428,22 @@ class _StudentRow extends StatelessWidget {
           children: [
             Row(
               children: [
+                Rosette(
+                  size: 40,
+                  color: current == null
+                      ? DesignTokens.bordersStrong
+                      : _statusColor(current!),
+                  child: Text(name.characters.firstOrNull ?? '',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15)),
+                ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(name,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w700)),
                 ),
                 if (saving)
                   const SizedBox(
@@ -383,11 +453,14 @@ class _StudentRow extends StatelessWidget {
                 else if (syncNote != null)
                   Text(syncNote!,
                       style: TextStyle(
-                          color: syncFailed ? DesignTokens.error : DesignTokens.warning,
+                          color: syncFailed
+                              ? DesignTokens.error
+                              : DesignTokens.warning,
                           fontSize: 12))
                 else if (current == null)
                   const Text('لم يُسجَّل',
-                      style: TextStyle(color: DesignTokens.warning, fontSize: 12)),
+                      style:
+                          TextStyle(color: DesignTokens.warning, fontSize: 12)),
               ],
             ),
             const SizedBox(height: DesignTokens.space8),
@@ -397,8 +470,21 @@ class _StudentRow extends StatelessWidget {
                 for (final st in AttendanceStatus.values)
                   ChoiceChip(
                     label: Text(attendanceStatusLabel(st)),
+                    selectedColor: _statusColor(st).withValues(alpha: 0.16),
+                    side: BorderSide(
+                        color: current == st
+                            ? _statusColor(st)
+                            : DesignTokens.bordersStrong,
+                        width: 1.5),
+                    labelStyle: TextStyle(
+                        fontFamily: DesignTokens.uiFont,
+                        fontWeight: FontWeight.w700,
+                        color: current == st
+                            ? Color.lerp(_statusColor(st), Colors.black, 0.3)
+                            : DesignTokens.mainText),
                     selected: current == st,
-                    onSelected: (editable && !saving) ? (_) => onPick(st) : null,
+                    onSelected:
+                        (editable && !saving) ? (_) => onPick(st) : null,
                   ),
               ],
             ),
@@ -408,11 +494,12 @@ class _StudentRow extends StatelessWidget {
                 child: Row(
                   children: [
                     if (onAssess != null)
-                      TextButton.icon(
+                      FilledButton.tonalIcon(
                         onPressed: onAssess,
-                        icon: const Icon(Icons.edit_note),
+                        icon: const Icon(Icons.mic_none_rounded, size: 20),
                         label: const Text('تسميع'),
                       ),
+                    const SizedBox(width: 10),
                     if (assessments > 0)
                       Text('تسميعات اليوم: $assessments',
                           style: const TextStyle(
@@ -440,7 +527,8 @@ class _GuestPickerState extends State<_GuestPicker> {
 
   @override
   Widget build(BuildContext context) {
-    final items = widget.options.where((g) => g.name.contains(_q.trim())).toList();
+    final items =
+        widget.options.where((g) => g.name.contains(_q.trim())).toList();
     return Directionality(
       textDirection: TextDirection.rtl,
       child: SafeArea(

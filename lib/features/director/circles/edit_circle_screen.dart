@@ -58,16 +58,21 @@ class _EditCircleScreenState extends ConsumerState<EditCircleScreen> {
   Future<void> _load() async {
     try {
       final centerId = ref.read(centerIdProvider);
-      final circle = await ref.read(circleRepositoryProvider).getCircle(widget.circleId);
+      final circle =
+          await ref.read(circleRepositoryProvider).getCircle(widget.circleId);
       if (!mounted) return;
-      if (circle == null || circle.centerId != centerId || circle.status != CircleStatus.active) {
+      if (circle == null ||
+          circle.centerId != centerId ||
+          circle.status != CircleStatus.active) {
         setState(() {
           _loading = false;
           _missing = true;
         });
         return;
       }
-      final teachers = (await ref.read(teacherRepositoryProvider).getTeachersByCenter(centerId))
+      final teachers = (await ref
+              .read(teacherRepositoryProvider)
+              .getTeachersByCenter(centerId))
           .where((t) => t.status == AccountStatus.active)
           .toList();
       if (!mounted) return;
@@ -77,17 +82,19 @@ class _EditCircleScreenState extends ConsumerState<EditCircleScreen> {
       _duration.text = '${circle.sessionDurationMinutes}';
       _description.text = circle.description ?? '';
       setState(() {
-        _mode = const {'onsite', 'online', 'hybrid'}.contains(circle.locationOrMode)
-            ? circle.locationOrMode
-            : 'onsite';
+        _mode =
+            const {'onsite', 'online', 'hybrid'}.contains(circle.locationOrMode)
+                ? circle.locationOrMode
+                : 'onsite';
         _teachers = teachers;
         _schedule = scheduleToMap(circle.weeklySchedule);
         // A suspended current teacher is not selectable; keep the value out of
         // the dropdown so it does not assert, but remember it for messaging.
         _originalTeacherId = circle.assignedTeacherId;
-        _teacherId = teachers.any((t) => t.teacherId == circle.assignedTeacherId)
-            ? circle.assignedTeacherId
-            : null;
+        _teacherId =
+            teachers.any((t) => t.teacherId == circle.assignedTeacherId)
+                ? circle.assignedTeacherId
+                : null;
         _loading = false;
       });
     } catch (_) {
@@ -138,19 +145,22 @@ class _EditCircleScreenState extends ConsumerState<EditCircleScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(changed ? 'تم حفظ التعديلات' : 'لا توجد تعديلات لحفظها'),
-        backgroundColor: changed ? DesignTokens.success : DesignTokens.secondaryText,
+        backgroundColor:
+            changed ? DesignTokens.success : DesignTokens.secondaryText,
       ));
       context.pop();
     } on CircleException catch (e) {
-      if (mounted) setState(() {
-        _saving = false;
-        _error = e.message;
-      });
+      if (mounted)
+        setState(() {
+          _saving = false;
+          _error = e.message;
+        });
     } catch (_) {
-      if (mounted) setState(() {
-        _saving = false;
-        _error = 'تعذر حفظ التعديلات. حاول مرة أخرى.';
-      });
+      if (mounted)
+        setState(() {
+          _saving = false;
+          _error = 'تعذر حفظ التعديلات. حاول مرة أخرى.';
+        });
     }
   }
 
@@ -177,13 +187,15 @@ class _EditCircleScreenState extends ConsumerState<EditCircleScreen> {
                       const SizedBox(height: DesignTokens.space16),
                       TextField(
                         controller: _level,
-                        decoration: const InputDecoration(labelText: 'المستوى التعليمي'),
+                        decoration: const InputDecoration(
+                            labelText: 'المستوى التعليمي'),
                       ),
                       const SizedBox(height: DesignTokens.space16),
                       TextField(
                         controller: _description,
                         maxLines: 2,
-                        decoration: const InputDecoration(labelText: 'وصف (اختياري)'),
+                        decoration:
+                            const InputDecoration(labelText: 'وصف (اختياري)'),
                       ),
                       const SizedBox(height: DesignTokens.space16),
                       Row(
@@ -193,7 +205,8 @@ class _EditCircleScreenState extends ConsumerState<EditCircleScreen> {
                               controller: _capacity,
                               keyboardType: TextInputType.number,
                               decoration: InputDecoration(
-                                  labelText: 'السعة القصوى *', errorText: _errors.capacity),
+                                  labelText: 'السعة القصوى *',
+                                  errorText: _errors.capacity),
                             ),
                           ),
                           const SizedBox(width: DesignTokens.space12),
@@ -211,11 +224,15 @@ class _EditCircleScreenState extends ConsumerState<EditCircleScreen> {
                       const SizedBox(height: DesignTokens.space16),
                       DropdownButtonFormField<String>(
                         value: _mode,
-                        decoration: const InputDecoration(labelText: 'المكان / النمط'),
+                        decoration:
+                            const InputDecoration(labelText: 'المكان / النمط'),
                         items: const [
-                          DropdownMenuItem(value: 'onsite', child: Text('حضوري')),
-                          DropdownMenuItem(value: 'online', child: Text('عن بعد')),
-                          DropdownMenuItem(value: 'hybrid', child: Text('مختلط')),
+                          DropdownMenuItem(
+                              value: 'onsite', child: Text('حضوري')),
+                          DropdownMenuItem(
+                              value: 'online', child: Text('عن بعد')),
+                          DropdownMenuItem(
+                              value: 'hybrid', child: Text('مختلط')),
                         ],
                         onChanged: (v) => setState(() => _mode = v ?? 'onsite'),
                       ),
@@ -248,14 +265,17 @@ class _EditCircleScreenState extends ConsumerState<EditCircleScreen> {
                           child: Text(
                             'عند تغيير المعلم يُنقل طلاب الحلقة وجلساتها القادمة إلى المعلم الجديد. '
                             'تبقى الجلسات المنتهية باسم من أجراها.',
-                            style: TextStyle(color: DesignTokens.warning, height: 1.5),
+                            style: TextStyle(
+                                color: DesignTokens.warning, height: 1.5),
                           ),
                         ),
                       if (_error != null)
                         Padding(
-                          padding: const EdgeInsets.only(top: DesignTokens.space16),
+                          padding:
+                              const EdgeInsets.only(top: DesignTokens.space16),
                           child: Text(_error!,
-                              style: const TextStyle(color: DesignTokens.error)),
+                              style:
+                                  const TextStyle(color: DesignTokens.error)),
                         ),
                       const SizedBox(height: DesignTokens.space24),
                       SizedBox(

@@ -113,7 +113,8 @@ class _CreateSessionSheetState extends State<CreateSessionSheet> {
           left: DesignTokens.space20,
           right: DesignTokens.space20,
           top: DesignTokens.space20,
-          bottom: MediaQuery.of(context).viewInsets.bottom + DesignTokens.space20,
+          bottom:
+              MediaQuery.of(context).viewInsets.bottom + DesignTokens.space20,
         ),
         child: SingleChildScrollView(
           child: Column(
@@ -129,7 +130,8 @@ class _CreateSessionSheetState extends State<CreateSessionSheet> {
                 value: _circleId,
                 decoration: const InputDecoration(labelText: 'الحلقة *'),
                 items: widget.circles
-                    .map((o) => DropdownMenuItem(value: o.id, child: Text(o.label)))
+                    .map((o) =>
+                        DropdownMenuItem(value: o.id, child: Text(o.label)))
                     .toList(),
                 onChanged: (v) => setState(() => _circleId = v),
               ),
@@ -138,7 +140,8 @@ class _CreateSessionSheetState extends State<CreateSessionSheet> {
                 value: _teacherId,
                 decoration: const InputDecoration(labelText: 'المعلم *'),
                 items: widget.teachers
-                    .map((o) => DropdownMenuItem(value: o.id, child: Text(o.label)))
+                    .map((o) =>
+                        DropdownMenuItem(value: o.id, child: Text(o.label)))
                     .toList(),
                 onChanged: (v) => setState(() => _teacherId = v),
               ),
@@ -201,7 +204,8 @@ class _CreateSessionSheetState extends State<CreateSessionSheet> {
                   padding: const EdgeInsets.all(DesignTokens.space12),
                   decoration: BoxDecoration(
                     color: DesignTokens.error.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusSmall),
+                    borderRadius:
+                        BorderRadius.circular(DesignTokens.radiusSmall),
                     border: Border.all(
                         color: DesignTokens.error.withValues(alpha: 0.3)),
                   ),

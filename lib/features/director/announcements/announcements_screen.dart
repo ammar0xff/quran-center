@@ -20,7 +20,8 @@ class _AnnouncementData {
   final List<Circle> circles;
 }
 
-final _announcementDataProvider = FutureProvider.autoDispose<_AnnouncementData>((ref) async {
+final _announcementDataProvider =
+    FutureProvider.autoDispose<_AnnouncementData>((ref) async {
   final centerId = ref.watch(centerIdProvider);
   final (sent, users, students, circles) = await (
     ref.read(notificationServiceProvider).announcements(centerId),
@@ -48,7 +49,8 @@ class AnnouncementsScreen extends ConsumerWidget {
         floatingActionButton: async.hasValue
             ? FloatingActionButton.extended(
                 onPressed: () async {
-                  final sent = await Navigator.of(context).push<bool>(MaterialPageRoute(
+                  final sent =
+                      await Navigator.of(context).push<bool>(MaterialPageRoute(
                     builder: (_) => _ComposeScreen(data: async.requireValue),
                   ));
                   if (sent == true) ref.invalidate(_announcementDataProvider);
@@ -71,20 +73,23 @@ class AnnouncementsScreen extends ConsumerWidget {
           data: (d) => d.sent.isEmpty
               ? const Center(child: Text('لم تُرسل إعلانات بعد.'))
               : ListView(
-                  padding: const EdgeInsets.fromLTRB(
-                      DesignTokens.space16, DesignTokens.space16, DesignTokens.space16, 96),
+                  padding: const EdgeInsets.fromLTRB(DesignTokens.space16,
+                      DesignTokens.space16, DesignTokens.space16, 96),
                   children: [
                     for (final a in d.sent)
                       Card(
                         child: ListTile(
                           title: Text(a['title'] as String,
-                              style: const TextStyle(fontWeight: FontWeight.w700)),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w700)),
                           subtitle: Text([
                             a['message'] as String,
                             '${audienceLabel(AudienceTypeJson.fromJson(a['targetAudience'] as String?))}'
                                 ' • وصل إلى ${a['recipientCount'] ?? 0}',
                             if (a['createdAt'] is DateTime)
-                              DateFormat.yMMMd('ar').add_jm().format(a['createdAt'] as DateTime),
+                              DateFormat.yMMMd('ar')
+                                  .add_jm()
+                                  .format(a['createdAt'] as DateTime),
                           ].join('\n')),
                           isThreeLine: true,
                         ),
@@ -158,12 +163,15 @@ class _ComposeScreenState extends ConsumerState<_ComposeScreen> {
       if (!mounted) return;
       _sent = true;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('أُرسل الإعلان إلى $n مستلم'), backgroundColor: DesignTokens.success));
+          content: Text('أُرسل الإعلان إلى $n مستلم'),
+          backgroundColor: DesignTokens.success));
       Navigator.of(context).pop(true);
     } on NotificationException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } catch (_) {
-      if (mounted) setState(() => _error = 'تعذر إرسال الإعلان. لم يُرسل شيء، حاول مرة أخرى.');
+      if (mounted)
+        setState(
+            () => _error = 'تعذر إرسال الإعلان. لم يُرسل شيء، حاول مرة أخرى.');
     } finally {
       if (mounted && !_sent) setState(() => _sending = false);
     }
@@ -171,7 +179,9 @@ class _ComposeScreenState extends ConsumerState<_ComposeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final activeCircles = widget.data.circles.where((c) => c.status == CircleStatus.active).toList();
+    final activeCircles = widget.data.circles
+        .where((c) => c.status == CircleStatus.active)
+        .toList();
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -216,8 +226,9 @@ class _ComposeScreenState extends ConsumerState<_ComposeScreen> {
                     FilterChip(
                       label: Text(c.name),
                       selected: _circles.contains(c.circleId),
-                      onSelected: (on) => setState(
-                          () => on ? _circles.add(c.circleId) : _circles.remove(c.circleId)),
+                      onSelected: (on) => setState(() => on
+                          ? _circles.add(c.circleId)
+                          : _circles.remove(c.circleId)),
                     ),
                 ],
               ),
@@ -225,12 +236,15 @@ class _ComposeScreenState extends ConsumerState<_ComposeScreen> {
             const SizedBox(height: DesignTokens.space12),
             Text('سيصل إلى $_reach مستلم',
                 style: const TextStyle(fontWeight: FontWeight.w600)),
-            const Text('الطلاب بلا حساب لا يصلهم إشعار إلكتروني ولا يُحسبون هنا.',
-                style: TextStyle(fontSize: 12, color: DesignTokens.secondaryText)),
+            const Text(
+                'الطلاب بلا حساب لا يصلهم إشعار إلكتروني ولا يُحسبون هنا.',
+                style:
+                    TextStyle(fontSize: 12, color: DesignTokens.secondaryText)),
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.only(top: DesignTokens.space12),
-                child: Text(_error!, style: const TextStyle(color: DesignTokens.error)),
+                child: Text(_error!,
+                    style: const TextStyle(color: DesignTokens.error)),
               ),
             const SizedBox(height: DesignTokens.space24),
             SizedBox(
@@ -241,7 +255,8 @@ class _ComposeScreenState extends ConsumerState<_ComposeScreen> {
                     ? const SizedBox(
                         height: 20,
                         width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white))
                     : const Text('إرسال الآن'),
               ),
             ),

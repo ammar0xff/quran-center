@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:quran_center/core/quran/surahs.dart';
+import 'package:quran_center/design_system/components/rosette.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/core/utils/wird_level.dart';
+import 'package:quran_center/design_system/components/marks.dart';
 import 'package:quran_center/features/shared/level_summary.dart';
-import 'package:quran_center/features/teacher/sessions/assessment_screen.dart' show assessmentTypeLabel;
+import 'package:quran_center/features/teacher/sessions/assessment_screen.dart'
+    show assessmentTypeLabel;
 import 'package:quran_center/data/models/audit_log.dart';
 import 'package:quran_center/data/models/enrollment.dart';
 import 'package:quran_center/data/models/enums.dart';
@@ -63,7 +66,8 @@ class DirectorStudentProfileScreen extends ConsumerWidget {
                 const Text('تعذر تحميل ملف الطالب'),
                 const SizedBox(height: DesignTokens.space12),
                 OutlinedButton(
-                  onPressed: () => ref.invalidate(studentProfileProvider(studentId)),
+                  onPressed: () =>
+                      ref.invalidate(studentProfileProvider(studentId)),
                   child: const Text('إعادة المحاولة'),
                 ),
               ],
@@ -130,17 +134,15 @@ class _Header extends StatelessWidget {
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: DesignTokens.softMint,
-            child: Text(
-              student.fullName.isNotEmpty ? student.fullName[0] : 'ط',
-              style: const TextStyle(
-                  color: DesignTokens.primaryDarkGreen,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold),
-            ),
-          ),
+          Rosette(
+              size: 60,
+              color: DesignTokens.primaryDarkGreen,
+              child: Text(
+                  student.fullName.isNotEmpty ? student.fullName[0] : 'ط',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 24))),
           const SizedBox(width: DesignTokens.space16),
           Expanded(
             child: Column(
@@ -161,7 +163,9 @@ class _Header extends StatelessWidget {
                   children: [
                     Text(enrollmentStatusLabel(student.enrollmentStatus),
                         style: TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w700, color: color)),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: color)),
                     Text(accessLabel(student.accountMode),
                         style: const TextStyle(
                             fontSize: 13, color: DesignTokens.secondaryText)),
@@ -222,7 +226,8 @@ class _OverviewTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = data.student;
     final current = data.currentEnrollment;
-    final circle = current == null ? null : (data.circleNames[current.circleId] ?? '—');
+    final circle =
+        current == null ? null : (data.circleNames[current.circleId] ?? '—');
     final teacher = current?.teacherId == null
         ? null
         : (data.teacherNames[current!.teacherId] ?? '—');
@@ -267,8 +272,8 @@ class _OverviewTab extends StatelessWidget {
         const SizedBox(height: DesignTokens.space16),
         if (s.enrollmentStatus == EnrollmentStatus.active)
           OutlinedButton.icon(
-            onPressed: () =>
-                context.push('/director/enrollments/assign?student=${s.studentId}'),
+            onPressed: () => context
+                .push('/director/enrollments/assign?student=${s.studentId}'),
             icon: const Icon(Icons.assignment_ind),
             label: Text(current == null ? 'تعيين لحلقة' : 'نقل إلى حلقة أخرى'),
           ),
@@ -316,7 +321,8 @@ class _LevelTab extends StatelessWidget {
         if (data.wirds.isEmpty)
           const Padding(
             padding: EdgeInsets.all(DesignTokens.space24),
-            child: Text('لم يُسجَّل لهذا الطالب تسميع بعد.', textAlign: TextAlign.center),
+            child: Text('لم يُسجَّل لهذا الطالب تسميع بعد.',
+                textAlign: TextAlign.center),
           ),
         for (final w in data.wirds)
           ListTile(
@@ -324,10 +330,7 @@ class _LevelTab extends StatelessWidget {
                 '${assessmentTypeLabel(w.assessmentType)} • ${surahByNumber(w.surah)?.name ?? w.surah}: ${w.startAyah}–${w.endAyah}'),
             subtitle: Text(
                 '${_date(w.assessedAt)} • ${data.teacherNames[w.teacherId] ?? 'معلمة'}'),
-            trailing: w.grade == null
-                ? null
-                : Text(w.grade!.label,
-                    style: TextStyle(fontWeight: FontWeight.w800, color: gradeColor(w.grade!))),
+            trailing: w.grade == null ? null : GradeChip(w.grade!),
           ),
       ],
     );
@@ -340,7 +343,8 @@ class _EnrollmentTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (data.enrollments.isEmpty) return _empty('لم يُسجَّل الطالب في أي حلقة بعد.');
+    if (data.enrollments.isEmpty)
+      return _empty('لم يُسجَّل الطالب في أي حلقة بعد.');
     return ListView(
       padding: const EdgeInsets.all(DesignTokens.space16),
       children: [
@@ -388,10 +392,12 @@ class _AttendanceTab extends StatelessWidget {
                   rate == null
                       ? 'نسبة الحضور: —'
                       : 'نسبة الحضور: ${(rate * 100).toStringAsFixed(1)}%',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: DesignTokens.space4),
-                Text('حاضر ${a.present} • متأخر ${a.late} • غائب ${a.absent} • معذور ${a.excused}',
+                Text(
+                    'حاضر ${a.present} • متأخر ${a.late} • غائب ${a.absent} • معذور ${a.excused}',
                     style: const TextStyle(color: DesignTokens.secondaryText)),
               ],
             ),
@@ -430,7 +436,8 @@ class _AuditTab extends StatelessWidget {
                 padding: const EdgeInsets.only(top: DesignTokens.space4),
                 child: Text([
                   DateFormat.yMMMd('ar').add_jm().format(l.createdAt),
-                  if (l.actorUserId != null) 'بواسطة: ${userNames[l.actorUserId] ?? l.actorUserId}',
+                  if (l.actorUserId != null)
+                    'بواسطة: ${userNames[l.actorUserId] ?? l.actorUserId}',
                   if (l.reason != null) 'السبب: ${l.reason}',
                 ].join(' • ')),
               ),

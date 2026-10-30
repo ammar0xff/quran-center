@@ -1,6 +1,7 @@
 import 'package:quran_center/core/utils/task_state.dart';
 import 'package:quran_center/data/datasources/firestore_datasource.dart';
 import 'package:quran_center/data/datasources/firestore_helpers.dart';
+import 'package:quran_center/data/models/attendance.dart';
 import 'package:quran_center/data/models/circle.dart';
 import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/data/models/learning_task.dart';
@@ -54,6 +55,17 @@ class StudentWorkspace {
         return c != 0 ? c : a.startTime.compareTo(b.startTime);
       });
     return list;
+  }
+
+  /// The student's own attendance records (the rules let them read these).
+  Future<List<Attendance>> attendance(String centerId, String studentId) async {
+    final docs = await _ds.query('attendance', where: [
+      QueryFilter.equal('centerId', centerId),
+      QueryFilter.equal('studentId', studentId),
+    ]);
+    return docs
+        .map((d) => Attendance.fromJson(d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
+        .toList();
   }
 
   Future<List<LearningTask>> tasks(String centerId, String studentId) async {

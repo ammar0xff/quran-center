@@ -88,8 +88,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('أدخل بريدك الإلكتروني وسنرسل إليك رابطًا لإعادة التعيين.',
-                style: TextStyle(color: DesignTokens.secondaryText, height: 1.6)),
+            const Text(
+                'أدخل بريدك الإلكتروني وسنرسل إليك رابطًا لإعادة التعيين.',
+                style:
+                    TextStyle(color: DesignTokens.secondaryText, height: 1.6)),
             const SizedBox(height: DesignTokens.space16),
             TextFormField(
               controller: _email,
@@ -99,7 +101,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               validator: (v) {
                 final value = (v ?? '').trim();
                 if (value.isEmpty) return 'البريد الإلكتروني مطلوب';
-                return isPlausibleEmail(value) ? null : 'أدخل بريدًا إلكترونيًا صحيحًا';
+                return isPlausibleEmail(value)
+                    ? null
+                    : 'أدخل بريدًا إلكترونيًا صحيحًا';
               },
               onFieldSubmitted: (_) => _send(),
             ),

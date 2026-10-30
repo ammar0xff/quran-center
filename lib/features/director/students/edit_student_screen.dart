@@ -49,7 +49,9 @@ class _EditStudentScreenState extends ConsumerState<EditStudentScreen> {
   Future<void> _load() async {
     Student? s;
     try {
-      s = await ref.read(studentRepositoryProvider).getStudent(widget.studentId);
+      s = await ref
+          .read(studentRepositoryProvider)
+          .getStudent(widget.studentId);
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -103,7 +105,8 @@ class _EditStudentScreenState extends ConsumerState<EditStudentScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(changed ? 'تم حفظ التعديلات' : 'لا توجد تعديلات لحفظها'),
-        backgroundColor: changed ? DesignTokens.success : DesignTokens.secondaryText,
+        backgroundColor:
+            changed ? DesignTokens.success : DesignTokens.secondaryText,
       ));
       context.pop();
     } catch (_) {
@@ -125,7 +128,8 @@ class _EditStudentScreenState extends ConsumerState<EditStudentScreen> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
-        appBar: AppBar(title: const Text('تعديل بيانات الطالب'), centerTitle: false),
+        appBar: AppBar(
+            title: const Text('تعديل بيانات الطالب'), centerTitle: false),
         body: _loading
             ? const Center(child: CircularProgressIndicator())
             : _missing
@@ -137,19 +141,21 @@ class _EditStudentScreenState extends ConsumerState<EditStudentScreen> {
                       children: [
                         TextFormField(
                           controller: _name,
-                          decoration: const InputDecoration(labelText: 'الاسم الكامل *'),
+                          decoration: const InputDecoration(
+                              labelText: 'الاسم الكامل *'),
                           validator: (v) => _required(v, 'الاسم مطلوب'),
                         ),
                         const SizedBox(height: DesignTokens.space16),
                         TextFormField(
                           controller: _preferred,
-                          decoration:
-                              const InputDecoration(labelText: 'الاسم المفضل (اختياري)'),
+                          decoration: const InputDecoration(
+                              labelText: 'الاسم المفضل (اختياري)'),
                         ),
                         const SizedBox(height: DesignTokens.space16),
                         TextFormField(
                           controller: _level,
-                          decoration: const InputDecoration(labelText: 'المستوى التعليمي *'),
+                          decoration: const InputDecoration(
+                              labelText: 'المستوى التعليمي *'),
                           validator: (v) => _required(v, 'المستوى مطلوب'),
                         ),
                         const SizedBox(height: DesignTokens.space16),
@@ -163,7 +169,8 @@ class _EditStudentScreenState extends ConsumerState<EditStudentScreen> {
                         if (_error != null) ...[
                           const SizedBox(height: DesignTokens.space16),
                           Text(_error!,
-                              style: const TextStyle(color: DesignTokens.error)),
+                              style:
+                                  const TextStyle(color: DesignTokens.error)),
                         ],
                         const SizedBox(height: DesignTokens.space24),
                         SizedBox(

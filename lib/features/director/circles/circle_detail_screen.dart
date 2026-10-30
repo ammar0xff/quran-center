@@ -26,7 +26,8 @@ class CircleDetailScreen extends ConsumerWidget {
 
   final String circleId;
 
-  Future<void> _archive(BuildContext context, WidgetRef ref, String name) async {
+  Future<void> _archive(
+      BuildContext context, WidgetRef ref, String name) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => Directionality(
@@ -56,10 +57,11 @@ class CircleDetailScreen extends ConsumerWidget {
           actorRole: actor.role);
       ref.invalidate(circleDetailProvider(circleId));
       messenger.showSnackBar(const SnackBar(
-          content: Text('تمت أرشفة الحلقة'), backgroundColor: DesignTokens.success));
+          content: Text('تمت أرشفة الحلقة'),
+          backgroundColor: DesignTokens.success));
     } on CircleException catch (e) {
-      messenger.showSnackBar(
-          SnackBar(content: Text(e.message), backgroundColor: DesignTokens.error));
+      messenger.showSnackBar(SnackBar(
+          content: Text(e.message), backgroundColor: DesignTokens.error));
     } catch (_) {
       messenger.showSnackBar(const SnackBar(
           content: Text('تعذرت الأرشفة. حاول مرة أخرى.'),
@@ -101,30 +103,39 @@ class CircleDetailScreen extends ConsumerWidget {
                 const Text('تعذر تحميل الحلقة'),
                 const SizedBox(height: DesignTokens.space12),
                 OutlinedButton(
-                    onPressed: () => ref.invalidate(circleDetailProvider(circleId)),
+                    onPressed: () =>
+                        ref.invalidate(circleDetailProvider(circleId)),
                     child: const Text('إعادة المحاولة')),
               ],
             ),
           ),
           data: (d) {
-            if (d == null) return const Center(child: Text('الحلقة غير موجودة'));
+            if (d == null)
+              return const Center(child: Text('الحلقة غير موجودة'));
             final c = d.circle;
             return ListView(
               padding: const EdgeInsets.all(DesignTokens.space20),
               children: [
                 Text(c.name,
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+                    style: const TextStyle(
+                        fontSize: 22, fontWeight: FontWeight.w700)),
                 const SizedBox(height: DesignTokens.space4),
                 Text(active ? 'نشطة' : 'مؤرشفة',
                     style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        color: active ? DesignTokens.success : DesignTokens.secondaryText)),
+                        color: active
+                            ? DesignTokens.success
+                            : DesignTokens.secondaryText)),
                 const SizedBox(height: DesignTokens.space16),
                 Card(
                   child: Column(children: [
-                    _row('المعلم', d.teacherName ?? (c.assignedTeacherId == null ? 'بدون معلم' : '—')),
+                    _row(
+                        'المعلم',
+                        d.teacherName ??
+                            (c.assignedTeacherId == null ? 'بدون معلم' : '—')),
                     const Divider(height: 1),
-                    _row('المستوى', c.educationalLevel.isEmpty ? '—' : c.educationalLevel),
+                    _row('المستوى',
+                        c.educationalLevel.isEmpty ? '—' : c.educationalLevel),
                     const Divider(height: 1),
                     _row('النمط', circleModeLabel(c.locationOrMode)),
                     const Divider(height: 1),
@@ -158,8 +169,8 @@ class CircleDetailScreen extends ConsumerWidget {
                     if (active)
                       TextButton.icon(
                         onPressed: () async {
-                          await context
-                              .push('/director/enrollments/assign?circle=$circleId');
+                          await context.push(
+                              '/director/enrollments/assign?circle=$circleId');
                           ref.invalidate(circleDetailProvider(circleId));
                         },
                         icon: const Icon(Icons.person_add_alt),
@@ -169,7 +180,8 @@ class CircleDetailScreen extends ConsumerWidget {
                 ),
                 if (d.roster.isEmpty)
                   const Padding(
-                    padding: EdgeInsets.symmetric(vertical: DesignTokens.space16),
+                    padding:
+                        EdgeInsets.symmetric(vertical: DesignTokens.space16),
                     child: Text('لا يوجد طلاب في هذه الحلقة بعد.',
                         style: TextStyle(color: DesignTokens.secondaryText)),
                   )
@@ -181,7 +193,8 @@ class CircleDetailScreen extends ConsumerWidget {
                         trailing: const Icon(Icons.chevron_left),
                         onTap: r.student == null
                             ? null
-                            : () => context.push('/director/students/${r.student!.studentId}'),
+                            : () => context.push(
+                                '/director/students/${r.student!.studentId}'),
                       ),
                     ),
                 if (active) ...[
@@ -213,7 +226,8 @@ class CircleDetailScreen extends ConsumerWidget {
                   style: const TextStyle(color: DesignTokens.secondaryText)),
             ),
             Expanded(
-              child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+              child: Text(value,
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
             ),
           ],
         ),

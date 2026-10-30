@@ -4,7 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/core/utils/supervision.dart';
-import 'package:quran_center/features/director/reports/reports_screen.dart' show reportDataProvider;
+import 'package:quran_center/features/director/reports/reports_screen.dart'
+    show reportDataProvider;
 import 'package:quran_center/features/director/widgets/director_bottom_nav.dart';
 
 /// Things worth a look, with the facts that put each one here. This points at
@@ -19,7 +20,8 @@ class SupervisionScreen extends ConsumerWidget {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
-        appBar: AppBar(title: const Text('المتابعة التعليمية'), centerTitle: false),
+        appBar:
+            AppBar(title: const Text('المتابعة التعليمية'), centerTitle: false),
         body: async.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => Center(
@@ -52,10 +54,12 @@ class SupervisionScreen extends ConsumerWidget {
                 if (items.isEmpty)
                   const Padding(
                     padding: EdgeInsets.all(DesignTokens.space24),
-                    child: Text('لا توجد بنود للمتابعة الآن.', textAlign: TextAlign.center),
+                    child: Text('لا توجد بنود للمتابعة الآن.',
+                        textAlign: TextAlign.center),
                   ),
                 for (final kind in FollowUpKind.values)
-                  ..._section(context, kind, items.where((i) => i.kind == kind).toList()),
+                  ..._section(context, kind,
+                      items.where((i) => i.kind == kind).toList()),
               ],
             );
           },
@@ -65,11 +69,13 @@ class SupervisionScreen extends ConsumerWidget {
     );
   }
 
-  List<Widget> _section(BuildContext context, FollowUpKind kind, List<FollowUpItem> items) {
+  List<Widget> _section(
+      BuildContext context, FollowUpKind kind, List<FollowUpItem> items) {
     if (items.isEmpty) return const [];
     return [
       Padding(
-        padding: const EdgeInsets.only(top: DesignTokens.space20, bottom: DesignTokens.space8),
+        padding: const EdgeInsets.only(
+            top: DesignTokens.space20, bottom: DesignTokens.space8),
         child: Text('${followUpKindLabel(kind)} (${items.length})',
             style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
       ),
@@ -84,7 +90,8 @@ class SupervisionScreen extends ConsumerWidget {
               DateFormat.yMMMd('ar').format(i.date),
             ].join(' • ')),
             isThreeLine: true,
-            trailing: i.studentId == null ? null : const Icon(Icons.chevron_left),
+            trailing:
+                i.studentId == null ? null : const Icon(Icons.chevron_left),
             onTap: i.studentId == null
                 ? null
                 : () => context.push('/director/students/${i.studentId}'),

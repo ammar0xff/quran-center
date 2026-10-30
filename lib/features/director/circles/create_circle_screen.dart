@@ -120,7 +120,8 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _saveError = 'تعذر حفظ الحلقة. البيانات محفوظة في النموذج، حاول مرة أخرى.';
+        _saveError =
+            'تعذر حفظ الحلقة. البيانات محفوظة في النموذج، حاول مرة أخرى.';
       });
     }
   }
@@ -159,7 +160,8 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
                     controller: _capacity,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                        labelText: 'السعة القصوى *', errorText: _errors.capacity),
+                        labelText: 'السعة القصوى *',
+                        errorText: _errors.capacity),
                   ),
                 ),
                 const SizedBox(width: DesignTokens.space12),
@@ -194,7 +196,8 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
                 const DropdownMenuItem<String?>(
                     value: null, child: Text('بدون معلم الآن')),
                 for (final t in _teachers)
-                  DropdownMenuItem<String?>(value: t.teacherId, child: Text(t.fullName)),
+                  DropdownMenuItem<String?>(
+                      value: t.teacherId, child: Text(t.fullName)),
               ],
               onChanged: (v) => setState(() => _teacherId = v),
             ),

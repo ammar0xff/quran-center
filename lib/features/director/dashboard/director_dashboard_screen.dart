@@ -5,6 +5,7 @@ import 'package:intl/intl.dart' hide TextDirection;
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/core/utils/dashboard_stats.dart';
+import 'package:quran_center/design_system/components/app_hero.dart';
 import 'package:quran_center/design_system/components/kpi_card.dart';
 import 'package:quran_center/design_system/components/section_header.dart';
 import 'package:quran_center/features/director/dashboard/dashboard_provider.dart';
@@ -26,43 +27,61 @@ class DirectorDashboardScreen extends ConsumerWidget {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
-        body: SafeArea(
-          child: RefreshIndicator(
-            onRefresh: () async => ref.refresh(dashboardStatsProvider.future),
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: DesignTokens.space20),
-              children: [
-                const SizedBox(height: DesignTokens.space16),
-                Row(children: [
+        body: RefreshIndicator(
+          onRefresh: () async => ref.refresh(dashboardStatsProvider.future),
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              AppHero(
+                child: Row(children: [
                   Expanded(
-                    child: Text('أهلاً بك، $name',
-                        style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: DesignTokens.mainText)),
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('السلام عليكم ورحمة الله',
+                              style: TextStyle(
+                                  fontFamily: DesignTokens.nameFont,
+                                  fontSize: 18,
+                                  color: Color(0xFFE9CF93))),
+                          const SizedBox(height: 2),
+                          Text(name,
+                              style: const TextStyle(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  height: 1.25)),
+                          const SizedBox(height: 2),
+                          Text(DateFormat.yMMMMEEEEd('ar').format(now),
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.white.withValues(alpha: 0.75))),
+                        ]),
                   ),
-                  const NotificationBell(route: '/director/notifications'),
+                  const NotificationBell(
+                      route: '/director/notifications', onDark: true),
                 ]),
-                const SizedBox(height: DesignTokens.space4),
-                Text(DateFormat.yMMMMEEEEd('ar').format(now),
-                    style: const TextStyle(
-                        fontSize: 14, color: DesignTokens.secondaryText)),
-                const SizedBox(height: DesignTokens.space24),
-                stats.when(
-                  loading: () => const Padding(
-                    padding: EdgeInsets.all(DesignTokens.space40),
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                  error: (_, __) => _ErrorBox(
-                    onRetry: () => ref.invalidate(dashboardStatsProvider),
-                  ),
-                  data: (s) => _Content(stats: s),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    stats.when(
+                      loading: () => const Padding(
+                        padding: EdgeInsets.all(DesignTokens.space40),
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                      error: (_, __) => _ErrorBox(
+                        onRetry: () => ref.invalidate(dashboardStatsProvider),
+                      ),
+                      data: (s) => _Content(stats: s),
+                    ),
+                    const SectionHeader(title: 'إجراءات سريعة'),
+                    const _QuickActions(),
+                  ],
                 ),
-                const SectionHeader(title: 'إجراءات سريعة'),
-                const _QuickActions(),
-                const SizedBox(height: DesignTokens.space40),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
         bottomNavigationBar: const DirectorBottomNav(currentIndex: 0),
@@ -100,43 +119,48 @@ class _Content extends StatelessWidget {
               style: TextStyle(height: 1.6),
             ),
           ),
-        GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 1.55,
-          crossAxisSpacing: DesignTokens.space16,
-          mainAxisSpacing: DesignTokens.space16,
-          children: [
-            KpiCard(
+        Row(children: [
+          Expanded(
+            child: KpiCard(
               value: '${stats.activeStudents}',
               label: 'طلاب منتظمون',
-              icon: Icons.people_outline,
+              icon: Icons.people_alt_rounded,
               onTap: () => context.go('/director/students'),
             ),
-            KpiCard(
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: KpiCard(
               value: '${stats.activeTeachers}',
               label: 'معلمون نشطون',
-              icon: Icons.person_outline,
+              icon: Icons.person_rounded,
               color: DesignTokens.informational,
               onTap: () => context.go('/director/teachers'),
             ),
-            KpiCard(
+          ),
+        ]),
+        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(
+            child: KpiCard(
               value: '${stats.activeCircles}',
               label: 'حلقات نشطة',
-              icon: Icons.school_outlined,
-              color: DesignTokens.success,
+              icon: Icons.school_rounded,
+              color: DesignTokens.leaf,
               onTap: () => context.go('/director/circles'),
             ),
-            KpiCard(
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: KpiCard(
               value: '${stats.todaySessions}',
               label: 'جلسات اليوم',
-              icon: Icons.today,
-              color: DesignTokens.warning,
+              icon: Icons.today_rounded,
+              color: DesignTokens.gold,
               onTap: () => context.push('/director/schedules'),
             ),
-          ],
-        ),
+          ),
+        ]),
         const SectionHeader(title: 'جلسات اليوم'),
         Row(
           children: [
@@ -152,8 +176,8 @@ class _Content extends StatelessWidget {
           padding: const EdgeInsets.all(DesignTokens.space16),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(DesignTokens.radiusMedium),
-            border: Border.all(color: DesignTokens.borders),
+            borderRadius: BorderRadius.circular(DesignTokens.radiusLarge),
+            border: Border.all(color: DesignTokens.borders, width: 1.5),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,8 +189,19 @@ class _Content extends StatelessWidget {
                   rate == null
                       ? 'نسبة الحضور: —'
                       : 'نسبة الحضور: ${(rate * 100).toStringAsFixed(1)}%',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: DesignTokens.primaryDarkGreen),
                 ),
+                if (rate != null) ...[
+                  const SizedBox(height: 10),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: LinearProgressIndicator(
+                        value: rate.clamp(0.0, 1.0).toDouble()),
+                  ),
+                ],
                 const SizedBox(height: DesignTokens.space8),
                 Text(
                   'حاضر ${att.present} • متأخر ${att.late} • غائب ${att.absent} • معذور ${att.excused}',
@@ -178,7 +213,9 @@ class _Content extends StatelessWidget {
                 'النسبة = (حاضر + متأخر) ÷ (حاضر + متأخر + غائب). لا يدخل المعذورون '
                 'في المقام، ولا يُعدّ السجل المفقود غيابًا.',
                 style: TextStyle(
-                    fontSize: 12, color: DesignTokens.secondaryText, height: 1.5),
+                    fontSize: 12,
+                    color: DesignTokens.secondaryText,
+                    height: 1.5),
               ),
               Align(
                 alignment: AlignmentDirectional.centerStart,
@@ -209,12 +246,13 @@ class _Chip extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(DesignTokens.radiusMedium),
-            border: Border.all(color: DesignTokens.borders),
+            border: Border.all(color: DesignTokens.borders, width: 1.5),
           ),
           child: Column(
             children: [
               Text('$value',
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: DesignTokens.space4),
               Text(label,
                   style: TextStyle(
@@ -234,11 +272,13 @@ class _ErrorBox extends StatelessWidget {
         padding: const EdgeInsets.all(DesignTokens.space24),
         child: Column(
           children: [
-            const Icon(Icons.error_outline, size: 48, color: DesignTokens.error),
+            const Icon(Icons.error_outline,
+                size: 48, color: DesignTokens.error),
             const SizedBox(height: DesignTokens.space12),
             const Text('تعذر تحميل بيانات اللوحة.'),
             const SizedBox(height: DesignTokens.space12),
-            OutlinedButton(onPressed: onRetry, child: const Text('إعادة المحاولة')),
+            OutlinedButton(
+                onPressed: onRetry, child: const Text('إعادة المحاولة')),
           ],
         ),
       );
@@ -253,19 +293,52 @@ class _QuickActions extends StatelessWidget {
       ('إضافة طالب', Icons.person_add, '/director/students/add'),
       ('إضافة معلم', Icons.person_add_alt, '/director/teachers/add'),
       ('إنشاء حلقة', Icons.add_box, '/director/circles/add'),
-      ('تعيين طالب لحلقة', Icons.assignment_ind, '/director/enrollments/assign'),
+      (
+        'تعيين طالب لحلقة',
+        Icons.assignment_ind,
+        '/director/enrollments/assign'
+      ),
       ('إدارة الجدول', Icons.schedule, '/director/schedules'),
       ('سجلات الحضور', Icons.fact_check, '/director/attendance'),
     ];
-    return Wrap(
-      spacing: DesignTokens.space12,
-      runSpacing: DesignTokens.space12,
+    return GridView.count(
+      crossAxisCount: 3,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 10,
+      crossAxisSpacing: 10,
+      childAspectRatio: 1.05,
       children: [
         for (final (label, icon, route) in actions)
-          ActionChip(
-            avatar: Icon(icon, size: 18, color: DesignTokens.primaryDarkGreen),
-            label: Text(label),
-            onPressed: () => context.push(route),
+          Card(
+            margin: EdgeInsets.zero,
+            child: InkWell(
+              onTap: () => context.push(route),
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                          color: DesignTokens.softMint,
+                          borderRadius: BorderRadius.circular(14)),
+                      child: Icon(icon,
+                          size: 24, color: DesignTokens.primaryDarkGreen),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(label,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            height: 1.25)),
+                  ],
+                ),
+              ),
+            ),
           ),
       ],
     );

@@ -18,7 +18,8 @@ class StudentScheduleScreen extends StatelessWidget {
       builder: (context, ref, d) {
         final today = DateTime.now();
         final start = DateTime(today.year, today.month, today.day);
-        final upcoming = d.sessions.where((s) => !s.date.isBefore(start)).toList();
+        final upcoming =
+            d.sessions.where((s) => !s.date.isBefore(start)).toList();
 
         if (d.circle == null) {
           return ListView(children: const [
@@ -33,7 +34,8 @@ class StudentScheduleScreen extends StatelessWidget {
           padding: const EdgeInsets.all(DesignTokens.space16),
           children: [
             Text(d.circle!.name,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
             const SizedBox(height: DesignTokens.space8),
             if (upcoming.isEmpty)
               const Padding(
@@ -45,11 +47,13 @@ class StudentScheduleScreen extends StatelessWidget {
                 child: ListTile(
                   title: Text(DateFormat.MMMEd('ar').format(s.date),
                       style: const TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: Text('${s.startTime}–${s.endTime} • ${circleModeLabel(s.locationOrMode)}'),
+                  subtitle: Text(
+                      '${s.startTime}–${s.endTime} • ${circleModeLabel(s.locationOrMode)}'),
                   trailing: s.status == SessionStatus.cancelled
                       ? const Text('ملغاة',
                           style: TextStyle(
-                              color: DesignTokens.error, fontWeight: FontWeight.w700))
+                              color: DesignTokens.error,
+                              fontWeight: FontWeight.w700))
                       : null,
                 ),
               ),

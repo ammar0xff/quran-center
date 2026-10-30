@@ -52,8 +52,8 @@ Future<void> _seed(FakeFirestoreDataSource store) async {
   }
 }
 
-const _welcome = 'أهلاً بك، مديرة الدار';
-const _teacherWelcome = 'أهلاً بك، مستخدم tea-1';
+const _welcome = 'مديرة الدار';
+const _teacherWelcome = 'مستخدم tea-1';
 
 void main() {
   setUpAll(() async {

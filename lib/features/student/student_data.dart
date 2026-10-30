@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
+import 'package:quran_center/core/utils/streak.dart';
 import 'package:quran_center/data/models/app_model.dart';
+import 'package:quran_center/data/models/attendance.dart';
 import 'package:quran_center/data/models/circle.dart';
 import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/data/models/learning_task.dart';
@@ -16,6 +18,7 @@ class StudentData {
     required this.sessions,
     required this.tasks,
     required this.feedback,
+    this.attendance = const [],
   });
 
   final Student student;
@@ -27,6 +30,16 @@ class StudentData {
 
   /// Assessments, newest first.
   final List<MemorizationRecord> feedback;
+  final List<Attendance> attendance;
+
+  /// Consecutive sessions attended (see [attendanceStreak]).
+  int get streak {
+    final dates = {for (final s in sessions) s.scheduleId: s.date};
+    return attendanceStreak([
+      for (final a in attendance)
+        (date: dates[a.sessionId] ?? a.createdAt, status: a.status)
+    ]);
+  }
 
   bool _open(LearningTask t) =>
       t.status != TaskStatus.completed && t.status != TaskStatus.cancelled;
@@ -47,7 +60,8 @@ class StudentData {
   Schedule? nextSession(DateTime now) {
     final today = DateTime(now.year, now.month, now.day);
     for (final s in sessions) {
-      if (s.status == SessionStatus.cancelled || s.status == SessionStatus.completed) continue;
+      if (s.status == SessionStatus.cancelled ||
+          s.status == SessionStatus.completed) continue;
       if (!s.date.isBefore(today)) return s;
     }
     return null;
@@ -70,7 +84,8 @@ class StudentData {
 
 /// Loads the signed-in student's own data. The student id comes from their
 /// profile, never from anything typed or passed in.
-final studentDataProvider = FutureProvider.autoDispose<StudentData>((ref) async {
+final studentDataProvider =
+    FutureProvider.autoDispose<StudentData>((ref) async {
   final profile = ref.watch(currentSessionProvider).profile;
   final studentId = profile?.studentId;
   if (profile == null || studentId == null) {
@@ -80,11 +95,12 @@ final studentDataProvider = FutureProvider.autoDispose<StudentData>((ref) async 
   final student = await ws.profile(profile.centerId, studentId);
   if (student == null) throw StateError('Student profile not found.');
 
-  final (circle, sessions, tasks, feedback) = await (
+  final (circle, sessions, tasks, feedback, attendance) = await (
     ws.circle(profile.centerId, student.currentCircleId),
     ws.sessions(profile.centerId, student.currentCircleId),
     ws.tasks(profile.centerId, studentId),
     ws.feedback(profile.centerId, studentId),
+    ws.attendance(profile.centerId, studentId),
   ).wait;
   return StudentData(
     student: student,
@@ -92,5 +108,6 @@ final studentDataProvider = FutureProvider.autoDispose<StudentData>((ref) async 
     sessions: sessions,
     tasks: tasks,
     feedback: feedback,
+    attendance: attendance,
   );
 });

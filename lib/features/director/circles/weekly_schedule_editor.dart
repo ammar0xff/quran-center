@@ -26,7 +26,8 @@ TimeOfDay parseTimeOfDay(String hhmm) {
 List<CircleWeeklySchedule> scheduleFromMap(Map<int, (String, String)> m) => [
       for (final (d, _) in weekDays)
         if (m.containsKey(d))
-          CircleWeeklySchedule(dayOfWeek: d, startTime: m[d]!.$1, endTime: m[d]!.$2),
+          CircleWeeklySchedule(
+              dayOfWeek: d, startTime: m[d]!.$1, endTime: m[d]!.$2),
     ];
 
 Map<int, (String, String)> scheduleToMap(List<CircleWeeklySchedule> list) =>
@@ -45,7 +46,8 @@ class WeeklyScheduleEditor extends StatelessWidget {
   final ValueChanged<Map<int, (String, String)>> onChanged;
   final String? error;
 
-  Future<void> _pick(BuildContext context, int day, {required bool start}) async {
+  Future<void> _pick(BuildContext context, int day,
+      {required bool start}) async {
     final current = value[day]!;
     final t = await showTimePicker(
       context: context,
@@ -71,7 +73,9 @@ class WeeklyScheduleEditor extends StatelessWidget {
                 onSelected: (on) {
                   final next = {...value};
                   if (on) {
-                    next[d] = value.values.isEmpty ? ('08:00', '10:00') : value.values.last;
+                    next[d] = value.values.isEmpty
+                        ? ('08:00', '10:00')
+                        : value.values.last;
                   } else {
                     next.remove(d);
                   }
@@ -106,7 +110,8 @@ class WeeklyScheduleEditor extends StatelessWidget {
         if (error != null)
           Padding(
             padding: const EdgeInsets.only(top: DesignTokens.space8),
-            child: Text(error!, style: const TextStyle(color: DesignTokens.error)),
+            child:
+                Text(error!, style: const TextStyle(color: DesignTokens.error)),
           ),
       ],
     );

@@ -52,14 +52,16 @@ final teacherHomeProvider =
     ref.read(taskServiceProvider).tasksForTeacher(centerId, teacherId),
   ).wait;
 
-  final activeStudents =
-      students.where((s) => s.enrollmentStatus == EnrollmentStatus.active).length;
+  final activeStudents = students
+      .where((s) => s.enrollmentStatus == EnrollmentStatus.active)
+      .length;
   final today = sessions.where((s) => s.date.isSameDate(now)).toList()
     ..sort((a, b) => a.startTime.compareTo(b.startTime));
   final startOfTomorrow = DateTime(now.year, now.month, now.day + 1);
   final upcoming = sessions
       .where((s) =>
-          s.status == SessionStatus.scheduled && !s.date.isBefore(startOfTomorrow))
+          s.status == SessionStatus.scheduled &&
+          !s.date.isBefore(startOfTomorrow))
       .toList()
     ..sort((a, b) {
       final d = a.date.compareTo(b.date);

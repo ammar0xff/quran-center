@@ -67,7 +67,8 @@ class _AccountAccessTabState extends ConsumerState<AccountAccessTab> {
     ));
   }
 
-  Future<void> _run(Future<void> Function() action, String successMessage) async {
+  Future<void> _run(
+      Future<void> Function() action, String successMessage) async {
     setState(() => _busy = true);
     try {
       await action();
@@ -182,7 +183,8 @@ class _AccountAccessTabState extends ConsumerState<AccountAccessTab> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text('الحالة الحالية',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(height: DesignTokens.space12),
                 ListTile(
                   contentPadding: EdgeInsets.zero,

@@ -18,7 +18,8 @@ import 'package:quran_center/features/director/widgets/director_bottom_nav.dart'
 /// a new circle transfers them (the old enrolment is kept as history). All the
 /// rules are enforced by [EnrollmentService]; this screen shows its answer.
 class EnrollmentAssignmentScreen extends ConsumerStatefulWidget {
-  const EnrollmentAssignmentScreen({super.key, this.initialStudentId, this.initialCircleId});
+  const EnrollmentAssignmentScreen(
+      {super.key, this.initialStudentId, this.initialCircleId});
 
   /// Preselected student, when opened from a student's menu.
   final String? initialStudentId;
@@ -81,15 +82,17 @@ class _EnrollmentAssignmentScreenState
           .where((c) => c.status == CircleStatus.active)
           .toList()
         ..sort((a, b) => a.name.compareTo(b.name));
-      final teachers =
-          await ref.read(teacherRepositoryProvider).getTeachersByCenter(centerId);
+      final teachers = await ref
+          .read(teacherRepositoryProvider)
+          .getTeachersByCenter(centerId);
       final enrollments = ref.read(enrollmentRepositoryProvider);
 
       final counts = <String, int>{};
       final byCircleId = {for (final c in allCircles) c.circleId: c.name};
       final current = <String, String>{};
       for (final c in circles) {
-        final active = await enrollments.getActiveEnrollmentsForCircle(c.circleId, centerId: centerId);
+        final active = await enrollments
+            .getActiveEnrollmentsForCircle(c.circleId, centerId: centerId);
         counts[c.circleId] = active.length;
         for (final e in active) {
           current[e.studentId] = byCircleId[e.circleId] ?? '';
@@ -103,7 +106,8 @@ class _EnrollmentAssignmentScreenState
         _teacherNames = {for (final t in teachers) t.teacherId: t.fullName};
         _counts = counts;
         _currentCircle = current;
-        if (preselect != null && students.any((s) => s.studentId == preselect)) {
+        if (preselect != null &&
+            students.any((s) => s.studentId == preselect)) {
           _studentId = preselect;
         }
         final circlePre = widget.initialCircleId;
@@ -149,7 +153,8 @@ class _EnrollmentAssignmentScreenState
             circleId: _circleId!,
             actorId: actor.id,
             actorRole: actor.role,
-            startDate: DateTime(_startDate.year, _startDate.month, _startDate.day),
+            startDate:
+                DateTime(_startDate.year, _startDate.month, _startDate.day),
             reason: _reason.text,
           );
       if (!mounted) return;
@@ -176,7 +181,8 @@ class _EnrollmentAssignmentScreenState
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
-        appBar: AppBar(title: const Text('تعيين الطالب للحلقة'), centerTitle: false),
+        appBar: AppBar(
+            title: const Text('تعيين الطالب للحلقة'), centerTitle: false),
         body: _loading
             ? const Center(child: CircularProgressIndicator())
             : _loadError != null
@@ -187,7 +193,8 @@ class _EnrollmentAssignmentScreenState
                         Text(_loadError!),
                         const SizedBox(height: DesignTokens.space12),
                         OutlinedButton(
-                            onPressed: _load, child: const Text('إعادة المحاولة')),
+                            onPressed: _load,
+                            child: const Text('إعادة المحاولة')),
                       ],
                     ),
                   )
@@ -264,7 +271,8 @@ class _EnrollmentAssignmentScreenState
             for (final c in _circles)
               DropdownMenuItem(
                 value: c.circleId,
-                child: Text('${c.name}  (${_counts[c.circleId] ?? 0}/${c.maxCapacity})'),
+                child: Text(
+                    '${c.name}  (${_counts[c.circleId] ?? 0}/${c.maxCapacity})'),
               ),
           ],
           onChanged: (v) => setState(() {
@@ -286,13 +294,15 @@ class _EnrollmentAssignmentScreenState
         OutlinedButton.icon(
           onPressed: _pickDate,
           icon: const Icon(Icons.event),
-          label: Text('تاريخ البداية: ${DateFormat.yMMMd('ar').format(_startDate)}'),
+          label: Text(
+              'تاريخ البداية: ${DateFormat.yMMMd('ar').format(_startDate)}'),
         ),
         const SizedBox(height: DesignTokens.space16),
         TextField(
           controller: _reason,
           maxLines: 2,
-          decoration: const InputDecoration(labelText: 'سبب / ملاحظة (اختياري)'),
+          decoration:
+              const InputDecoration(labelText: 'سبب / ملاحظة (اختياري)'),
         ),
         if (_error != null) ...[
           const SizedBox(height: DesignTokens.space16),
@@ -303,9 +313,11 @@ class _EnrollmentAssignmentScreenState
               decoration: BoxDecoration(
                 color: DesignTokens.error.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(DesignTokens.radiusSmall),
-                border: Border.all(color: DesignTokens.error.withValues(alpha: 0.3)),
+                border: Border.all(
+                    color: DesignTokens.error.withValues(alpha: 0.3)),
               ),
-              child: Text(_error!, style: const TextStyle(color: DesignTokens.error)),
+              child: Text(_error!,
+                  style: const TextStyle(color: DesignTokens.error)),
             ),
           ),
         ],
@@ -318,7 +330,8 @@ class _EnrollmentAssignmentScreenState
                 ? const SizedBox(
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
                 : const Text('تعيين'),
           ),
         ),

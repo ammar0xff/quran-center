@@ -76,10 +76,12 @@ class _AttendanceAdministrationScreenState
 
   Future<void> _load() async {
     try {
-      final records =
-          await ref.read(attendanceRepositoryProvider).getByCenter(ref.read(centerIdProvider));
-      final students =
-          await ref.read(studentRepositoryProvider).getStudentsByCenter(ref.read(centerIdProvider));
+      final records = await ref
+          .read(attendanceRepositoryProvider)
+          .getByCenter(ref.read(centerIdProvider));
+      final students = await ref
+          .read(studentRepositoryProvider)
+          .getStudentsByCenter(ref.read(centerIdProvider));
       if (!mounted) return;
       setState(() {
         _records = records;
@@ -120,10 +122,9 @@ class _AttendanceAdministrationScreenState
   }
 
   Future<void> _openHistory(Attendance record) async {
-    final logs = await ref
-        .read(auditRepositoryProvider)
-        .getForEntity('attendance', record.attendanceId,
-            centerId: record.centerId);
+    final logs = await ref.read(auditRepositoryProvider).getForEntity(
+        'attendance', record.attendanceId,
+        centerId: record.centerId);
     if (!mounted) return;
     await showModalBottomSheet<void>(
       context: context,
@@ -150,7 +151,8 @@ class _AttendanceAdministrationScreenState
                         Text(_error!),
                         const SizedBox(height: DesignTokens.space12),
                         OutlinedButton(
-                            onPressed: _load, child: const Text('إعادة المحاولة')),
+                            onPressed: _load,
+                            child: const Text('إعادة المحاولة')),
                       ],
                     ),
                   )
@@ -195,7 +197,8 @@ class _AttendanceAdministrationScreenState
                         for (final r in items)
                           _RecordTile(
                             record: r,
-                            studentName: _studentNames[r.studentId] ?? r.studentId,
+                            studentName:
+                                _studentNames[r.studentId] ?? r.studentId,
                             onCorrect: () => _openCorrection(r),
                             onHistory: () => _openHistory(r),
                           ),
@@ -246,7 +249,8 @@ class _SummaryCard extends StatelessWidget {
           ),
           const SizedBox(height: DesignTokens.space8),
           const Text('تشمل جميع السجلات المسجلة (بلا تحديد فترة).',
-              style: TextStyle(fontSize: 12, color: DesignTokens.secondaryText)),
+              style:
+                  TextStyle(fontSize: 12, color: DesignTokens.secondaryText)),
           const Divider(height: DesignTokens.space24),
           Text(
             rate == null
@@ -397,7 +401,8 @@ class _CorrectionDialogState extends ConsumerState<_CorrectionDialog> {
               Text(widget.studentName,
                   style: const TextStyle(fontWeight: FontWeight.w700)),
               const SizedBox(height: DesignTokens.space4),
-              Text('الحالة الحالية: ${attendanceStatusLabel(widget.record.status)}',
+              Text(
+                  'الحالة الحالية: ${attendanceStatusLabel(widget.record.status)}',
                   style: const TextStyle(color: DesignTokens.secondaryText)),
               const SizedBox(height: DesignTokens.space16),
               DropdownButtonFormField<AttendanceStatus>(
@@ -419,7 +424,8 @@ class _CorrectionDialogState extends ConsumerState<_CorrectionDialog> {
               const SizedBox(height: DesignTokens.space8),
               const Text(
                 'تُحفظ الحالة الأصلية ويُسجَّل التصحيح في سجل التدقيق.',
-                style: TextStyle(fontSize: 12, color: DesignTokens.secondaryText),
+                style:
+                    TextStyle(fontSize: 12, color: DesignTokens.secondaryText),
               ),
               if (_error != null) ...[
                 const SizedBox(height: DesignTokens.space8),

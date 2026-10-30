@@ -120,13 +120,15 @@ class _AddTeacherScreenState extends ConsumerState<AddTeacherScreen> {
                 controller: _phone,
                 keyboardType: TextInputType.phone,
                 textDirection: TextDirection.ltr,
-                decoration: const InputDecoration(labelText: 'الجوال (اختياري)'),
+                decoration:
+                    const InputDecoration(labelText: 'الجوال (اختياري)'),
               ),
               const SizedBox(height: DesignTokens.space16),
               TextFormField(
                 controller: _notes,
                 maxLines: 3,
-                decoration: const InputDecoration(labelText: 'ملاحظات مهنية (اختياري)'),
+                decoration:
+                    const InputDecoration(labelText: 'ملاحظات مهنية (اختياري)'),
               ),
               if (_error != null) ...[
                 const SizedBox(height: DesignTokens.space16),
@@ -136,8 +138,10 @@ class _AddTeacherScreenState extends ConsumerState<AddTeacherScreen> {
                     padding: const EdgeInsets.all(DesignTokens.space12),
                     decoration: BoxDecoration(
                       color: DesignTokens.error.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(DesignTokens.radiusSmall),
-                      border: Border.all(color: DesignTokens.error.withValues(alpha: 0.3)),
+                      borderRadius:
+                          BorderRadius.circular(DesignTokens.radiusSmall),
+                      border: Border.all(
+                          color: DesignTokens.error.withValues(alpha: 0.3)),
                     ),
                     child: Text(_error!,
                         style: const TextStyle(color: DesignTokens.error)),

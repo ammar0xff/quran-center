@@ -5,7 +5,8 @@ import 'package:quran_center/data/providers/repositories.dart';
 
 /// Loads the signed-in director's center data and derives the dashboard
 /// numbers. Re-evaluated each time the dashboard is opened.
-final dashboardStatsProvider = FutureProvider.autoDispose<DashboardStats>((ref) async {
+final dashboardStatsProvider =
+    FutureProvider.autoDispose<DashboardStats>((ref) async {
   final centerId = ref.watch(centerIdProvider);
   final (students, teachers, circles, schedules, attendance) = await (
     ref.watch(studentRepositoryProvider).getStudentsByCenter(centerId),

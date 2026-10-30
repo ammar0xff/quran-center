@@ -12,14 +12,19 @@ import 'package:quran_center/features/director/accounts/accounts_screen.dart'
 import 'package:quran_center/features/teacher/widgets/teacher_bottom_nav.dart';
 
 class _TeacherAccount {
-  const _TeacherAccount({this.teacher, this.centerName, required this.circleCount, required this.studentCount});
+  const _TeacherAccount(
+      {this.teacher,
+      this.centerName,
+      required this.circleCount,
+      required this.studentCount});
   final Teacher? teacher;
   final String? centerName;
   final int circleCount;
   final int studentCount;
 }
 
-final _teacherAccountProvider = FutureProvider.autoDispose<_TeacherAccount>((ref) async {
+final _teacherAccountProvider =
+    FutureProvider.autoDispose<_TeacherAccount>((ref) async {
   final profile = ref.watch(currentSessionProvider).profile!;
   final ds = ref.read(firestoreDataSourceProvider);
   final ws = ref.read(teacherWorkspaceProvider);
@@ -29,9 +34,11 @@ final _teacherAccountProvider = FutureProvider.autoDispose<_TeacherAccount>((ref
   try {
     final raw = await ds.getDoc('teachers/${profile.uid}');
     if (raw != null && raw['centerId'] == profile.centerId) {
-      teacher = Teacher.fromJson(profile.uid, firestoreConverter.decodeFromRead(raw));
+      teacher =
+          Teacher.fromJson(profile.uid, firestoreConverter.decodeFromRead(raw));
     }
-    centerName = (await ds.getDoc('centers/${profile.centerId}'))?['name'] as String?;
+    centerName =
+        (await ds.getDoc('centers/${profile.centerId}'))?['name'] as String?;
   } catch (_) {
     // Optional details; the rest of the screen still works.
   }
@@ -43,8 +50,9 @@ final _teacherAccountProvider = FutureProvider.autoDispose<_TeacherAccount>((ref
     teacher: teacher,
     centerName: centerName,
     circleCount: circles.where((c) => c.status == CircleStatus.active).length,
-    studentCount:
-        students.where((s) => s.enrollmentStatus == EnrollmentStatus.active).length,
+    studentCount: students
+        .where((s) => s.enrollmentStatus == EnrollmentStatus.active)
+        .length,
   );
 });
 
@@ -54,7 +62,8 @@ final _teacherAccountProvider = FutureProvider.autoDispose<_TeacherAccount>((ref
 class TeacherMoreScreen extends ConsumerWidget {
   const TeacherMoreScreen({super.key});
 
-  Future<void> _changePassword(BuildContext context, WidgetRef ref, String email) async {
+  Future<void> _changePassword(
+      BuildContext context, WidgetRef ref, String email) async {
     final messenger = ScaffoldMessenger.of(context);
     try {
       await ref.read(authGatewayProvider).sendPasswordReset(email);
@@ -66,7 +75,8 @@ class TeacherMoreScreen extends ConsumerWidget {
     } on AuthFailure catch (e) {
       messenger
         ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(e.message), backgroundColor: DesignTokens.error));
+        ..showSnackBar(SnackBar(
+            content: Text(e.message), backgroundColor: DesignTokens.error));
     }
   }
 
@@ -81,8 +91,13 @@ class TeacherMoreScreen extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(
               vertical: DesignTokens.space12, horizontal: DesignTokens.space16),
           child: Row(children: [
-            SizedBox(width: 110, child: Text(l, style: const TextStyle(color: DesignTokens.secondaryText))),
-            Expanded(child: Text(v, style: const TextStyle(fontWeight: FontWeight.w600))),
+            SizedBox(
+                width: 110,
+                child: Text(l,
+                    style: const TextStyle(color: DesignTokens.secondaryText))),
+            Expanded(
+                child: Text(v,
+                    style: const TextStyle(fontWeight: FontWeight.w600))),
           ]),
         );
 
@@ -98,7 +113,8 @@ class TeacherMoreScreen extends ConsumerWidget {
               child: Column(children: [
                 row('الاسم', profile?.fullName ?? '—'),
                 const Divider(height: 1),
-                row('الحالة', profile == null ? '—' : accountStatusLabel(profile.status)),
+                row('الحالة',
+                    profile == null ? '—' : accountStatusLabel(profile.status)),
                 if (account?.centerName != null) ...[
                   const Divider(height: 1),
                   row('الدار', account!.centerName!),
@@ -121,7 +137,8 @@ class TeacherMoreScreen extends ConsumerWidget {
             ),
             const SizedBox(height: DesignTokens.space8),
             const Text('لتعديل بياناتك أو حلقاتك تواصل مع إدارة الدار.',
-                style: TextStyle(fontSize: 12, color: DesignTokens.secondaryText)),
+                style:
+                    TextStyle(fontSize: 12, color: DesignTokens.secondaryText)),
             const SizedBox(height: DesignTokens.space20),
             if (email != null)
               OutlinedButton.icon(

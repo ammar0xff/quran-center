@@ -2,14 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/core/utils/wird_level.dart';
 import 'package:quran_center/data/models/enums.dart';
-
-Color gradeColor(WirdGrade g) => switch (g) {
-      WirdGrade.excellent => DesignTokens.success,
-      WirdGrade.veryGood => DesignTokens.primaryDarkGreen,
-      WirdGrade.good => DesignTokens.informational,
-      WirdGrade.acceptable => DesignTokens.warning,
-      WirdGrade.repeat => DesignTokens.error,
-    };
+import 'package:quran_center/design_system/components/marks.dart';
 
 /// A student's level at a glance: the overall word, how many wirds it rests
 /// on, the trend, and how many of each mark. The wording is always tied to the
@@ -26,7 +19,7 @@ class LevelSummary extends StatelessWidget {
       return const Text('لا يوجد مستوى بعد: لم تُسجَّل أوراد مُقيَّمة.',
           style: TextStyle(color: DesignTokens.secondaryText));
     }
-    return Column(
+    final text = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -35,24 +28,48 @@ class LevelSummary extends StatelessWidget {
         ),
         Text(
           'من آخر ${level.total} أوراد • ${trendLabel(level.trend)}',
-          style: const TextStyle(fontSize: 12, color: DesignTokens.secondaryText),
+          style:
+              const TextStyle(fontSize: 12, color: DesignTokens.secondaryText),
         ),
         if (!compact) ...[
-          const SizedBox(height: DesignTokens.space4),
+          const SizedBox(height: DesignTokens.space8),
           Wrap(
             spacing: DesignTokens.space8,
+            runSpacing: 4,
             children: [
               for (final g in WirdGrade.values)
                 if ((level.counts[g] ?? 0) > 0)
-                  Text('${g.label} ${level.counts[g]}',
-                      style: TextStyle(
-                          fontSize: 12, fontWeight: FontWeight.w700, color: gradeColor(g))),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: gradeColor(g).withValues(alpha: 0.13),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text('${g.label} ${level.counts[g]}',
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color:
+                                Color.lerp(gradeColor(g), Colors.black, 0.25))),
+                  ),
             ],
           ),
+          const SizedBox(height: DesignTokens.space4),
           for (final e in level.byType.entries)
             Text('${wirdTypeLabel(e.key)}: ${e.value.toStringAsFixed(1)}',
-                style: const TextStyle(fontSize: 12, color: DesignTokens.secondaryText)),
+                style: const TextStyle(
+                    fontSize: 12, color: DesignTokens.secondaryText)),
         ],
+      ],
+    );
+    if (compact) return text;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        LevelBadge(level: level, size: 60),
+        const SizedBox(width: 14),
+        Expanded(child: text),
       ],
     );
   }

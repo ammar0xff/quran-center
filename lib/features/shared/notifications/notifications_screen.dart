@@ -8,21 +8,28 @@ import 'package:quran_center/data/models/notification.dart' as model;
 import 'package:quran_center/data/providers/repositories.dart';
 
 /// The signed-in user's notifications. Only ever the user's own.
-final inboxProvider = FutureProvider.autoDispose<List<model.Notification>>((ref) async {
+final inboxProvider =
+    FutureProvider.autoDispose<List<model.Notification>>((ref) async {
   final profile = ref.watch(currentSessionProvider).profile;
   if (profile == null) return [];
-  return ref.read(notificationServiceProvider).inbox(profile.centerId, profile.uid);
+  return ref
+      .read(notificationServiceProvider)
+      .inbox(profile.centerId, profile.uid);
 });
 
 /// A bell with the number of unread notifications; opens [route].
 class NotificationBell extends ConsumerWidget {
-  const NotificationBell({super.key, required this.route});
+  const NotificationBell({super.key, required this.route, this.onDark = false});
 
   final String route;
 
+  /// White icon, for use on the emerald header.
+  final bool onDark;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final unread = ref.watch(inboxProvider).valueOrNull?.where((n) => !n.read).length ?? 0;
+    final unread =
+        ref.watch(inboxProvider).valueOrNull?.where((n) => !n.read).length ?? 0;
     return IconButton(
       tooltip: unread == 0 ? 'الإشعارات' : 'الإشعارات ($unread غير مقروء)',
       onPressed: () async {
@@ -32,7 +39,8 @@ class NotificationBell extends ConsumerWidget {
       icon: Badge(
         isLabelVisible: unread > 0,
         label: Text('$unread'),
-        child: const Icon(Icons.notifications_outlined),
+        child: Icon(Icons.notifications_outlined,
+            color: onDark ? Colors.white : null),
       ),
     );
   }
@@ -46,8 +54,11 @@ class NotificationsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(inboxProvider);
-    final unreadIds =
-        async.valueOrNull?.where((n) => !n.read).map((n) => n.notificationId).toList() ?? [];
+    final unreadIds = async.valueOrNull
+            ?.where((n) => !n.read)
+            .map((n) => n.notificationId)
+            .toList() ??
+        [];
 
     Future<void> markAll() async {
       try {
@@ -71,7 +82,8 @@ class NotificationsScreen extends ConsumerWidget {
           centerTitle: false,
           actions: [
             if (unreadIds.isNotEmpty)
-              TextButton(onPressed: markAll, child: const Text('تعليم الكل كمقروء')),
+              TextButton(
+                  onPressed: markAll, child: const Text('تعليم الكل كمقروء')),
           ],
         ),
         body: async.when(
@@ -96,17 +108,24 @@ class NotificationsScreen extends ConsumerWidget {
                   Card(
                     color: n.read ? null : DesignTokens.softMint,
                     child: ListTile(
-                      leading: Icon(n.read ? Icons.notifications_none : Icons.notifications_active,
+                      leading: Icon(
+                          n.read
+                              ? Icons.notifications_none
+                              : Icons.notifications_active,
                           color: DesignTokens.primaryDarkGreen),
                       title: Text(n.title,
-                          style: TextStyle(fontWeight: n.read ? FontWeight.w500 : FontWeight.w700)),
+                          style: TextStyle(
+                              fontWeight:
+                                  n.read ? FontWeight.w500 : FontWeight.w700)),
                       subtitle: Text(
                           '${n.message}\n${DateFormat.yMMMd('ar').add_jm().format(n.createdAt)}'),
                       isThreeLine: true,
                       onTap: n.read
                           ? null
                           : () async {
-                              await ref.read(notificationServiceProvider).markRead([n.notificationId]);
+                              await ref
+                                  .read(notificationServiceProvider)
+                                  .markRead([n.notificationId]);
                               ref.invalidate(inboxProvider);
                             },
                     ),

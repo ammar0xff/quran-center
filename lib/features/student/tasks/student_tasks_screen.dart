@@ -26,7 +26,8 @@ class _StudentTasksScreenState extends ConsumerState<StudentTasksScreen> {
   bool _matches(LearningTask t) {
     switch (_filter) {
       case _Filter.open:
-        return t.status != TaskStatus.completed && t.status != TaskStatus.cancelled;
+        return t.status != TaskStatus.completed &&
+            t.status != TaskStatus.cancelled;
       case _Filter.redo:
         return t.status == TaskStatus.needsReview;
       case _Filter.done:
@@ -46,7 +47,11 @@ class _StudentTasksScreenState extends ConsumerState<StudentTasksScreen> {
         return ListView(
           padding: const EdgeInsets.all(DesignTokens.space16),
           children: [
-            _Progress(done: d.completedTasks.length, total: d.tasks.where((t) => t.status != TaskStatus.cancelled).length),
+            _Progress(
+                done: d.completedTasks.length,
+                total: d.tasks
+                    .where((t) => t.status != TaskStatus.cancelled)
+                    .length),
             const SizedBox(height: DesignTokens.space12),
             Wrap(
               spacing: DesignTokens.space8,
@@ -81,13 +86,16 @@ class _StudentTasksScreenState extends ConsumerState<StudentTasksScreen> {
             for (final t in items)
               Card(
                 child: ListTile(
-                  title: Text('${taskTypeLabel(t.taskType)} • ${taskRangeText(t)}',
+                  title: Text(
+                      '${taskTypeLabel(t.taskType)} • ${taskRangeText(t)}',
                       style: const TextStyle(fontWeight: FontWeight.w600)),
                   subtitle: Text(
                     '${taskStatusLabel(t.status)}'
                     '${t.isOverdue ? ' • متأخرة' : ''} • ${DateFormat.MMMEd('ar').format(t.dueDate)}',
                     style: TextStyle(
-                        color: t.isOverdue ? DesignTokens.error : DesignTokens.secondaryText),
+                        color: t.isOverdue
+                            ? DesignTokens.error
+                            : DesignTokens.secondaryText),
                   ),
                   trailing: const Icon(Icons.chevron_left),
                   onTap: () => context.push('/student/tasks/${t.taskId}'),

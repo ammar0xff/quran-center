@@ -15,14 +15,24 @@ import 'package:quran_center/features/director/widgets/director_bottom_nav.dart'
 final reportDataProvider = FutureProvider.autoDispose<ReportData>((ref) async {
   final centerId = ref.watch(centerIdProvider);
   final ds = ref.read(firestoreDataSourceProvider);
-  final (students, circles, teachers, schedules, attendance, assessmentDocs, taskDocs) = await (
+  final (
+    students,
+    circles,
+    teachers,
+    schedules,
+    attendance,
+    assessmentDocs,
+    taskDocs
+  ) = await (
     ref.read(studentRepositoryProvider).getStudentsByCenter(centerId),
     ref.read(circleRepositoryProvider).getCirclesByCenter(centerId),
     ref.read(teacherRepositoryProvider).getTeachersByCenter(centerId),
     ref.read(scheduleRepositoryProvider).getSchedulesByCenter(centerId),
     ref.read(attendanceRepositoryProvider).getByCenter(centerId),
-    ds.query('memorization_records', where: [QueryFilter.equal('centerId', centerId)]),
-    ds.query('learning_tasks', where: [QueryFilter.equal('centerId', centerId)]),
+    ds.query('memorization_records',
+        where: [QueryFilter.equal('centerId', centerId)]),
+    ds.query('learning_tasks',
+        where: [QueryFilter.equal('centerId', centerId)]),
   ).wait;
   return ReportData(
     students: students,
@@ -32,11 +42,13 @@ final reportDataProvider = FutureProvider.autoDispose<ReportData>((ref) async {
     attendance: attendance,
     assessments: [
       for (final d in assessmentDocs)
-        MemorizationRecord.fromJson(d['id'] ?? '', firestoreConverter.decodeFromRead(d))
+        MemorizationRecord.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d))
     ],
     tasks: [
       for (final d in taskDocs)
-        LearningTask.fromJson(d['id'] ?? '', firestoreConverter.decodeFromRead(d))
+        LearningTask.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d))
     ],
   );
 });
@@ -61,7 +73,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     if (_days == null) return const ReportPeriod();
     final n = DateTime.now();
     final tomorrow = DateTime(n.year, n.month, n.day + 1);
-    return ReportPeriod(from: tomorrow.subtract(Duration(days: _days!)), to: tomorrow);
+    return ReportPeriod(
+        from: tomorrow.subtract(Duration(days: _days!)), to: tomorrow);
   }
 
   String get _periodLabel => _days == null ? 'كل الفترات' : 'آخر $_days يومًا';
@@ -112,8 +125,15 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             ['الطالب', 'الحلقة', 'حاضر', 'متأخر', 'غائب', 'معذور', 'النسبة'],
             [
               for (final x in r)
-                [x.name, x.circleName, x.summary.present, x.summary.late, x.summary.absent,
-                  x.summary.excused, rateText(x.summary)]
+                [
+                  x.name,
+                  x.circleName,
+                  x.summary.present,
+                  x.summary.late,
+                  x.summary.absent,
+                  x.summary.excused,
+                  rateText(x.summary)
+                ]
             ],
             'النسبة = (حاضر + متأخر) ÷ (حاضر + متأخر + غائب). لا يدخل المعذورون في المقام، '
                 'والطالب بلا سجلات لا نسبة له (—) وليس 0%.',
@@ -123,11 +143,24 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           final r = teacherActivity(d, period);
           return (
             'نشاط المعلمين',
-            ['المعلم', 'جلسات منجزة', 'جلسات مجدولة', 'سجلات حضور', 'تسميعات', 'مهام بانتظار التحقق'],
+            [
+              'المعلم',
+              'جلسات منجزة',
+              'جلسات مجدولة',
+              'سجلات حضور',
+              'تسميعات',
+              'مهام بانتظار التحقق'
+            ],
             [
               for (final x in r)
-                [x.name, x.sessionsCompleted, x.sessionsScheduled, x.attendanceRecorded,
-                  x.assessments, x.tasksAwaitingVerification]
+                [
+                  x.name,
+                  x.sessionsCompleted,
+                  x.sessionsScheduled,
+                  x.attendanceRecorded,
+                  x.assessments,
+                  x.tasksAwaitingVerification
+                ]
             ],
             'هذه أعداد عمل منجز وليست تقييمًا لجودة التدريس.',
           );
@@ -136,11 +169,26 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           final r = circleOverview(d, period);
           return (
             'نظرة على الحلقات',
-            ['الحلقة', 'المعلم', 'الطلاب', 'السعة', 'جلسات منجزة', 'جلسات ملغاة', 'نسبة الحضور'],
+            [
+              'الحلقة',
+              'المعلم',
+              'الطلاب',
+              'السعة',
+              'جلسات منجزة',
+              'جلسات ملغاة',
+              'نسبة الحضور'
+            ],
             [
               for (final x in r)
-                [x.name, x.teacherName, x.students, x.capacity, x.sessionsCompleted,
-                  x.sessionsCancelled, rateText(x.summary)]
+                [
+                  x.name,
+                  x.teacherName,
+                  x.students,
+                  x.capacity,
+                  x.sessionsCompleted,
+                  x.sessionsCancelled,
+                  rateText(x.summary)
+                ]
             ],
             'عدد الطلاب والسعة حاليان؛ بقية الأعمدة ضمن الفترة المختارة.',
           );
@@ -184,15 +232,18 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             isExpanded: true,
             decoration: const InputDecoration(labelText: 'الحلقة'),
             items: [
-              const DropdownMenuItem<String?>(value: null, child: Text('كل الحلقات')),
+              const DropdownMenuItem<String?>(
+                  value: null, child: Text('كل الحلقات')),
               for (final c in d.circles)
-                DropdownMenuItem<String?>(value: c.circleId, child: Text(c.name)),
+                DropdownMenuItem<String?>(
+                    value: c.circleId, child: Text(c.name)),
             ],
             onChanged: (v) => setState(() => _circleId = v),
           ),
         ],
         const SizedBox(height: DesignTokens.space16),
-        Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        Text(title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
         Text(
           'الفترة: $_periodLabel'
           '${_kind == _Kind.attendance && _circleId != null ? ' • الحلقة: ${d.circles.firstWhere((c) => c.circleId == _circleId).name}' : ''}'
@@ -201,7 +252,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         ),
         const SizedBox(height: DesignTokens.space4),
         Text(note,
-            style: const TextStyle(fontSize: 12, color: DesignTokens.secondaryText, height: 1.5)),
+            style: const TextStyle(
+                fontSize: 12, color: DesignTokens.secondaryText, height: 1.5)),
         const SizedBox(height: DesignTokens.space8),
         OutlinedButton.icon(
           onPressed: rows.isEmpty ? null : () => _copy(csv),
@@ -212,7 +264,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         if (rows.isEmpty)
           const Padding(
             padding: EdgeInsets.all(DesignTokens.space24),
-            child: Text('لا توجد بيانات لهذا الاختيار.', textAlign: TextAlign.center),
+            child: Text('لا توجد بيانات لهذا الاختيار.',
+                textAlign: TextAlign.center),
           )
         else
           Card(

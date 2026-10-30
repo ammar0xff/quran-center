@@ -40,13 +40,21 @@ class SyncStatusBar extends ConsumerWidget {
       child: Row(
         children: [
           snap.syncing
-              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-              : Icon(failed > 0 ? Icons.error_outline : Icons.cloud_upload_outlined, color: color),
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2))
+              : Icon(
+                  failed > 0
+                      ? Icons.error_outline
+                      : Icons.cloud_upload_outlined,
+                  color: color),
           const SizedBox(width: DesignTokens.space12),
           Expanded(
             child: Text(
               [
-                if (pending > 0) '$pending تغييرات محفوظة على جهازك بانتظار المزامنة',
+                if (pending > 0)
+                  '$pending تغييرات محفوظة على جهازك بانتظار المزامنة',
                 if (failed > 0) '$failed تغييرات رفضها الخادم',
               ].join(' • '),
               style: TextStyle(color: color, fontWeight: FontWeight.w600),
@@ -54,7 +62,8 @@ class SyncStatusBar extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => failed > 0
-                ? _showFailures(context, box, ops.where((o) => o.failed).toList())
+                ? _showFailures(
+                    context, box, ops.where((o) => o.failed).toList())
                 : box.flush(),
             child: Text(failed > 0 ? 'عرض' : 'مزامنة الآن'),
           ),

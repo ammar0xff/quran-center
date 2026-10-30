@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:quran_center/core/quran/surahs.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
-import 'package:quran_center/data/models/enums.dart';
-import 'package:quran_center/features/shared/level_summary.dart';
+import 'package:quran_center/design_system/components/marks.dart';
 import 'package:quran_center/features/student/widgets/student_scaffold.dart';
 import 'package:quran_center/features/teacher/sessions/assessment_screen.dart'
     show assessmentTypeLabel;
@@ -19,12 +18,14 @@ class StudentFeedbackScreen extends StatelessWidget {
       title: 'الملاحظات',
       navIndex: 3,
       builder: (context, ref, d) {
-        final items = d.feedback; // every wird heard for this student, newest first
+        final items =
+            d.feedback; // every wird heard for this student, newest first
         if (items.isEmpty) {
           return ListView(children: const [
             Padding(
               padding: EdgeInsets.all(DesignTokens.space24),
-              child: Text('لم يُسجَّل لك تسميع بعد.', textAlign: TextAlign.center),
+              child:
+                  Text('لم يُسجَّل لك تسميع بعد.', textAlign: TextAlign.center),
             ),
           ]);
         }
@@ -46,16 +47,16 @@ class StudentFeedbackScreen extends StatelessWidget {
                             style: const TextStyle(fontWeight: FontWeight.w700),
                           ),
                         ),
-                        if (r.grade != null)
-                          Text(r.grade!.label,
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w800, color: gradeColor(r.grade!))),
+                        if (r.grade != null) GradeChip(r.grade!),
                       ]),
                       Text(DateFormat.yMMMd('ar').format(r.assessedAt),
-                          style: const TextStyle(color: DesignTokens.secondaryText)),
+                          style: const TextStyle(
+                              color: DesignTokens.secondaryText)),
                       const SizedBox(height: DesignTokens.space8),
-                      if (r.studentVisibleFeedback != null) Text(r.studentVisibleFeedback!),
-                      if (r.strengths != null) Text('نقاط القوة: ${r.strengths}'),
+                      if (r.studentVisibleFeedback != null)
+                        Text(r.studentVisibleFeedback!),
+                      if (r.strengths != null)
+                        Text('نقاط القوة: ${r.strengths}'),
                       if (r.areasForImprovement != null)
                         Text('للتحسين: ${r.areasForImprovement}'),
                       if (r.recommendedNextAssignment != null)

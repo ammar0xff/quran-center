@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/quran/surahs.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
+import 'package:quran_center/design_system/components/marks.dart';
 import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/data/providers/sync_providers.dart';
 import 'package:quran_center/data/services/teacher_session_service.dart';
@@ -101,7 +102,8 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen> {
     if (start == null || end == null) return 'أدخل رقمي آية البداية والنهاية';
     final range = validateAyahRange(e.surah!, start, end);
     if (range != null) return range;
-    if (type != AssessmentType.newAssignment && e.grade == null) return 'اختر التقدير';
+    if (type != AssessmentType.newAssignment && e.grade == null)
+      return 'اختر التقدير';
     return null;
   }
 
@@ -163,13 +165,15 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen> {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(const SnackBar(
-            content: Text('تم حفظ التسميع'), backgroundColor: DesignTokens.success));
+            content: Text('تم حفظ التسميع'),
+            backgroundColor: DesignTokens.success));
       context.pop(true);
     } catch (_) {
       if (mounted) {
         setState(() {
           _saving = false;
-          _saveError = 'تعذر الحفظ على الجهاز. بياناتك ما زالت في النموذج، حاول مرة أخرى.';
+          _saveError =
+              'تعذر الحفظ على الجهاز. بياناتك ما زالت في النموذج، حاول مرة أخرى.';
         });
       }
     }
@@ -212,7 +216,8 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen> {
               contentPadding: EdgeInsets.zero,
               title: Text(assessmentTypeLabel(type),
                   style: const TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: Text(graded ? 'سمع الطالب هذا الورد' : 'ما سيحفظه الطالب بعد ذلك'),
+              subtitle: Text(
+                  graded ? 'سمع الطالب هذا الورد' : 'ما سيحفظه الطالب بعد ذلك'),
               value: e.included,
               onChanged: (v) => setState(() {
                 e.included = v;
@@ -227,7 +232,12 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen> {
                 decoration: const InputDecoration(labelText: 'السورة *'),
                 items: [
                   for (final s in surahs)
-                    DropdownMenuItem(value: s.number, child: Text('${s.number}. ${s.name}')),
+                    DropdownMenuItem(
+                        value: s.number,
+                        child: Text('${s.number}. ${s.name}',
+                            style: const TextStyle(
+                                fontFamily: DesignTokens.nameFont,
+                                fontSize: 19))),
                 ],
                 onChanged: (v) => setState(() {
                   e.surah = v;
@@ -243,7 +253,10 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen> {
                       keyboardType: TextInputType.number,
                       onChanged: (_) => _dirty = true,
                       decoration: InputDecoration(
-                          labelText: 'من آية *', errorText: e.error != null && e.surah != null ? e.error : null),
+                          labelText: 'من آية *',
+                          errorText: e.error != null && e.surah != null
+                              ? e.error
+                              : null),
                     ),
                   ),
                   const SizedBox(width: DesignTokens.space12),
@@ -261,13 +274,17 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen> {
                 Padding(
                   padding: const EdgeInsets.only(top: DesignTokens.space4),
                   child: Text('عدد آيات ${surah.name}: ${surah.ayahCount}',
-                      style: const TextStyle(fontSize: 12, color: DesignTokens.secondaryText)),
+                      style: const TextStyle(
+                          fontSize: 12, color: DesignTokens.secondaryText)),
                 ),
               if (e.surah == null && e.error != null)
-                Text(e.error!, style: const TextStyle(color: DesignTokens.error)),
+                Text(e.error!,
+                    style: const TextStyle(color: DesignTokens.error)),
               if (graded) ...[
                 const SizedBox(height: DesignTokens.space12),
-                const Text('التقدير *', style: TextStyle(fontWeight: FontWeight.w600)),
+                const Text('التقدير *',
+                    style: TextStyle(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 6),
                 Wrap(
                   spacing: DesignTokens.space8,
                   children: [
@@ -275,6 +292,18 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen> {
                       ChoiceChip(
                         key: ValueKey('grade_${type.name}_${g.name}'),
                         label: Text(g.label),
+                        selectedColor: gradeColor(g).withValues(alpha: 0.18),
+                        side: BorderSide(
+                            color: e.grade == g
+                                ? gradeColor(g)
+                                : DesignTokens.bordersStrong,
+                            width: 1.5),
+                        labelStyle: TextStyle(
+                            fontFamily: DesignTokens.uiFont,
+                            fontWeight: FontWeight.w700,
+                            color: e.grade == g
+                                ? Color.lerp(gradeColor(g), Colors.black, 0.3)
+                                : DesignTokens.mainText),
                         selected: e.grade == g,
                         onSelected: (on) => setState(() {
                           e.grade = on ? g : null;
@@ -284,7 +313,8 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen> {
                   ],
                 ),
                 if (e.error == 'اختر التقدير')
-                  const Text('اختر التقدير', style: TextStyle(color: DesignTokens.error)),
+                  const Text('اختر التقدير',
+                      style: TextStyle(color: DesignTokens.error)),
               ],
             ],
           ],
@@ -311,7 +341,9 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen> {
         child: Scaffold(
           backgroundColor: DesignTokens.warmOffWhite,
           appBar: AppBar(
-            title: Text(widget.studentName == null ? 'تسميع' : 'تسميع: ${widget.studentName}'),
+            title: Text(widget.studentName == null
+                ? 'تسميع'
+                : 'تسميع: ${widget.studentName}'),
             centerTitle: false,
           ),
           body: ListView(
@@ -324,7 +356,8 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen> {
                 maxLines: 2,
                 onChanged: (_) => _dirty = true,
                 decoration: const InputDecoration(
-                    labelText: 'ملاحظة تراها الطالبة/الطالب', helperText: 'تظهر للطالب'),
+                    labelText: 'ملاحظة تراها الطالبة/الطالب',
+                    helperText: 'تظهر للطالب'),
               ),
               const SizedBox(height: DesignTokens.space12),
               TextField(
@@ -332,7 +365,8 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen> {
                 maxLines: 2,
                 onChanged: (_) => _dirty = true,
                 decoration: const InputDecoration(
-                    labelText: 'ملاحظة خاصة بالمعلم', helperText: 'لا يراها الطالب أبدًا'),
+                    labelText: 'ملاحظة خاصة بالمعلم',
+                    helperText: 'لا يراها الطالب أبدًا'),
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
@@ -346,7 +380,8 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen> {
               if (_saveError != null)
                 Padding(
                   padding: const EdgeInsets.only(top: DesignTokens.space8),
-                  child: Text(_saveError!, style: const TextStyle(color: DesignTokens.error)),
+                  child: Text(_saveError!,
+                      style: const TextStyle(color: DesignTokens.error)),
                 ),
               const SizedBox(height: DesignTokens.space16),
               SizedBox(
@@ -357,7 +392,8 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen> {
                       ? const SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white))
                       : const Text('حفظ التسميع'),
                 ),
               ),

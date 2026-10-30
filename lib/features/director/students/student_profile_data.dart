@@ -65,18 +65,37 @@ class StudentProfileData {
 final studentProfileProvider = FutureProvider.autoDispose
     .family<StudentProfileData?, String>((ref, studentId) async {
   final centerId = ref.watch(centerIdProvider);
-  final student = await ref.read(studentRepositoryProvider).getStudent(studentId);
+  final student =
+      await ref.read(studentRepositoryProvider).getStudent(studentId);
   if (student == null || student.centerId != centerId) return null;
 
-  final (enrollments, circles, teachers, records, schedules, audit, users, note, wirdDocs) = await (
-    ref.read(enrollmentRepositoryProvider).getHistoryForStudent(studentId, centerId: centerId),
+  final (
+    enrollments,
+    circles,
+    teachers,
+    records,
+    schedules,
+    audit,
+    users,
+    note,
+    wirdDocs
+  ) = await (
+    ref
+        .read(enrollmentRepositoryProvider)
+        .getHistoryForStudent(studentId, centerId: centerId),
     ref.read(circleRepositoryProvider).getCirclesByCenter(centerId),
     ref.read(teacherRepositoryProvider).getTeachersByCenter(centerId),
-    ref.read(attendanceRepositoryProvider).getByStudent(studentId, centerId: centerId),
+    ref
+        .read(attendanceRepositoryProvider)
+        .getByStudent(studentId, centerId: centerId),
     ref.read(scheduleRepositoryProvider).getSchedulesByCenter(centerId),
-    ref.read(auditRepositoryProvider).getForEntity('student', studentId, centerId: centerId),
+    ref
+        .read(auditRepositoryProvider)
+        .getForEntity('student', studentId, centerId: centerId),
     ref.read(userRepositoryProvider).getUsersByCenter(centerId),
-    ref.read(studentRepositoryProvider).getAdminNote(studentId, centerId: centerId),
+    ref
+        .read(studentRepositoryProvider)
+        .getAdminNote(studentId, centerId: centerId),
     ref.read(firestoreDataSourceProvider).query('memorization_records', where: [
       QueryFilter.equal('centerId', centerId),
       QueryFilter.equal('studentId', studentId),
@@ -102,7 +121,8 @@ final studentProfileProvider = FutureProvider.autoDispose
     adminNote: note,
     wirds: ([
       for (final d in wirdDocs)
-        MemorizationRecord.fromJson(d['id'] ?? '', firestoreConverter.decodeFromRead(d))
+        MemorizationRecord.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d))
     ]..sort((a, b) => b.assessedAt.compareTo(a.assessedAt))),
   );
 });

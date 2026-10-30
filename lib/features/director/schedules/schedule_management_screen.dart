@@ -75,12 +75,15 @@ class _ScheduleManagementScreenState
 
   Future<void> _load() async {
     try {
-      final schedules =
-          await ref.read(scheduleRepositoryProvider).getSchedulesByCenter(ref.read(centerIdProvider));
-      final circles =
-          await ref.read(circleRepositoryProvider).getCirclesByCenter(ref.read(centerIdProvider));
-      final teachers =
-          await ref.read(teacherRepositoryProvider).getTeachersByCenter(ref.read(centerIdProvider));
+      final schedules = await ref
+          .read(scheduleRepositoryProvider)
+          .getSchedulesByCenter(ref.read(centerIdProvider));
+      final circles = await ref
+          .read(circleRepositoryProvider)
+          .getCirclesByCenter(ref.read(centerIdProvider));
+      final teachers = await ref
+          .read(teacherRepositoryProvider)
+          .getTeachersByCenter(ref.read(centerIdProvider));
       if (!mounted) return;
       setState(() {
         _schedules = schedules;
@@ -211,20 +214,23 @@ class _ScheduleManagementScreenState
                   IconButton(
                     tooltip: 'السابق',
                     icon: const Icon(Icons.chevron_right),
-                    onPressed: () => _shift(_view == ScheduleView.weekly ? -7 : -1),
+                    onPressed: () =>
+                        _shift(_view == ScheduleView.weekly ? -7 : -1),
                   ),
                   Text(_rangeLabel,
                       style: const TextStyle(fontWeight: FontWeight.w600)),
                   IconButton(
                     tooltip: 'التالي',
                     icon: const Icon(Icons.chevron_left),
-                    onPressed: () => _shift(_view == ScheduleView.weekly ? 7 : 1),
+                    onPressed: () =>
+                        _shift(_view == ScheduleView.weekly ? 7 : 1),
                   ),
                 ],
               ),
             Padding(
               padding: const EdgeInsets.symmetric(
-                  horizontal: DesignTokens.space20, vertical: DesignTokens.space8),
+                  horizontal: DesignTokens.space20,
+                  vertical: DesignTokens.space8),
               child: Row(
                 children: [
                   Expanded(
@@ -248,8 +254,8 @@ class _ScheduleManagementScreenState
                     child: DropdownButtonFormField<SessionStatus?>(
                       value: _statusFilter,
                       isExpanded: true,
-                      decoration:
-                          const InputDecoration(labelText: 'الحالة', isDense: true),
+                      decoration: const InputDecoration(
+                          labelText: 'الحالة', isDense: true),
                       items: [
                         const DropdownMenuItem<SessionStatus?>(
                             value: null, child: Text('كل الحالات')),
@@ -267,7 +273,8 @@ class _ScheduleManagementScreenState
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : _loadError != null
-                      ? _stateMessage(Icons.error_outline, _loadError!, 'إعادة المحاولة', _load)
+                      ? _stateMessage(Icons.error_outline, _loadError!,
+                          'إعادة المحاولة', _load)
                       : items.isEmpty
                           ? _stateMessage(
                               Icons.schedule,
@@ -286,10 +293,11 @@ class _ScheduleManagementScreenState
                               itemCount: items.length,
                               itemBuilder: (_, i) => _ScheduleCard(
                                 schedule: items[i],
-                                circleName:
-                                    _circleNames[items[i].circleId] ?? items[i].circleId,
-                                teacherName: _teacherNames[items[i].teacherId] ??
-                                    items[i].teacherId,
+                                circleName: _circleNames[items[i].circleId] ??
+                                    items[i].circleId,
+                                teacherName:
+                                    _teacherNames[items[i].teacherId] ??
+                                        items[i].teacherId,
                               ),
                             ),
             ),
@@ -300,8 +308,8 @@ class _ScheduleManagementScreenState
     );
   }
 
-  Widget _stateMessage(
-      IconData icon, String message, String actionLabel, VoidCallback onAction) {
+  Widget _stateMessage(IconData icon, String message, String actionLabel,
+      VoidCallback onAction) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -369,7 +377,8 @@ class _ScheduleCard extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: DesignTokens.space8, vertical: DesignTokens.space4),
+                    horizontal: DesignTokens.space8,
+                    vertical: DesignTokens.space4),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(DesignTokens.radiusSmall),
@@ -377,7 +386,9 @@ class _ScheduleCard extends StatelessWidget {
                 ),
                 child: Text(sessionStatusLabel(schedule.status),
                     style: TextStyle(
-                        fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: color)),
               ),
               Text('${schedule.startTime} - ${schedule.endTime}',
                   style: const TextStyle(

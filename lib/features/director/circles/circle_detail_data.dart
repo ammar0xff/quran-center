@@ -34,18 +34,26 @@ final circleDetailProvider = FutureProvider.autoDispose
   if (circle == null || circle.centerId != centerId) return null;
 
   final (enrollments, students, teachers) = await (
-    ref.read(enrollmentRepositoryProvider).getActiveEnrollmentsForCircle(circleId, centerId: centerId),
+    ref
+        .read(enrollmentRepositoryProvider)
+        .getActiveEnrollmentsForCircle(circleId, centerId: centerId),
     ref.read(studentRepositoryProvider).getStudentsByCenter(centerId),
     ref.read(teacherRepositoryProvider).getTeachersByCenter(centerId),
   ).wait;
 
   final byId = {for (final s in students) s.studentId: s};
-  final roster = [for (final e in enrollments) RosterEntry(e, byId[e.studentId])]
-    ..sort((a, b) => (a.student?.displayName ?? '').compareTo(b.student?.displayName ?? ''));
+  final roster = [
+    for (final e in enrollments) RosterEntry(e, byId[e.studentId])
+  ]..sort((a, b) =>
+      (a.student?.displayName ?? '').compareTo(b.student?.displayName ?? ''));
   final teacherName = circle.assignedTeacherId == null
       ? null
-      : teachers.where((t) => t.teacherId == circle.assignedTeacherId).firstOrNull?.fullName;
-  return CircleDetailData(circle: circle, teacherName: teacherName, roster: roster);
+      : teachers
+          .where((t) => t.teacherId == circle.assignedTeacherId)
+          .firstOrNull
+          ?.fullName;
+  return CircleDetailData(
+      circle: circle, teacherName: teacherName, roster: roster);
 });
 
 String circleModeLabel(String mode) {

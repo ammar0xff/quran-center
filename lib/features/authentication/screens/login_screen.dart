@@ -6,6 +6,8 @@ import 'package:quran_center/core/auth/auth_gateway.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/core/utils/account_access_rules.dart';
+import 'package:quran_center/design_system/components/app_hero.dart';
+import 'package:quran_center/design_system/components/rosette.dart';
 
 /// Email + password sign-in.
 ///
@@ -67,111 +69,139 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: DesignTokens.warmOffWhite,
-        body: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(DesignTokens.space24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Form(
-                  key: _formKey,
+        body: SingleChildScrollView(
+          child: Column(
+            children: [
+              AppHero(
+                bottomRadius: 40,
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 250,
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.menu_book,
-                          size: 72, color: DesignTokens.primaryDarkGreen),
-                      const SizedBox(height: DesignTokens.space24),
-                      const Text('تسجيل الدخول',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: DesignTokens.mainText)),
-                      const SizedBox(height: DesignTokens.space8),
-                      const Text('سجّل الدخول إلى حسابك في دار تحفيظ القرآن.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              fontSize: 15, color: DesignTokens.secondaryText)),
-                      const SizedBox(height: DesignTokens.space32),
-                      TextFormField(
-                        controller: _email,
-                        keyboardType: TextInputType.emailAddress,
-                        textDirection: TextDirection.ltr,
-                        textInputAction: TextInputAction.next,
-                        autofillHints: const [AutofillHints.username],
-                        decoration:
-                            const InputDecoration(labelText: 'البريد الإلكتروني'),
-                        validator: _validateEmail,
+                      Rosette(
+                        size: 84,
+                        color: DesignTokens.gold,
+                        child: const Icon(Icons.menu_book_rounded,
+                            color: Colors.white, size: 36),
                       ),
-                      const SizedBox(height: DesignTokens.space16),
-                      TextFormField(
-                        controller: _password,
-                        obscureText: _obscure,
-                        textDirection: TextDirection.ltr,
-                        textInputAction: TextInputAction.done,
-                        autofillHints: const [AutofillHints.password],
-                        onFieldSubmitted: (_) => _submit(),
-                        decoration: InputDecoration(
-                          labelText: 'كلمة المرور',
-                          suffixIcon: IconButton(
-                            tooltip: _obscure
-                                ? 'إظهار كلمة المرور'
-                                : 'إخفاء كلمة المرور',
-                            icon: Icon(_obscure
-                                ? Icons.visibility_off
-                                : Icons.visibility),
-                            onPressed: () => setState(() => _obscure = !_obscure),
-                          ),
+                      const SizedBox(height: 18),
+                      const Text('بسم الله الرحمن الرحيم',
+                          style: TextStyle(
+                              fontFamily: DesignTokens.nameFont,
+                              fontSize: 26,
+                              color: Color(0xFFE9CF93),
+                              height: 1.4)),
+                      const SizedBox(height: 4),
+                      Text('دار تحفيظ القرآن',
+                          style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white.withValues(alpha: 0.8),
+                              fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text('تسجيل الدخول',
+                            style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w700,
+                                color: DesignTokens.mainText)),
+                        const SizedBox(height: 4),
+                        const Text('سجّل الدخول إلى حسابك في دار تحفيظ القرآن.',
+                            style: TextStyle(
+                                fontSize: 14,
+                                color: DesignTokens.secondaryText)),
+                        const SizedBox(height: DesignTokens.space24),
+                        TextFormField(
+                          controller: _email,
+                          keyboardType: TextInputType.emailAddress,
+                          textDirection: TextDirection.ltr,
+                          textInputAction: TextInputAction.next,
+                          autofillHints: const [AutofillHints.username],
+                          decoration: const InputDecoration(
+                              labelText: 'البريد الإلكتروني'),
+                          validator: _validateEmail,
                         ),
-                        validator: _validatePassword,
-                      ),
-                      if (_error != null) ...[
-                        const SizedBox(height: DesignTokens.space12),
-                        Semantics(
-                          liveRegion: true,
-                          child: Container(
-                            padding: const EdgeInsets.all(DesignTokens.space12),
-                            decoration: BoxDecoration(
-                              color: DesignTokens.error.withValues(alpha: 0.08),
-                              borderRadius:
-                                  BorderRadius.circular(DesignTokens.radiusSmall),
-                              border: Border.all(
-                                  color: DesignTokens.error.withValues(alpha: 0.3)),
+                        const SizedBox(height: DesignTokens.space16),
+                        TextFormField(
+                          controller: _password,
+                          obscureText: _obscure,
+                          textDirection: TextDirection.ltr,
+                          textInputAction: TextInputAction.done,
+                          autofillHints: const [AutofillHints.password],
+                          onFieldSubmitted: (_) => _submit(),
+                          decoration: InputDecoration(
+                            labelText: 'كلمة المرور',
+                            suffixIcon: IconButton(
+                              tooltip: _obscure
+                                  ? 'إظهار كلمة المرور'
+                                  : 'إخفاء كلمة المرور',
+                              icon: Icon(_obscure
+                                  ? Icons.visibility_off_rounded
+                                  : Icons.visibility_rounded),
+                              onPressed: () =>
+                                  setState(() => _obscure = !_obscure),
                             ),
-                            child: Text(_error!,
-                                style: const TextStyle(
-                                    color: DesignTokens.error, fontSize: 13)),
                           ),
+                          validator: _validatePassword,
                         ),
-                      ],
-                      const SizedBox(height: DesignTokens.space24),
-                      SizedBox(
-                        height: DesignTokens.buttonHeight,
-                        child: FilledButton(
+                        if (_error != null) ...[
+                          const SizedBox(height: DesignTokens.space12),
+                          Semantics(
+                            liveRegion: true,
+                            child: Container(
+                              padding:
+                                  const EdgeInsets.all(DesignTokens.space12),
+                              decoration: BoxDecoration(
+                                color:
+                                    DesignTokens.error.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(
+                                    DesignTokens.radiusMedium),
+                                border: Border.all(
+                                    color: DesignTokens.error
+                                        .withValues(alpha: 0.3)),
+                              ),
+                              child: Text(_error!,
+                                  style: const TextStyle(
+                                      color: DesignTokens.error, fontSize: 13)),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: DesignTokens.space24),
+                        FilledButton(
                           onPressed: _submitting ? null : _submit,
                           child: _submitting
                               ? const SizedBox(
                                   height: 20,
                                   width: 20,
                                   child: CircularProgressIndicator(
-                                      strokeWidth: 2, color: Colors.white),
-                                )
+                                      strokeWidth: 2, color: Colors.white))
                               : const Text('تسجيل الدخول'),
                         ),
-                      ),
-                      const SizedBox(height: DesignTokens.space12),
-                      TextButton(
-                        onPressed: _submitting
-                            ? null
-                            : () => context.push(Routes.forgotPassword),
-                        child: const Text('نسيت كلمة المرور؟'),
-                      ),
-                    ],
+                        const SizedBox(height: DesignTokens.space8),
+                        TextButton(
+                          onPressed: _submitting
+                              ? null
+                              : () => context.push(Routes.forgotPassword),
+                          child: const Text('نسيت كلمة المرور؟'),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
         ),
       ),

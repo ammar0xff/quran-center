@@ -19,51 +19,29 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(
-        left: DesignTokens.space20,
-        right: DesignTokens.space20,
-        top: DesignTokens.space24,
-        bottom: DesignTokens.space12,
-      ),
+      padding: const EdgeInsets.fromLTRB(4, 24, 4, 10),
       child: Row(
         children: [
+          Container(
+            width: 4,
+            height: subtitle == null ? 18 : 34,
+            margin: const EdgeInsetsDirectional.only(end: 10),
+            decoration: BoxDecoration(color: DesignTokens.gold, borderRadius: BorderRadius.circular(2)),
+          ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: DesignTokens.mainText,
-                  ),
-                ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: DesignTokens.space4),
-                  Text(
-                    subtitle!,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: DesignTokens.secondaryText,
-                    ),
-                  ),
-                ],
+                Text(title,
+                    style: const TextStyle(
+                        fontSize: 17, fontWeight: FontWeight.w700, color: DesignTokens.mainText)),
+                if (subtitle != null)
+                  Text(subtitle!,
+                      style: const TextStyle(fontSize: 12.5, color: DesignTokens.secondaryText)),
               ],
             ),
           ),
-          if (onSeeAll != null)
-            TextButton(
-              onPressed: onSeeAll,
-              child: Text(
-                seeAllLabel,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: DesignTokens.primaryDarkGreen,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
+          if (onSeeAll != null) TextButton(onPressed: onSeeAll, child: Text(seeAllLabel)),
         ],
       ),
     );

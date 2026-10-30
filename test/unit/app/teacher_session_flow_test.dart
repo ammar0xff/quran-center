@@ -84,7 +84,7 @@ void main() {
   group('home', () {
     testWidgets('shows this teacher\'s counts and today\'s sessions only', (tester) async {
       await open(tester);
-      expect(find.text('أهلاً بك، المعلمة فاطمة'), findsOneWidget);
+      expect(find.text('المعلمة فاطمة'), findsOneWidget);
       expect(find.text('2'), findsOneWidget); // my students (s9 belongs to another teacher)
       expect(find.text('1'), findsWidgets); // my circles
       expect(find.text('لم تبدأ'), findsOneWidget);

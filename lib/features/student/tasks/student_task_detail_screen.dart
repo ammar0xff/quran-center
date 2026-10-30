@@ -14,7 +14,9 @@ import 'package:quran_center/features/student/widgets/student_scaffold.dart';
 
 String taskRangeText(LearningTask t) {
   final name = surahByNumber(t.surah)?.name ?? 'سورة ${t.surah}';
-  return t.startAyah == t.endAyah ? '$name: ${t.startAyah}' : '$name: ${t.startAyah}–${t.endAyah}';
+  return t.startAyah == t.endAyah
+      ? '$name: ${t.startAyah}'
+      : '$name: ${t.startAyah}–${t.endAyah}';
 }
 
 /// One task. The student can start it and report practice, but a task is
@@ -24,20 +26,28 @@ class StudentTaskDetailScreen extends ConsumerWidget {
 
   final String taskId;
 
-  Future<void> _act(BuildContext context, WidgetRef ref, String success,
-      Future<void> Function(StudentWorkspace ws, String centerId, String studentId) action) async {
+  Future<void> _act(
+      BuildContext context,
+      WidgetRef ref,
+      String success,
+      Future<void> Function(
+              StudentWorkspace ws, String centerId, String studentId)
+          action) async {
     final messenger = ScaffoldMessenger.of(context);
     final profile = ref.read(currentSessionProvider).profile!;
     try {
-      await action(ref.read(studentWorkspaceProvider), profile.centerId, profile.studentId!);
+      await action(ref.read(studentWorkspaceProvider), profile.centerId,
+          profile.studentId!);
       ref.invalidate(studentDataProvider);
       messenger
         ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(success), backgroundColor: DesignTokens.success));
+        ..showSnackBar(SnackBar(
+            content: Text(success), backgroundColor: DesignTokens.success));
     } on StudentActionException catch (e) {
       messenger
         ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(e.message), backgroundColor: DesignTokens.error));
+        ..showSnackBar(SnackBar(
+            content: Text(e.message), backgroundColor: DesignTokens.error));
     } catch (_) {
       messenger
         ..hideCurrentSnackBar()
@@ -66,22 +76,29 @@ class StudentTaskDetailScreen extends ConsumerWidget {
               TextField(
                 controller: reflection,
                 maxLines: 2,
-                decoration: const InputDecoration(labelText: 'ملاحظة عن تدريبك (اختياري)'),
+                decoration: const InputDecoration(
+                    labelText: 'ملاحظة عن تدريبك (اختياري)'),
               ),
             ],
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.of(ctx).pop(false), child: const Text('رجوع')),
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('رجوع')),
             FilledButton(
-                onPressed: () => Navigator.of(ctx).pop(true), child: const Text('تسجيل')),
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('تسجيل')),
           ],
         ),
       ),
     );
     if (ok != true || !context.mounted) return;
-    await _act(context, ref, 'تم تسجيل تدريبك. بانتظار اعتماد معلمك.',
-        (ws, c, s) => ws.reportPractice(c, s, taskId, reflection: reflection.text));
+    await _act(
+        context,
+        ref,
+        'تم تسجيل تدريبك. بانتظار اعتماد معلمك.',
+        (ws, c, s) =>
+            ws.reportPractice(c, s, taskId, reflection: reflection.text));
   }
 
   @override
@@ -101,13 +118,15 @@ class StudentTaskDetailScreen extends ConsumerWidget {
         }
         final v = t.teacherVerification;
         final claim = t.selfReportedPractice;
-        final open = t.status != TaskStatus.completed && t.status != TaskStatus.cancelled;
+        final open = t.status != TaskStatus.completed &&
+            t.status != TaskStatus.cancelled;
 
         return ListView(
           padding: const EdgeInsets.all(DesignTokens.space20),
           children: [
             Text(taskTypeLabel(t.taskType),
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
             const SizedBox(height: DesignTokens.space4),
             Text(taskRangeText(t), style: const TextStyle(fontSize: 16)),
             const SizedBox(height: DesignTokens.space16),
@@ -196,8 +215,11 @@ class StudentTaskDetailScreen extends ConsumerWidget {
           children: [
             SizedBox(
                 width: 110,
-                child: Text(label, style: const TextStyle(color: DesignTokens.secondaryText))),
-            Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600))),
+                child: Text(label,
+                    style: const TextStyle(color: DesignTokens.secondaryText))),
+            Expanded(
+                child: Text(value,
+                    style: const TextStyle(fontWeight: FontWeight.w600))),
           ],
         ),
       );

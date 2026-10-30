@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quran_center/design_system/components/rosette.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/core/utils/wird_level.dart';
 import 'package:quran_center/features/shared/level_summary.dart';
@@ -12,7 +13,8 @@ class TeacherStudentsScreen extends ConsumerStatefulWidget {
   const TeacherStudentsScreen({super.key});
 
   @override
-  ConsumerState<TeacherStudentsScreen> createState() => _TeacherStudentsScreenState();
+  ConsumerState<TeacherStudentsScreen> createState() =>
+      _TeacherStudentsScreenState();
 }
 
 class _TeacherStudentsScreenState extends ConsumerState<TeacherStudentsScreen> {
@@ -64,7 +66,8 @@ class _TeacherStudentsScreenState extends ConsumerState<TeacherStudentsScreen> {
                   child: TextField(
                     onChanged: (v) => setState(() => _query = v),
                     decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.search), hintText: 'ابحث بالاسم'),
+                        prefixIcon: Icon(Icons.search),
+                        hintText: 'ابحث بالاسم'),
                   ),
                 ),
                 Expanded(
@@ -77,34 +80,41 @@ class _TeacherStudentsScreenState extends ConsumerState<TeacherStudentsScreen> {
                             for (final s in items)
                               Card(
                                 child: ListTile(
-                                  leading: CircleAvatar(
-                                    backgroundColor: DesignTokens.softMint,
-                                    child: Text(
-                                      s.fullName.isNotEmpty ? s.fullName[0] : 'ط',
-                                      style: const TextStyle(
-                                          color: DesignTokens.primaryDarkGreen,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
+                                  leading: Rosette(
+                                      size: 44,
+                                      color: DesignTokens.primaryDarkGreen,
+                                      child: Text(
+                                          s.fullName.isNotEmpty
+                                              ? s.fullName[0]
+                                              : 'ط',
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 17))),
                                   title: Text(s.displayName,
-                                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w600)),
                                   subtitle: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text([
-                                        if ((d.circleNameOf[s.studentId] ?? '').isNotEmpty)
+                                        if ((d.circleNameOf[s.studentId] ?? '')
+                                            .isNotEmpty)
                                           d.circleNameOf[s.studentId]!,
                                         if ((d.openTasks[s.studentId] ?? 0) > 0)
                                           '${d.openTasks[s.studentId]} مهام مفتوحة',
                                       ].join(' • ')),
                                       LevelSummary(
-                                        level: d.levels[s.studentId] ?? computeLevel(const []),
+                                        level: d.levels[s.studentId] ??
+                                            computeLevel(const []),
                                         compact: true,
                                       ),
                                     ],
                                   ),
                                   trailing: const Icon(Icons.chevron_left),
-                                  onTap: () => context.push('/teacher/students/${s.studentId}'),
+                                  onTap: () => context
+                                      .push('/teacher/students/${s.studentId}'),
                                 ),
                               ),
                           ],

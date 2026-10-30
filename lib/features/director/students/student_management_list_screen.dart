@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
+import 'package:quran_center/design_system/components/rosette.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/core/utils/student_filter.dart';
 import 'package:quran_center/data/models/enums.dart';
@@ -329,15 +330,15 @@ class _StudentCard extends StatelessWidget {
           onTap: onOpen,
           contentPadding: const EdgeInsets.symmetric(
               horizontal: DesignTokens.space16, vertical: DesignTokens.space8),
-          leading: CircleAvatar(
-            backgroundColor: DesignTokens.softMint,
-            child: Text(
-              student.fullName.isNotEmpty ? student.fullName[0] : 'ط',
-              style: const TextStyle(
-                  color: DesignTokens.primaryDarkGreen,
-                  fontWeight: FontWeight.bold),
-            ),
-          ),
+          leading: Rosette(
+              size: 44,
+              color: DesignTokens.primaryDarkGreen,
+              child: Text(
+                  student.fullName.isNotEmpty ? student.fullName[0] : 'ط',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 17))),
           title: Text(student.displayName,
               style:
                   const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),

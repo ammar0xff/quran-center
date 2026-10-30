@@ -196,7 +196,8 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
             padding: const EdgeInsets.all(DesignTokens.space20),
             children: [
               // Section A: Basic information
-              _sectionHeader('أ. المعلومات الأساسية', 'الاسم الكامل مطلوب؛باقي الحقول اختيارية'),
+              _sectionHeader('أ. المعلومات الأساسية',
+                  'الاسم الكامل مطلوب؛باقي الحقول اختيارية'),
               TextFormField(
                 controller: _fullNameController,
                 decoration: const InputDecoration(
@@ -239,11 +240,13 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
               const SizedBox(height: DesignTokens.space8),
               const Text(
                 'يُعيَّن الطالب إلى حلقة ومعلم من شاشة «تعيين الطالب للحلقة» بعد الحفظ.',
-                style: TextStyle(fontSize: 12, color: DesignTokens.secondaryText),
+                style:
+                    TextStyle(fontSize: 12, color: DesignTokens.secondaryText),
               ),
 
               // Section C: Digital access
-              _sectionHeader('ج. الوصول الرقمي', 'الطلاب بدون دخول هم الخيار الافتراضي'),
+              _sectionHeader(
+                  'ج. الوصول الرقمي', 'الطلاب بدون دخول هم الخيار الافتراضي'),
               ListTile(
                 onTap: () => setState(() => _accountMode = AccountMode.none),
                 leading: Radio<AccountMode>(
@@ -258,7 +261,8 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
                 ),
               ),
               ListTile(
-                onTap: () => setState(() => _accountMode = AccountMode.loginEnabled),
+                onTap: () =>
+                    setState(() => _accountMode = AccountMode.loginEnabled),
                 leading: Radio<AccountMode>(
                   value: AccountMode.loginEnabled,
                   groupValue: _accountMode,
@@ -331,7 +335,8 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation(Colors.white),
+                                valueColor:
+                                    AlwaysStoppedAnimation(Colors.white),
                               ),
                             )
                           : Text(_saved ? 'تم الحفظ' : 'حفظ الطالب'),

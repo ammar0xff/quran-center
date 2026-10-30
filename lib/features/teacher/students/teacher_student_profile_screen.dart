@@ -7,6 +7,7 @@ import 'package:quran_center/core/quran/surahs.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/core/utils/task_state.dart';
 import 'package:quran_center/core/utils/wird_level.dart';
+import 'package:quran_center/design_system/components/marks.dart';
 import 'package:quran_center/features/shared/level_summary.dart';
 import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/data/models/learning_task.dart';
@@ -53,14 +54,15 @@ class TeacherStudentProfileScreen extends ConsumerWidget {
                 const Text('تعذر تحميل ملف الطالب'),
                 const SizedBox(height: DesignTokens.space12),
                 OutlinedButton(
-                    onPressed: () =>
-                        ref.invalidate(teacherStudentProfileProvider(studentId)),
+                    onPressed: () => ref
+                        .invalidate(teacherStudentProfileProvider(studentId)),
                     child: const Text('إعادة المحاولة')),
               ],
             ),
           ),
           data: (d) {
-            if (d == null) return const Center(child: Text('الطالب غير موجود ضمن طلابك'));
+            if (d == null)
+              return const Center(child: Text('الطالب غير موجود ضمن طلابك'));
             return DefaultTabController(
               length: 3,
               child: Column(
@@ -81,7 +83,8 @@ class TeacherStudentProfileScreen extends ConsumerWidget {
                             if (d.circle != null) d.circle!.name,
                             'المستوى: ${d.student.educationalLevel}',
                           ].join(' • '),
-                          style: const TextStyle(color: DesignTokens.secondaryText),
+                          style: const TextStyle(
+                              color: DesignTokens.secondaryText),
                         ),
                         const SizedBox(height: DesignTokens.space8),
                         LevelSummary(level: computeLevel(d.assessments)),
@@ -109,8 +112,8 @@ class TeacherStudentProfileScreen extends ConsumerWidget {
             ? null
             : FloatingActionButton.extended(
                 onPressed: () async {
-                  final added =
-                      await context.push<bool>('/teacher/students/$studentId/tasks/new');
+                  final added = await context
+                      .push<bool>('/teacher/students/$studentId/tasks/new');
                   if (added == true) {
                     ref.invalidate(teacherStudentProfileProvider(studentId));
                     ref.invalidate(teacherStudentsProvider);
@@ -138,12 +141,14 @@ class _AssessmentsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (data.assessments.isEmpty) return _empty('لم تُسجَّل تسميعات لهذا الطالب بعد.');
+    if (data.assessments.isEmpty)
+      return _empty('لم تُسجَّل تسميعات لهذا الطالب بعد.');
     return ListView(
       padding: const EdgeInsets.all(DesignTokens.space16),
       children: [
         for (final a in data.assessments)
-          _AssessmentCard(a, data.privateNotes[a.recordId], a.teacherId == data.teacherId)
+          _AssessmentCard(
+              a, data.privateNotes[a.recordId], a.teacherId == data.teacherId)
       ],
     );
   }
@@ -171,18 +176,15 @@ class _AssessmentCard extends StatelessWidget {
                     '${assessmentTypeLabel(a.assessmentType)} • ${ayahRangeText(a.surah, a.startAyah, a.endAyah)}',
                     style: const TextStyle(fontWeight: FontWeight.w700)),
               ),
-              if (a.grade != null)
-                Text(a.grade!.label,
-                    style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        color: gradeColor(a.grade!))),
+              if (a.grade != null) GradeChip(a.grade!),
             ]),
             const SizedBox(height: DesignTokens.space4),
             Text(
                 '${_date(a.assessedAt)}${mine ? '' : ' • سمعتها معلمة أخرى'}'
                 '${a.requiresFollowUp ? ' • يحتاج متابعة' : ''}',
                 style: const TextStyle(color: DesignTokens.secondaryText)),
-            if (a.studentVisibleFeedback != null) Text('للطالب: ${a.studentVisibleFeedback}'),
+            if (a.studentVisibleFeedback != null)
+              Text('للطالب: ${a.studentVisibleFeedback}'),
             if (privateNote != null)
               Container(
                 margin: const EdgeInsets.only(top: DesignTokens.space8),
@@ -205,7 +207,8 @@ class _TasksTab extends ConsumerWidget {
   final TeacherStudentProfile data;
   final String studentId;
 
-  Future<void> _verify(BuildContext context, WidgetRef ref, LearningTask t) async {
+  Future<void> _verify(
+      BuildContext context, WidgetRef ref, LearningTask t) async {
     var result = verificationPassed;
     final feedback = TextEditingController();
     final ok = await showDialog<bool>(
@@ -232,7 +235,8 @@ class _TasksTab extends ConsumerWidget {
                 ),
                 TextField(
                   controller: feedback,
-                  decoration: const InputDecoration(labelText: 'ملاحظة (اختياري)'),
+                  decoration:
+                      const InputDecoration(labelText: 'ملاحظة (اختياري)'),
                 ),
               ],
             ),
@@ -260,7 +264,8 @@ class _TasksTab extends ConsumerWidget {
     });
   }
 
-  Future<void> _cancel(BuildContext context, WidgetRef ref, LearningTask t) async {
+  Future<void> _cancel(
+      BuildContext context, WidgetRef ref, LearningTask t) async {
     final reason = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
@@ -308,7 +313,8 @@ class _TasksTab extends ConsumerWidget {
     } on TaskException catch (e) {
       messenger
         ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(e.message), backgroundColor: DesignTokens.error));
+        ..showSnackBar(SnackBar(
+            content: Text(e.message), backgroundColor: DesignTokens.error));
     } catch (_) {
       messenger
         ..hideCurrentSnackBar()
@@ -332,26 +338,32 @@ class _TasksTab extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('${taskTypeLabel(t.taskType)} • ${ayahRangeText(t.surah, t.startAyah, t.endAyah)}',
+                  Text(
+                      '${taskTypeLabel(t.taskType)} • ${ayahRangeText(t.surah, t.startAyah, t.endAyah)}',
                       style: const TextStyle(fontWeight: FontWeight.w700)),
                   const SizedBox(height: DesignTokens.space4),
                   Text(
                     '${taskStatusLabel(t.status)}'
                     '${t.isOverdue ? ' • متأخرة' : ''} • الموعد ${_date(t.dueDate)}',
                     style: TextStyle(
-                        color: t.isOverdue ? DesignTokens.error : DesignTokens.secondaryText,
+                        color: t.isOverdue
+                            ? DesignTokens.error
+                            : DesignTokens.secondaryText,
                         fontWeight: FontWeight.w600),
                   ),
-                  if (t.teacherInstructions.isNotEmpty) Text(t.teacherInstructions),
+                  if (t.teacherInstructions.isNotEmpty)
+                    Text(t.teacherInstructions),
                   if (t.selfReportedPractice != null)
                     Text(
                       'بلاغ الطالب بالتدريب (غير مُتحقَّق منه) — ${_date(t.selfReportedPractice!.reportedAt)}',
                       style: const TextStyle(color: DesignTokens.warning),
                     ),
                   if (t.teacherVerification != null)
-                    Text('تحقق المعلم: ${t.teacherVerification!.result == verificationPassed ? 'أتقنها' : 'تحتاج إعادة'}'
+                    Text(
+                        'تحقق المعلم: ${t.teacherVerification!.result == verificationPassed ? 'أتقنها' : 'تحتاج إعادة'}'
                         '${t.teacherVerification!.feedback == null ? '' : ' — ${t.teacherVerification!.feedback}'}'),
-                  if (t.status != TaskStatus.completed && t.status != TaskStatus.cancelled)
+                  if (t.status != TaskStatus.completed &&
+                      t.status != TaskStatus.cancelled)
                     Row(
                       children: [
                         TextButton(
@@ -377,7 +389,8 @@ class _AttendanceTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (data.attendance.isEmpty) return _empty('لا توجد سجلات حضور سجّلتَها لهذا الطالب بعد.');
+    if (data.attendance.isEmpty)
+      return _empty('لا توجد سجلات حضور سجّلتَها لهذا الطالب بعد.');
     final a = data.attendanceSummary;
     final rate = a.rate;
     final list = [...data.attendance]..sort((x, y) {
@@ -398,9 +411,11 @@ class _AttendanceTab extends StatelessWidget {
                   rate == null
                       ? 'نسبة الحضور: —'
                       : 'نسبة الحضور: ${(rate * 100).toStringAsFixed(1)}%',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.w700),
                 ),
-                Text('حاضر ${a.present} • متأخر ${a.late} • غائب ${a.absent} • معذور ${a.excused}',
+                Text(
+                    'حاضر ${a.present} • متأخر ${a.late} • غائب ${a.absent} • معذور ${a.excused}',
                     style: const TextStyle(color: DesignTokens.secondaryText)),
               ],
             ),
@@ -409,7 +424,8 @@ class _AttendanceTab extends StatelessWidget {
         for (final r in list)
           ListTile(
             title: Text(attendanceStatusLabel(r.status)),
-            subtitle: Text(_date(data.sessionDates[r.sessionId] ?? r.createdAt)),
+            subtitle:
+                Text(_date(data.sessionDates[r.sessionId] ?? r.createdAt)),
           ),
       ],
     );

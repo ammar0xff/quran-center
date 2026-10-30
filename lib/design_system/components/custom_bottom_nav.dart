@@ -20,55 +20,62 @@ class CustomBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: DesignTokens.bottomNavHeight,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: DesignTokens.borders)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, -4),
-          ),
-        ],
+        border: Border(top: BorderSide(color: DesignTokens.borders, width: 1.5)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: Row(
-        children: List.generate(items.length, (i) {
-          final item = items[i];
-          final active = i == currentIndex;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onTap(i),
-              behavior: HitTestBehavior.opaque,
-              child: Container(
-                height: double.infinity,
-                color: active
-                    ? DesignTokens.softMint.withValues(alpha: 0.5)
-                    : Colors.transparent,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      active ? item.activeIcon : item.icon,
-                      size: 22,
-                      color: active ? DesignTokens.primaryDarkGreen : DesignTokens.secondaryText,
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: DesignTokens.bottomNavHeight,
+          child: Row(
+            children: List.generate(items.length, (i) {
+              final item = items[i];
+              final active = i == currentIndex;
+              final color = active ? DesignTokens.primaryDarkGreen : DesignTokens.secondaryText;
+              return Expanded(
+                child: Semantics(
+                  button: true,
+                  selected: active,
+                  label: item.label,
+                  child: InkWell(
+                    onTap: () => onTap(i),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        AnimatedContainer(
+                          duration: DesignTokens.durationFast,
+                          width: 52,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: active ? DesignTokens.softMint : Colors.transparent,
+                            borderRadius: BorderRadius.circular(16),
+                            border: active
+                                ? Border.all(color: DesignTokens.primaryDarkGreen.withValues(alpha: 0.35), width: 1.5)
+                                : null,
+                          ),
+                          child: Icon(active ? (item.activeIcon ?? item.icon) : item.icon, size: 22, color: color),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          item.label,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                            color: color,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: DesignTokens.space4),
-                    Text(
-                      item.label,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: active ? FontWeight.w700 : FontWeight.normal,
-                        color: active ? DesignTokens.primaryDarkGreen : DesignTokens.secondaryText,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-          );
-        }),
+              );
+            }),
+          ),
+        ),
       ),
     );
   }

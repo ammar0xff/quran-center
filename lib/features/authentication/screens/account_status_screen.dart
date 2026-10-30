@@ -47,7 +47,8 @@ class AccountStatusScreen extends ConsumerWidget {
         return (
           icon: Icons.person_search,
           title: 'لم يتم العثور على ملف الحساب',
-          body: 'سجّلت الدخول بنجاح لكن لا يوجد ملف مرتبط بحسابك. تواصل مع إدارة الدار.',
+          body:
+              'سجّلت الدخول بنجاح لكن لا يوجد ملف مرتبط بحسابك. تواصل مع إدارة الدار.',
         );
     }
   }

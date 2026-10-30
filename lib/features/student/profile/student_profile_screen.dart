@@ -17,12 +17,17 @@ class StudentProfileScreen extends ConsumerWidget {
         final s = d.student;
         Widget row(String l, String v) => Padding(
               padding: const EdgeInsets.symmetric(
-                  vertical: DesignTokens.space12, horizontal: DesignTokens.space16),
+                  vertical: DesignTokens.space12,
+                  horizontal: DesignTokens.space16),
               child: Row(children: [
                 SizedBox(
                     width: 110,
-                    child: Text(l, style: const TextStyle(color: DesignTokens.secondaryText))),
-                Expanded(child: Text(v, style: const TextStyle(fontWeight: FontWeight.w600))),
+                    child: Text(l,
+                        style: const TextStyle(
+                            color: DesignTokens.secondaryText))),
+                Expanded(
+                    child: Text(v,
+                        style: const TextStyle(fontWeight: FontWeight.w600))),
               ]),
             );
         return ListView(

@@ -4,7 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/core/utils/level_reports.dart';
-import 'package:quran_center/features/director/reports/reports_screen.dart' show reportDataProvider;
+import 'package:quran_center/features/director/reports/reports_screen.dart'
+    show reportDataProvider;
 import 'package:quran_center/features/director/widgets/director_bottom_nav.dart';
 import 'package:quran_center/features/shared/level_summary.dart';
 
@@ -25,7 +26,8 @@ class LevelsScreen extends ConsumerWidget {
           appBar: AppBar(
             title: const Text('المستويات'),
             centerTitle: false,
-            bottom: const TabBar(tabs: [Tab(text: 'الطلاب'), Tab(text: 'المعلمون')]),
+            bottom: const TabBar(
+                tabs: [Tab(text: 'الطلاب'), Tab(text: 'المعلمون')]),
           ),
           body: async.when(
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -70,25 +72,29 @@ class _StudentsState extends State<_Students> {
         const Text(
           'المستوى من آخر 12 وردًا مُقيَّمًا لكل طالب، أيًّا كانت المعلمة التي سمعت منه. '
           'الأضعف أولًا، ومن لم يُقيَّم له ورد في الآخر.',
-          style: TextStyle(fontSize: 12, color: DesignTokens.secondaryText, height: 1.5),
+          style: TextStyle(
+              fontSize: 12, color: DesignTokens.secondaryText, height: 1.5),
         ),
         const SizedBox(height: DesignTokens.space8),
         TextField(
           onChanged: (v) => setState(() => _q = v),
-          decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'ابحث بالاسم'),
+          decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.search), hintText: 'ابحث بالاسم'),
         ),
         const SizedBox(height: DesignTokens.space8),
         if (items.isEmpty) const Center(child: Text('لا يوجد طلاب مطابقون')),
         for (final r in items)
           Card(
             child: ListTile(
-              title: Text(r.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+              title: Text(r.name,
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text([
                     if (r.circleName.isNotEmpty) r.circleName,
-                    if (r.teacherNames.isNotEmpty) 'المعلمة: ${r.teacherNames.join('، ')}',
+                    if (r.teacherNames.isNotEmpty)
+                      'المعلمة: ${r.teacherNames.join('، ')}',
                     if (r.level.lastHeard != null)
                       'آخر ورد: ${DateFormat.MMMd('ar').format(r.level.lastHeard!)}',
                   ].join(' • ')),
@@ -120,7 +126,8 @@ class _Teachers extends StatelessWidget {
           '«مستوى طلابها» هو متوسط مستويات طلاب المعلمة الحاليين. «متوسط ما أعطته» هو متوسط '
           'التقدير الذي منحته لما سمعته (ويشمل الطلاب الزائرين). الرقمان وصف للأعمال المسجلة، '
           'وليسا حكمًا على جودة التدريس.',
-          style: TextStyle(fontSize: 12, color: DesignTokens.secondaryText, height: 1.5),
+          style: TextStyle(
+              fontSize: 12, color: DesignTokens.secondaryText, height: 1.5),
         ),
         const SizedBox(height: DesignTokens.space8),
         for (final r in rows)
@@ -130,9 +137,12 @@ class _Teachers extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(r.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                  Text(r.name,
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w700)),
                   const SizedBox(height: DesignTokens.space8),
-                  Text('عدد طلابها: ${r.students} (لهم مستوى: ${r.studentsWithLevel})'),
+                  Text(
+                      'عدد طلابها: ${r.students} (لهم مستوى: ${r.studentsWithLevel})'),
                   Text('مستوى طلابها: ${averageText(r.studentsAverage)}'),
                   Text('أوراد سمعتها: ${r.wirdsHeard}'),
                   Text('متوسط ما أعطته: ${averageText(r.gradeGiven)}'),

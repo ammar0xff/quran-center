@@ -175,6 +175,6 @@ void main() {
     await app.signIn('tea@x.com', 'pw');
     await app.go('/director/finance');
     expect(find.text('المالية'), findsNothing);
-    expect(find.textContaining('أهلاً بك'), findsOneWidget);
+    expect(find.textContaining('السلام عليكم'), findsOneWidget);
   });
 }

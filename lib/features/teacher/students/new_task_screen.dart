@@ -89,7 +89,8 @@ class _NewTaskScreenState extends ConsumerState<NewTaskScreen> {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(const SnackBar(
-            content: Text('تم إسناد المهمة'), backgroundColor: DesignTokens.success));
+            content: Text('تم إسناد المهمة'),
+            backgroundColor: DesignTokens.success));
       context.pop(true);
     } on TaskException catch (e) {
       if (mounted) {
@@ -132,10 +133,12 @@ class _NewTaskScreenState extends ConsumerState<NewTaskScreen> {
             DropdownButtonFormField<int>(
               value: _surah,
               isExpanded: true,
-              decoration: InputDecoration(labelText: 'السورة *', errorText: _surahError),
+              decoration: InputDecoration(
+                  labelText: 'السورة *', errorText: _surahError),
               items: [
                 for (final s in surahs)
-                  DropdownMenuItem(value: s.number, child: Text('${s.number}. ${s.name}')),
+                  DropdownMenuItem(
+                      value: s.number, child: Text('${s.number}. ${s.name}')),
               ],
               onChanged: (v) => setState(() => _surah = v),
             ),
@@ -146,7 +149,8 @@ class _NewTaskScreenState extends ConsumerState<NewTaskScreen> {
                   child: TextField(
                     controller: _start,
                     keyboardType: TextInputType.number,
-                    decoration: InputDecoration(labelText: 'من آية *', errorText: _rangeError),
+                    decoration: InputDecoration(
+                        labelText: 'من آية *', errorText: _rangeError),
                   ),
                 ),
                 const SizedBox(width: DesignTokens.space12),
@@ -163,7 +167,8 @@ class _NewTaskScreenState extends ConsumerState<NewTaskScreen> {
               Padding(
                 padding: const EdgeInsets.only(top: DesignTokens.space4),
                 child: Text('عدد آيات ${surah.name}: ${surah.ayahCount}',
-                    style: const TextStyle(fontSize: 12, color: DesignTokens.secondaryText)),
+                    style: const TextStyle(
+                        fontSize: 12, color: DesignTokens.secondaryText)),
               ),
             const SizedBox(height: DesignTokens.space16),
             OutlinedButton.icon(
@@ -177,12 +182,14 @@ class _NewTaskScreenState extends ConsumerState<NewTaskScreen> {
                 if (d != null) setState(() => _due = d);
               },
               icon: const Icon(Icons.event),
-              label: Text('موعد التسليم: ${DateFormat.yMMMd('ar').format(_due)}'),
+              label:
+                  Text('موعد التسليم: ${DateFormat.yMMMd('ar').format(_due)}'),
             ),
             const SizedBox(height: DesignTokens.space16),
             DropdownButtonFormField<String?>(
               value: _priority,
-              decoration: const InputDecoration(labelText: 'الأولوية (اختياري)'),
+              decoration:
+                  const InputDecoration(labelText: 'الأولوية (اختياري)'),
               items: const [
                 DropdownMenuItem(value: null, child: Text('بدون')),
                 DropdownMenuItem(value: 'low', child: Text('منخفضة')),
@@ -195,12 +202,14 @@ class _NewTaskScreenState extends ConsumerState<NewTaskScreen> {
             TextField(
               controller: _instructions,
               maxLines: 3,
-              decoration: const InputDecoration(labelText: 'تعليمات للطالب (اختياري)'),
+              decoration:
+                  const InputDecoration(labelText: 'تعليمات للطالب (اختياري)'),
             ),
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.only(top: DesignTokens.space16),
-                child: Text(_error!, style: const TextStyle(color: DesignTokens.error)),
+                child: Text(_error!,
+                    style: const TextStyle(color: DesignTokens.error)),
               ),
             const SizedBox(height: DesignTokens.space24),
             SizedBox(
@@ -211,7 +220,8 @@ class _NewTaskScreenState extends ConsumerState<NewTaskScreen> {
                     ? const SizedBox(
                         height: 20,
                         width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white))
                     : const Text('إسناد المهمة'),
               ),
             ),

@@ -171,7 +171,7 @@ void main() {
 
       await tester.tap(_navItem('نظرة عامة'));
       await tester.pumpAndSettle();
-      expect(find.text('أهلاً بك، مديرة الدار'), findsOneWidget);
+      expect(find.text('مديرة الدار'), findsOneWidget);
     });
 
     testWidgets('More reaches schedules and attendance and offers sign-out', (tester) async {
@@ -203,7 +203,9 @@ void main() {
       final app = await bootApp(tester, accounts: _accounts, seed: _seed);
       await app.signIn('dir@x.com', 'pw');
 
-      await tester.tap(find.widgetWithText(ActionChip, 'إضافة طالب'));
+      await tester.ensureVisible(find.text('إضافة طالب'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('إضافة طالب'));
       await tester.pumpAndSettle();
       expect(find.text('إضافة طالب جديد'), findsOneWidget);
     });

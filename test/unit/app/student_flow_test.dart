@@ -108,7 +108,7 @@ void main() {
   testWidgets('a student cannot open teacher or director screens by URL', (tester) async {
     final app = await open(tester);
     await app.go('/teacher/home');
-    expect(find.text('أهلاً بك، بسمة خالد'), findsOneWidget);
+    expect(find.text('بسمة خالد'), findsOneWidget);
     await app.go('/director/students');
     expect(find.text('إدارة الطلاب'), findsNothing);
   });
@@ -116,7 +116,7 @@ void main() {
   group('home', () {
     testWidgets('shows the most urgent task, the next class, honest counts and feedback', (tester) async {
       await open(tester);
-      expect(find.text('أهلاً بك، بسمة خالد'), findsOneWidget);
+      expect(find.text('بسمة خالد'), findsOneWidget);
       // The overdue task comes first.
       expect(find.textContaining('مراجعة قريبة • الفلق: 1–4'), findsOneWidget);
       expect(find.textContaining('متأخرة'), findsWidgets);
@@ -125,10 +125,12 @@ void main() {
       expect(find.text('حلقة المغرب'), findsNothing);
       // 1 teacher-verified; 4 open (late, new, redo, reported).
       Finder countOf(String title) => find.descendant(
-          of: find.widgetWithText(ListTile, title), matching: find.byType(Text));
+          of: find.ancestor(of: find.text(title), matching: find.byType(Column)).first,
+          matching: find.byType(Text));
       expect(tester.widgetList<Text>(countOf('مهام معتمدة من المعلم')).any((t) => t.data == '1'), isTrue);
       expect(tester.widgetList<Text>(countOf('مهام مفتوحة')).any((t) => t.data == '4'), isTrue);
-      expect(find.text('أحسنتِ، واصلي'), findsOneWidget);
+      await tester.scrollUntilVisible(find.textContaining('أحسنتِ، واصلي'), 300);
+      expect(find.textContaining('أحسنتِ، واصلي'), findsOneWidget);
     });
 
     testWidgets('a brand-new student sees plain empty states, not zeros dressed up', (tester) async {

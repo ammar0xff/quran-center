@@ -25,7 +25,8 @@ final _accountsProvider = FutureProvider.autoDispose<_Accounts>((ref) async {
   ).wait;
   return _Accounts(users, {
     for (final t in teachers)
-      if (t.contactInfo?['email'] != null) t.teacherId: t.contactInfo!['email']!,
+      if (t.contactInfo?['email'] != null)
+        t.teacherId: t.contactInfo!['email']!,
   });
 });
 
@@ -78,11 +79,13 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
       messenger
         ..hideCurrentSnackBar()
         ..showSnackBar(const SnackBar(
-            content: Text('أُرسلت رسالة التفعيل'), backgroundColor: DesignTokens.success));
+            content: Text('أُرسلت رسالة التفعيل'),
+            backgroundColor: DesignTokens.success));
     } on AccountAccessException catch (e) {
       messenger
         ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(e.message), backgroundColor: DesignTokens.error));
+        ..showSnackBar(SnackBar(
+            content: Text(e.message), backgroundColor: DesignTokens.error));
     }
   }
 
@@ -121,7 +124,8 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                     TextField(
                       onChanged: (v) => setState(() => _query = v),
                       decoration: const InputDecoration(
-                          prefixIcon: Icon(Icons.search), hintText: 'ابحث بالاسم'),
+                          prefixIcon: Icon(Icons.search),
+                          hintText: 'ابحث بالاسم'),
                     ),
                     const SizedBox(height: DesignTokens.space8),
                     Align(
@@ -156,13 +160,15 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
                   child: items.isEmpty
                       ? const Center(child: Text('لا توجد حسابات مطابقة'))
                       : ListView(
-                          padding: const EdgeInsets.symmetric(horizontal: DesignTokens.space16),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: DesignTokens.space16),
                           children: [
                             for (final u in items)
                               Card(
                                 child: ListTile(
                                   title: Text(u.fullName,
-                                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w600)),
                                   subtitle: Text(
                                       '${roleLabel(u.role)} • ${accountStatusLabel(u.status)}'),
                                   trailing: _actions(u, d),
@@ -192,7 +198,8 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
         itemBuilder: (_) => [
           const PopupMenuItem(value: 'open', child: Text('إدارة المعلمين')),
           if (email != null && u.status == AccountStatus.active)
-            const PopupMenuItem(value: 'resend', child: Text('إعادة إرسال رسالة التفعيل')),
+            const PopupMenuItem(
+                value: 'resend', child: Text('إعادة إرسال رسالة التفعيل')),
         ],
       );
     }

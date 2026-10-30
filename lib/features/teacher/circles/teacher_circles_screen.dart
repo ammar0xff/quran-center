@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
+import 'package:quran_center/design_system/components/rosette.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/data/models/circle.dart';
 import 'package:quran_center/data/models/enums.dart';
@@ -75,10 +76,11 @@ class TeacherCirclesScreen extends ConsumerWidget {
                 for (final c in d.circles)
                   Card(
                     child: ListTile(
-                      leading: const CircleAvatar(
-                        backgroundColor: DesignTokens.softMint,
-                        child: Icon(Icons.school, color: DesignTokens.primaryDarkGreen),
-                      ),
+                      leading: const Rosette(
+                          size: 44,
+                          color: DesignTokens.leaf,
+                          child: Icon(Icons.school_rounded,
+                              color: Colors.white, size: 20)),
                       title: Text(c.name,
                           style: const TextStyle(fontWeight: FontWeight.w600)),
                       subtitle: Text(

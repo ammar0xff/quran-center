@@ -28,17 +28,21 @@ final _financeProvider = FutureProvider.autoDispose<_Bundle>((ref) async {
     data,
     [
       for (final s in students)
-        if (s.enrollmentStatus == EnrollmentStatus.active) (id: s.studentId, name: s.displayName)
+        if (s.enrollmentStatus == EnrollmentStatus.active)
+          (id: s.studentId, name: s.displayName)
     ]..sort((a, b) => a.name.compareTo(b.name)),
     [
       for (final t in teachers)
-        if (t.status == AccountStatus.active) (id: t.teacherId, name: t.fullName)
+        if (t.status == AccountStatus.active)
+          (id: t.teacherId, name: t.fullName)
     ]..sort((a, b) => a.name.compareTo(b.name)),
   );
 });
 
 Color _stateColor(SubscriptionState s) => switch (s) {
-      SubscriptionState.paid || SubscriptionState.overpaid => DesignTokens.success,
+      SubscriptionState.paid ||
+      SubscriptionState.overpaid =>
+        DesignTokens.success,
       SubscriptionState.partial => DesignTokens.warning,
       SubscriptionState.unpaid => DesignTokens.error,
       SubscriptionState.waived => DesignTokens.secondaryText,
@@ -69,7 +73,9 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
     final messenger = ScaffoldMessenger.of(context);
     void say(String m, bool good) => messenger
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(m), backgroundColor: good ? DesignTokens.success : DesignTokens.error));
+      ..showSnackBar(SnackBar(
+          content: Text(m),
+          backgroundColor: good ? DesignTokens.success : DesignTokens.error));
     try {
       await action();
       ref.invalidate(_financeProvider);
@@ -83,7 +89,8 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
     return false;
   }
 
-  Future<String?> _askText(String title, String label, {String? initial, bool number = false}) async {
+  Future<String?> _askText(String title, String label,
+      {String? initial, bool number = false}) async {
     final c = TextEditingController(text: initial);
     final r = await showDialog<String>(
       context: context,
@@ -94,12 +101,18 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
           content: TextField(
             controller: c,
             autofocus: true,
-            keyboardType: number ? const TextInputType.numberWithOptions(decimal: true) : null,
+            keyboardType: number
+                ? const TextInputType.numberWithOptions(decimal: true)
+                : null,
             decoration: InputDecoration(labelText: label),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
-            FilledButton(onPressed: () => Navigator.pop(ctx, c.text), child: const Text('حفظ')),
+            TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('إلغاء')),
+            FilledButton(
+                onPressed: () => Navigator.pop(ctx, c.text),
+                child: const Text('حفظ')),
           ],
         ),
       ),
@@ -123,9 +136,17 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
               preferredSize: const Size.fromHeight(96),
               child: Column(children: [
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  IconButton(tooltip: 'الشهر السابق', onPressed: () => _shift(-1), icon: const Icon(Icons.chevron_right)),
-                  Text(monthLabel(_month), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                  IconButton(tooltip: 'الشهر التالي', onPressed: () => _shift(1), icon: const Icon(Icons.chevron_left)),
+                  IconButton(
+                      tooltip: 'الشهر السابق',
+                      onPressed: () => _shift(-1),
+                      icon: const Icon(Icons.chevron_right)),
+                  Text(monthLabel(_month),
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w700)),
+                  IconButton(
+                      tooltip: 'الشهر التالي',
+                      onPressed: () => _shift(1),
+                      icon: const Icon(Icons.chevron_left)),
                 ]),
                 const TabBar(tabs: [
                   Tab(text: 'الاشتراكات'),
@@ -142,7 +163,9 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 const Text('تعذر تحميل البيانات المالية'),
                 const SizedBox(height: DesignTokens.space12),
-                OutlinedButton(onPressed: () => ref.invalidate(_financeProvider), child: const Text('إعادة المحاولة')),
+                OutlinedButton(
+                    onPressed: () => ref.invalidate(_financeProvider),
+                    child: const Text('إعادة المحاولة')),
               ]),
             ),
             data: (b) => TabBarView(children: [
@@ -162,7 +185,8 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
 
   Widget _subscriptions(_Bundle b) {
     final subs = b.data.subscriptions.where((s) => s.month == _month).toList();
-    final withoutFee = b.students.where((s) => (b.data.fees[s.id] ?? 0) <= 0).length;
+    final withoutFee =
+        b.students.where((s) => (b.data.fees[s.id] ?? 0) <= 0).length;
     return ListView(
       padding: const EdgeInsets.all(DesignTokens.space16),
       children: [
@@ -175,7 +199,9 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
                   ScaffoldMessenger.of(context)
                     ..hideCurrentSnackBar()
                     ..showSnackBar(SnackBar(
-                        content: Text(n == 0 ? 'لا توجد اشتراكات جديدة لإصدارها.' : 'أُصدر $n اشتراكًا.'),
+                        content: Text(n == 0
+                            ? 'لا توجد اشتراكات جديدة لإصدارها.'
+                            : 'أُصدر $n اشتراكًا.'),
                         backgroundColor: DesignTokens.success));
                 }
               },
@@ -184,28 +210,37 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
             ),
           ),
           const SizedBox(width: DesignTokens.space8),
-          OutlinedButton(onPressed: () => _editFees(b), child: const Text('الرسوم الشهرية')),
+          OutlinedButton(
+              onPressed: () => _editFees(b),
+              child: const Text('الرسوم الشهرية')),
         ]),
         if (withoutFee > 0)
           Padding(
             padding: const EdgeInsets.only(top: DesignTokens.space8),
-            child: Text('$withoutFee طالبًا بلا رسوم محددة؛ لن يُصدر لهم اشتراك حتى تحدد رسومهم.',
-                style: const TextStyle(fontSize: 12, color: DesignTokens.warning)),
+            child: Text(
+                '$withoutFee طالبًا بلا رسوم محددة؛ لن يُصدر لهم اشتراك حتى تحدد رسومهم.',
+                style:
+                    const TextStyle(fontSize: 12, color: DesignTokens.warning)),
           ),
         const SizedBox(height: DesignTokens.space12),
         if (subs.isEmpty)
           const Padding(
             padding: EdgeInsets.all(DesignTokens.space24),
-            child: Text('لا توجد اشتراكات لهذا الشهر بعد.', textAlign: TextAlign.center),
+            child: Text('لا توجد اشتراكات لهذا الشهر بعد.',
+                textAlign: TextAlign.center),
           ),
         for (final s in subs)
           Card(
             child: ListTile(
-              title: Text(s.studentName, style: const TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: Text('المطلوب ${formatAmount(s.due)} • المدفوع ${formatAmount(s.paid)}'
+              title: Text(s.studentName,
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: Text(
+                  'المطلوب ${formatAmount(s.due)} • المدفوع ${formatAmount(s.paid)}'
                   '${s.owed > 0 ? ' • المتبقي ${formatAmount(s.owed)}' : ''}'),
               trailing: Text(subscriptionStateLabel(s.state),
-                  style: TextStyle(fontWeight: FontWeight.w800, color: _stateColor(s.state))),
+                  style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: _stateColor(s.state))),
               onTap: () => _openSubscription(b, s),
             ),
           ),
@@ -216,7 +251,8 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
   Future<int?> _issueSubs() async {
     int? n;
     await _run(() async {
-      n = await _svc.issueSubscriptions(centerId: _centerId, actorId: _actor, month: _month);
+      n = await _svc.issueSubscriptions(
+          centerId: _centerId, actorId: _actor, month: _month);
     }, null);
     return n;
   }
@@ -234,26 +270,35 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
               padding: const EdgeInsets.all(DesignTokens.space16),
               children: [
                 const Text('الرسوم الشهرية لكل طالب',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+                    style:
+                        TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
                 for (final s in b.students)
                   ListTile(
                     title: Text(s.name),
-                    trailing: Text((b.data.fees[s.id] ?? 0) > 0 ? formatAmount(b.data.fees[s.id]!) : 'غير محددة'),
+                    trailing: Text((b.data.fees[s.id] ?? 0) > 0
+                        ? formatAmount(b.data.fees[s.id]!)
+                        : 'غير محددة'),
                     onTap: () async {
-                      final t = await _askText('رسوم ${s.name}', 'المبلغ الشهري ($currencyLabel)', number: true);
+                      final t = await _askText(
+                          'رسوم ${s.name}', 'المبلغ الشهري ($currencyLabel)',
+                          number: true);
                       if (t == null) return;
                       final cents = parseAmount(t, allowZero: true);
                       if (cents == null) {
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                              content: Text('أدخل مبلغًا صحيحًا (رقم بحد أقصى خانتين عشريتين).'),
+                              content: Text(
+                                  'أدخل مبلغًا صحيحًا (رقم بحد أقصى خانتين عشريتين).'),
                               backgroundColor: DesignTokens.error));
                         }
                         return;
                       }
                       await _run(
                         () => _svc.setStudentFee(
-                            centerId: _centerId, actorId: _actor, studentId: s.id, monthlyFee: cents),
+                            centerId: _centerId,
+                            actorId: _actor,
+                            studentId: s.id,
+                            monthlyFee: cents),
                         'حُفظت الرسوم',
                       );
                       final fresh = await ref.read(_financeProvider.future);
@@ -272,7 +317,8 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
   }
 
   Future<void> _openSubscription(_Bundle b, Subscription s) async {
-    final payments = b.data.payments.where((p) => p.subscriptionId == s.id).toList();
+    final payments =
+        b.data.payments.where((p) => p.subscriptionId == s.id).toList();
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -284,8 +330,10 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
             padding: const EdgeInsets.all(DesignTokens.space16),
             children: [
               Text('${s.studentName} • ${monthLabel(s.month)}',
-                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-              Text('المطلوب ${formatAmount(s.due)} • المدفوع ${formatAmount(s.paid)} • ${subscriptionStateLabel(s.state)}'),
+                  style: const TextStyle(
+                      fontSize: 17, fontWeight: FontWeight.w700)),
+              Text(
+                  'المطلوب ${formatAmount(s.due)} • المدفوع ${formatAmount(s.paid)} • ${subscriptionStateLabel(s.state)}'),
               const SizedBox(height: DesignTokens.space8),
               if (!s.waived)
                 FilledButton.icon(
@@ -300,11 +348,15 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
                 TextButton(
                   onPressed: () async {
                     Navigator.pop(ctx);
-                    final why = await _askText('إعفاء من الاشتراك', 'سبب الإعفاء *');
+                    final why =
+                        await _askText('إعفاء من الاشتراك', 'سبب الإعفاء *');
                     if (why == null) return;
                     await _run(
                       () => _svc.waiveSubscription(
-                          centerId: _centerId, actorId: _actor, subscriptionId: s.id, reason: why),
+                          centerId: _centerId,
+                          actorId: _actor,
+                          subscriptionId: s.id,
+                          reason: why),
                       'تم الإعفاء',
                     );
                   },
@@ -318,7 +370,8 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
                   title: Text(formatAmount(p.amount),
                       style: TextStyle(
                           fontWeight: FontWeight.w700,
-                          decoration: p.voided ? TextDecoration.lineThrough : null)),
+                          decoration:
+                              p.voided ? TextDecoration.lineThrough : null)),
                   subtitle: Text(
                       '${DateFormat.yMMMd('ar').format(p.paidAt)} • ${paymentMethodLabel(p.method)}'
                       '${p.note == null ? '' : ' • ${p.note}'}${p.voided ? ' • ملغاة' : ''}'),
@@ -327,11 +380,15 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
                       : TextButton(
                           onPressed: () async {
                             Navigator.pop(ctx);
-                            final why = await _askText('إلغاء الدفعة', 'سبب الإلغاء *');
+                            final why =
+                                await _askText('إلغاء الدفعة', 'سبب الإلغاء *');
                             if (why == null) return;
                             await _run(
                               () => _svc.voidPayment(
-                                  centerId: _centerId, actorId: _actor, paymentId: p.id, reason: why),
+                                  centerId: _centerId,
+                                  actorId: _actor,
+                                  paymentId: p.id,
+                                  reason: why),
                               'أُلغيت الدفعة',
                             );
                           },
@@ -346,7 +403,10 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
   }
 
   Future<void> _payDialog(Subscription s) async {
-    final amount = TextEditingController(text: s.owed > 0 ? (s.owed / 100).toString().replaceAll(RegExp(r'\.0$'), '') : '');
+    final amount = TextEditingController(
+        text: s.owed > 0
+            ? (s.owed / 100).toString().replaceAll(RegExp(r'\.0$'), '')
+            : '');
     final note = TextEditingController();
     var method = PaymentMethod.cash;
     final id = 'pay_${DateTime.now().microsecondsSinceEpoch}';
@@ -361,8 +421,10 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
             content: Column(mainAxisSize: MainAxisSize.min, children: [
               TextField(
                 controller: amount,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(labelText: 'المبلغ ($currencyLabel) *', errorText: error),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                    labelText: 'المبلغ ($currencyLabel) *', errorText: error),
               ),
               const SizedBox(height: DesignTokens.space8),
               DropdownButtonFormField<PaymentMethod>(
@@ -370,14 +432,20 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
                 decoration: const InputDecoration(labelText: 'طريقة الدفع'),
                 items: [
                   for (final m in PaymentMethod.values)
-                    DropdownMenuItem(value: m, child: Text(paymentMethodLabel(m))),
+                    DropdownMenuItem(
+                        value: m, child: Text(paymentMethodLabel(m))),
                 ],
                 onChanged: (v) => setD(() => method = v ?? method),
               ),
-              TextField(controller: note, decoration: const InputDecoration(labelText: 'ملاحظة (اختياري)')),
+              TextField(
+                  controller: note,
+                  decoration:
+                      const InputDecoration(labelText: 'ملاحظة (اختياري)')),
             ]),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('إلغاء')),
               FilledButton(
                 onPressed: () {
                   if (parseAmount(amount.text) == null) {
@@ -396,8 +464,13 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
     if (ok != true) return;
     await _run(
       () => _svc.recordPayment(
-          centerId: _centerId, actorId: _actor, paymentId: id, subscriptionId: s.id,
-          amount: parseAmount(amount.text)!, method: method, note: note.text),
+          centerId: _centerId,
+          actorId: _actor,
+          paymentId: id,
+          subscriptionId: s.id,
+          amount: parseAmount(amount.text)!,
+          method: method,
+          note: note.text),
       'سُجّلت الدفعة',
     );
   }
@@ -406,8 +479,11 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
 
   Widget _expenses(_Bundle b) {
     final from = monthStart(_month), to = nextMonthStart(_month);
-    final items = b.data.expenses.where((e) => !e.date.isBefore(from) && e.date.isBefore(to)).toList();
-    final total = items.where((e) => !e.voided).fold<int>(0, (a, e) => a + e.amount);
+    final items = b.data.expenses
+        .where((e) => !e.date.isBefore(from) && e.date.isBefore(to))
+        .toList();
+    final total =
+        items.where((e) => !e.voided).fold<int>(0, (a, e) => a + e.amount);
     return ListView(
       padding: const EdgeInsets.all(DesignTokens.space16),
       children: [
@@ -417,20 +493,24 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
           label: const Text('تسجيل مصروف'),
         ),
         const SizedBox(height: DesignTokens.space8),
-        Text('إجمالي المصروفات: ${formatAmount(total)}', style: const TextStyle(fontWeight: FontWeight.w700)),
+        Text('إجمالي المصروفات: ${formatAmount(total)}',
+            style: const TextStyle(fontWeight: FontWeight.w700)),
         const SizedBox(height: DesignTokens.space8),
         if (items.isEmpty)
           const Padding(
             padding: EdgeInsets.all(DesignTokens.space24),
-            child: Text('لا توجد مصروفات في هذا الشهر.', textAlign: TextAlign.center),
+            child: Text('لا توجد مصروفات في هذا الشهر.',
+                textAlign: TextAlign.center),
           ),
         for (final e in items)
           Card(
             child: ListTile(
-              title: Text('${expenseCategories[e.category] ?? e.category} • ${formatAmount(e.amount)}',
+              title: Text(
+                  '${expenseCategories[e.category] ?? e.category} • ${formatAmount(e.amount)}',
                   style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      decoration: e.voided ? TextDecoration.lineThrough : null)),
+                      decoration:
+                          e.voided ? TextDecoration.lineThrough : null)),
               subtitle: Text([
                 DateFormat.yMMMd('ar').format(e.date),
                 if (e.description.isNotEmpty) e.description,
@@ -440,11 +520,15 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
                   ? null
                   : TextButton(
                       onPressed: () async {
-                        final why = await _askText('إلغاء المصروف', 'سبب الإلغاء *');
+                        final why =
+                            await _askText('إلغاء المصروف', 'سبب الإلغاء *');
                         if (why == null) return;
                         await _run(
                           () => _svc.voidExpense(
-                              centerId: _centerId, actorId: _actor, expenseId: e.id, reason: why),
+                              centerId: _centerId,
+                              actorId: _actor,
+                              expenseId: e.id,
+                              reason: why),
                           'أُلغي المصروف',
                         );
                       },
@@ -484,15 +568,23 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
                 ),
                 TextField(
                   controller: amount,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(labelText: 'المبلغ ($currencyLabel) *', errorText: error),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                      labelText: 'المبلغ ($currencyLabel) *', errorText: error),
                 ),
-                TextField(controller: desc, decoration: const InputDecoration(labelText: 'البيان (اختياري)')),
+                TextField(
+                    controller: desc,
+                    decoration:
+                        const InputDecoration(labelText: 'البيان (اختياري)')),
                 const SizedBox(height: DesignTokens.space8),
                 OutlinedButton.icon(
                   onPressed: () async {
                     final d = await showDatePicker(
-                        context: ctx, initialDate: date, firstDate: DateTime(2020), lastDate: DateTime.now());
+                        context: ctx,
+                        initialDate: date,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now());
                     if (d != null) setD(() => date = d);
                   },
                   icon: const Icon(Icons.event),
@@ -501,7 +593,9 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
               ]),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('إلغاء')),
               FilledButton(
                 onPressed: () {
                   if (parseAmount(amount.text) == null) {
@@ -520,8 +614,13 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
     if (ok != true) return;
     await _run(
       () => _svc.addExpense(
-          centerId: _centerId, actorId: _actor, expenseId: id, category: category,
-          amount: parseAmount(amount.text)!, date: date, description: desc.text),
+          centerId: _centerId,
+          actorId: _actor,
+          expenseId: id,
+          category: category,
+          amount: parseAmount(amount.text)!,
+          date: date,
+          description: desc.text),
       'سُجّل المصروف',
     );
   }
@@ -537,25 +636,30 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
           Expanded(
             child: FilledButton.icon(
               onPressed: () => _run(() async {
-                await _svc.issueWages(centerId: _centerId, actorId: _actor, month: _month);
+                await _svc.issueWages(
+                    centerId: _centerId, actorId: _actor, month: _month);
               }, 'أُصدرت أجور الشهر'),
               icon: const Icon(Icons.playlist_add),
               label: const Text('إصدار أجور الشهر'),
             ),
           ),
           const SizedBox(width: DesignTokens.space8),
-          OutlinedButton(onPressed: () => _editRates(b), child: const Text('الأجر المتفق عليه')),
+          OutlinedButton(
+              onPressed: () => _editRates(b),
+              child: const Text('الأجر المتفق عليه')),
         ]),
         const SizedBox(height: DesignTokens.space12),
         if (items.isEmpty)
           const Padding(
             padding: EdgeInsets.all(DesignTokens.space24),
-            child: Text('لا توجد أجور لهذا الشهر بعد.', textAlign: TextAlign.center),
+            child: Text('لا توجد أجور لهذا الشهر بعد.',
+                textAlign: TextAlign.center),
           ),
         for (final w in items)
           Card(
             child: ListTile(
-              title: Text(w.teacherName, style: const TextStyle(fontWeight: FontWeight.w700)),
+              title: Text(w.teacherName,
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
               subtitle: Text([
                 'الأجر ${formatAmount(w.amount)}',
                 if (w.adjustment != 0)
@@ -565,10 +669,16 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
               ].join(' ')),
               trailing: w.paid
                   ? const Text('مدفوع',
-                      style: TextStyle(fontWeight: FontWeight.w800, color: DesignTokens.success))
+                      style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          color: DesignTokens.success))
                   : Row(mainAxisSize: MainAxisSize.min, children: [
-                      TextButton(onPressed: () => _adjustWage(w), child: const Text('تعديل')),
-                      FilledButton(onPressed: () => _payWage(w), child: const Text('دفع')),
+                      TextButton(
+                          onPressed: () => _adjustWage(w),
+                          child: const Text('تعديل')),
+                      FilledButton(
+                          onPressed: () => _payWage(w),
+                          child: const Text('دفع')),
                     ]),
             ),
           ),
@@ -589,20 +699,28 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
               padding: const EdgeInsets.all(DesignTokens.space16),
               children: [
                 const Text('الأجر الشهري المتفق عليه',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+                    style:
+                        TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
                 if (b.teachers.isEmpty) const Text('لا يوجد معلمون نشطون.'),
                 for (final t in b.teachers)
                   ListTile(
                     title: Text(t.name),
-                    trailing: Text((b.data.rates[t.id] ?? 0) > 0 ? formatAmount(b.data.rates[t.id]!) : 'غير محدد'),
+                    trailing: Text((b.data.rates[t.id] ?? 0) > 0
+                        ? formatAmount(b.data.rates[t.id]!)
+                        : 'غير محدد'),
                     onTap: () async {
-                      final v = await _askText('أجر ${t.name}', 'المبلغ الشهري ($currencyLabel)', number: true);
+                      final v = await _askText(
+                          'أجر ${t.name}', 'المبلغ الشهري ($currencyLabel)',
+                          number: true);
                       if (v == null) return;
                       final cents = parseAmount(v, allowZero: true);
                       if (cents == null) return;
                       await _run(
                         () => _svc.setWageRate(
-                            centerId: _centerId, actorId: _actor, teacherId: t.id, monthlyAmount: cents),
+                            centerId: _centerId,
+                            actorId: _actor,
+                            teacherId: t.id,
+                            monthlyAmount: cents),
                         'حُفظ الأجر',
                       );
                       final fresh = await ref.read(_financeProvider.future);
@@ -643,13 +761,19 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
               ),
               TextField(
                 controller: amount,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(labelText: 'المبلغ ($currencyLabel) *', errorText: error),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                    labelText: 'المبلغ ($currencyLabel) *', errorText: error),
               ),
-              TextField(controller: note, decoration: const InputDecoration(labelText: 'السبب *')),
+              TextField(
+                  controller: note,
+                  decoration: const InputDecoration(labelText: 'السبب *')),
             ]),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('إلغاء')),
               FilledButton(
                 onPressed: () {
                   if (parseAmount(amount.text, allowZero: true) == null) {
@@ -669,7 +793,11 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
     final cents = parseAmount(amount.text, allowZero: true)!;
     await _run(
       () => _svc.adjustWage(
-          centerId: _centerId, actorId: _actor, wageId: w.id, adjustment: bonus ? cents : -cents, note: note.text),
+          centerId: _centerId,
+          actorId: _actor,
+          wageId: w.id,
+          adjustment: bonus ? cents : -cents,
+          note: note.text),
       'عُدّل الأجر',
     );
   }
@@ -688,13 +816,18 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
               decoration: const InputDecoration(labelText: 'طريقة الدفع'),
               items: [
                 for (final m in PaymentMethod.values)
-                  DropdownMenuItem(value: m, child: Text(paymentMethodLabel(m))),
+                  DropdownMenuItem(
+                      value: m, child: Text(paymentMethodLabel(m))),
               ],
               onChanged: (v) => setD(() => method = v ?? method),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
-              FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('تأكيد الدفع')),
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('إلغاء')),
+              FilledButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('تأكيد الدفع')),
             ],
           ),
         ),
@@ -702,7 +835,8 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
     );
     if (ok != true) return;
     await _run(
-      () => _svc.payWage(centerId: _centerId, actorId: _actor, wageId: w.id, method: method),
+      () => _svc.payWage(
+          centerId: _centerId, actorId: _actor, wageId: w.id, method: method),
       'سُجّل دفع الأجر',
     );
   }
@@ -712,10 +846,16 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
   Widget _summary(_Bundle b) {
     final s = b.data.summary(_month);
     Widget row(String l, String v, {bool bold = false}) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: DesignTokens.space8, horizontal: DesignTokens.space16),
+          padding: const EdgeInsets.symmetric(
+              vertical: DesignTokens.space8, horizontal: DesignTokens.space16),
           child: Row(children: [
-            Expanded(child: Text(l, style: TextStyle(fontWeight: bold ? FontWeight.w800 : null))),
-            Text(v, style: TextStyle(fontWeight: bold ? FontWeight.w800 : FontWeight.w600)),
+            Expanded(
+                child: Text(l,
+                    style:
+                        TextStyle(fontWeight: bold ? FontWeight.w800 : null))),
+            Text(v,
+                style: TextStyle(
+                    fontWeight: bold ? FontWeight.w800 : FontWeight.w600)),
           ]),
         );
     return ListView(
@@ -755,7 +895,8 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
         const Text(
           'الصافي النقدي = ما قُبض في الشهر − المصروفات − الأجور المدفوعة فيه. لا يدخل فيه ما هو مستحق '
           'ولم يُقبض بعد، ولا الأجور غير المدفوعة، ولا الدفعات الملغاة.',
-          style: TextStyle(fontSize: 12, color: DesignTokens.secondaryText, height: 1.5),
+          style: TextStyle(
+              fontSize: 12, color: DesignTokens.secondaryText, height: 1.5),
         ),
       ],
     );
