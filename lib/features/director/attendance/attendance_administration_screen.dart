@@ -6,6 +6,7 @@ import 'package:quran_center/core/utils/attendance_rules.dart';
 import 'package:quran_center/data/models/attendance.dart';
 import 'package:quran_center/data/models/audit_log.dart';
 import 'package:quran_center/data/models/enums.dart';
+import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/data/providers/repositories.dart';
 import 'package:quran_center/data/repositories/attendance_repository.dart';
 

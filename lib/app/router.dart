@@ -1,111 +1,111 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quran_center/core/auth/app_session.dart';
+import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/features/authentication/screens/account_status_screen.dart';
 import 'package:quran_center/features/authentication/screens/forgot_password_screen.dart';
 import 'package:quran_center/features/authentication/screens/login_screen.dart';
 import 'package:quran_center/features/authentication/screens/splash_screen.dart';
 import 'package:quran_center/features/director/attendance/attendance_administration_screen.dart';
+import 'package:quran_center/features/director/circles/circle_management_list_screen.dart';
 import 'package:quran_center/features/director/dashboard/director_dashboard_screen.dart';
+import 'package:quran_center/features/director/enrollments/enrollment_assignment_screen.dart';
+import 'package:quran_center/features/director/schedules/schedule_management_screen.dart';
 import 'package:quran_center/features/director/students/add_student_screen.dart';
 import 'package:quran_center/features/director/students/director_student_profile_screen.dart';
 import 'package:quran_center/features/director/students/student_management_list_screen.dart';
-import 'package:quran_center/features/director/circles/circle_management_list_screen.dart';
-import 'package:quran_center/features/director/enrollments/enrollment_assignment_screen.dart';
-import 'package:quran_center/features/director/schedules/schedule_management_screen.dart';
 import 'package:quran_center/features/director/teachers/teacher_management_list_screen.dart';
+import 'package:quran_center/features/shared/role_home_placeholder.dart';
 
-abstract class AppRoute {
-  static const splash = '/';
-  static const login = '/login';
-  static const forgotPassword = '/forgot-password';
-  static const accountStatus = '/account-status';
-  static const appShell = '/app';
-  static const teacherDashboard = '/teacher/dashboard';
-  static const studentDashboard = '/student/dashboard';
-  static const directorDashboard = '/director/dashboard';
-}
+/// The application router.
+///
+/// Every navigation is checked against the current [AppSession] by
+/// [redirectFor], so an unauthenticated, suspended, or wrong-role user cannot
+/// reach a protected screen by URL, deep link or back button. The router is
+/// re-evaluated whenever the session changes (sign-in, sign-out, suspension).
+final routerProvider = Provider<GoRouter>((ref) {
+  final refresh = ValueNotifier<int>(0);
+  ref.listen<AppSession>(currentSessionProvider, (_, __) => refresh.value++);
 
-/// GoRouter with auth redirect.
-final router = GoRouter(
-  initialLocation: AppRoute.splash,
-  redirect: (context, state) {
-    final loggedIn = FirebaseAuth.instance.currentUser != null;
-    final isLogin = state.matchedLocation == AppRoute.login;
-    if (!loggedIn) return isLogin ? null : AppRoute.login;
-    if (isLogin) return AppRoute.appShell;
-    return null;
-  },
-  routes: [
-    GoRoute(path: AppRoute.splash, builder: (_, __) => const SplashScreen()),
-    GoRoute(path: AppRoute.login, builder: (_, __) => const LoginScreen()),
-    GoRoute(
-      path: AppRoute.forgotPassword,
-      builder: (_, __) => const ForgotPasswordScreen(),
-    ),
-    GoRoute(
-      path: AppRoute.accountStatus,
-      builder: (_, __) => const AccountStatusScreen(),
-    ),
-    GoRoute(
-      path: AppRoute.appShell,
-      builder: (_, __) => const DirectorDashboardScreen(),
-    ),
-    GoRoute(
-      path: AppRoute.teacherDashboard,
-      builder: (_, __) => const _PlaceholderScreen('Teacher Dashboard'),
-    ),
-    GoRoute(
-      path: AppRoute.studentDashboard,
-      builder: (_, __) => const _PlaceholderScreen('Student Dashboard'),
-    ),
-    GoRoute(
-      path: AppRoute.directorDashboard,
-      builder: (_, __) => const DirectorDashboardScreen(),
-    ),
-    GoRoute(
-      path: '/director/students',
-      builder: (_, __) => const StudentManagementListScreen(),
-    ),
-    GoRoute(
-      path: '/director/students/add',
-      builder: (_, __) => const AddStudentScreen(),
-    ),
-    GoRoute(
-      path: '/director/students/:id',
-      builder: (_, state) => DirectorStudentProfileScreen(studentId: state.pathParameters['id']!),
-    ),
-    GoRoute(
-      path: '/director/teachers',
-      builder: (_, __) => const TeacherManagementListScreen(),
-    ),
-    GoRoute(
-      path: '/director/circles',
-      builder: (_, __) => const CircleManagementListScreen(),
-    ),
-    GoRoute(
-      path: '/director/enrollments/assign',
-      builder: (_, __) => const EnrollmentAssignmentScreen(),
-    ),
-    GoRoute(
-      path: '/director/schedules',
-      builder: (_, __) => const ScheduleManagementScreen(),
-    ),
-    GoRoute(
-      path: '/director/attendance',
-      builder: (_, __) => const AttendanceAdministrationScreen(),
-    ),
-  ],
-);
+  final router = GoRouter(
+    initialLocation: Routes.splash,
+    refreshListenable: refresh,
+    redirect: (context, state) =>
+        redirectFor(ref.read(currentSessionProvider), state.matchedLocation),
+    routes: [
+      GoRoute(path: Routes.splash, builder: (_, __) => const SplashScreen()),
+      GoRoute(path: Routes.login, builder: (_, __) => const LoginScreen()),
+      GoRoute(
+        path: Routes.forgotPassword,
+        builder: (_, __) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: Routes.accountStatus,
+        builder: (_, __) => const AccountStatusScreen(),
+      ),
 
-class _PlaceholderScreen extends StatelessWidget {
-  final String title;
-  const _PlaceholderScreen(this.title);
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(child: Text('$title (placeholder)')),
-    );
-  }
-}
+      // Director area
+      GoRoute(
+        path: Routes.directorHome,
+        builder: (_, __) => const DirectorDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/director/students',
+        builder: (_, __) => const StudentManagementListScreen(),
+      ),
+      GoRoute(
+        path: '/director/students/add',
+        builder: (_, __) => const AddStudentScreen(),
+      ),
+      GoRoute(
+        path: '/director/students/:id',
+        builder: (_, state) =>
+            DirectorStudentProfileScreen(studentId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/director/teachers',
+        builder: (_, __) => const TeacherManagementListScreen(),
+      ),
+      GoRoute(
+        path: '/director/circles',
+        builder: (_, __) => const CircleManagementListScreen(),
+      ),
+      GoRoute(
+        path: '/director/enrollments/assign',
+        builder: (_, __) => const EnrollmentAssignmentScreen(),
+      ),
+      GoRoute(
+        path: '/director/schedules',
+        builder: (_, __) => const ScheduleManagementScreen(),
+      ),
+      GoRoute(
+        path: '/director/attendance',
+        builder: (_, __) => const AttendanceAdministrationScreen(),
+      ),
+
+      // Teacher and student areas: not built yet (Phases 5 and 6).
+      GoRoute(
+        path: Routes.teacherHome,
+        builder: (_, __) => const RoleHomePlaceholder(
+          title: 'واجهة المعلم',
+          message: 'واجهة المعلم قيد التطوير ولم تتوفر بعد.',
+        ),
+      ),
+      GoRoute(
+        path: Routes.studentHome,
+        builder: (_, __) => const RoleHomePlaceholder(
+          title: 'واجهة الطالب',
+          message: 'واجهة الطالب قيد التطوير ولم تتوفر بعد.',
+        ),
+      ),
+    ],
+  );
+
+  ref.onDispose(() {
+    router.dispose();
+    refresh.dispose();
+  });
+  return router;
+});

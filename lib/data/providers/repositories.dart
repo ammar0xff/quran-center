@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quran_center/data/datasources/fake_firestore_datasource.dart';
 import 'package:quran_center/data/repositories/attendance_repository.dart';
@@ -12,7 +11,9 @@ import 'package:quran_center/data/repositories/impl/enrollment_repository_impl.d
 import 'package:quran_center/data/repositories/impl/schedule_repository_impl.dart';
 import 'package:quran_center/data/repositories/impl/student_repository_impl.dart';
 import 'package:quran_center/data/repositories/impl/teacher_repository_impl.dart';
+import 'package:quran_center/data/repositories/impl/user_repository_impl.dart';
 import 'package:quran_center/data/repositories/schedule_repository.dart';
+import 'package:quran_center/data/repositories/user_repository.dart';
 import 'package:quran_center/data/services/account_access_service.dart';
 import 'package:quran_center/data/repositories/student_repository.dart';
 import 'package:quran_center/data/repositories/teacher_repository.dart';
@@ -49,6 +50,10 @@ final attendanceRepositoryProvider = Provider<AttendanceRepository>(
   (ref) => AttendanceRepositoryImpl(ref.watch(firestoreDataSourceProvider)),
 );
 
+final userRepositoryProvider = Provider<UserRepository>(
+  (ref) => UserRepositoryImpl(ref.watch(firestoreDataSourceProvider)),
+);
+
 final auditRepositoryProvider = Provider<AuditRepository>(
   (ref) => AuditRepositoryImpl(ref.watch(firestoreDataSourceProvider)),
 );
@@ -60,22 +65,3 @@ final accountAccessServiceProvider = Provider<AccountAccessService>(
   (ref) => CloudFunctionsAccountAccessService(),
 );
 
-/// The authenticated user performing an audited action.
-class Actor {
-  const Actor(this.id, this.role);
-  final String id;
-  final String role;
-}
-
-/// Resolves the acting user from Firebase Auth. Falls back to 'unresolved'
-/// when no session exists (or Firebase is not initialised, e.g. in tests);
-/// override in tests. The role is a placeholder until role resolution from
-/// the authoritative users/{uid} profile is wired.
-final actorProvider = Provider<Actor>((ref) {
-  try {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    return Actor(uid ?? 'unresolved', 'director');
-  } catch (_) {
-    return const Actor('unresolved', 'director');
-  }
-});

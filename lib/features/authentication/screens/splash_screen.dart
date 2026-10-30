@@ -1,60 +1,48 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:quran_center/app/router.dart';
-import 'package:quran_center/core/localization/app_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 
-/// Splash screen: initializes Firebase, restores session, resolves role,
-/// then navigates to login or the authorized dashboard.
-/// States: initializing, retry, config error. Never infinite spinner.
-class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+/// Shown while the session is being restored. It does not navigate: the
+/// router sends the user onward as soon as the session resolves.
+/// If this takes unusually long it offers a retry, so it is never an endless
+/// spinner.
+class SplashScreen extends ConsumerStatefulWidget {
+  const SplashScreen({super.key, this.slowAfter = const Duration(seconds: 8)});
+
+  final Duration slowAfter;
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
-  bool _initializing = true;
-  String? _error;
+class _SplashScreenState extends ConsumerState<SplashScreen> {
+  Timer? _timer;
+  bool _slow = false;
 
   @override
   void initState() {
     super.initState();
-    _initialize();
+    _arm();
   }
 
-  Future<void> _initialize() async {
-    try {
-      await Future.delayed(const Duration(seconds: 1)); // branded pause
-      // Firebase is initialized in bootstrap(); here we resolve role and route.
-      if (!mounted) return;
-      // TODO: wire appLifecycleProvider role resolution here.
-      _navigate();
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _initializing = false;
-        _error = 'Config error';
-      });
-    }
-  }
-
-  void _navigate() {
-    // Until auth is wired, route to login.
-    Navigator.of(context).pushReplacementNamed(AppRoute.login);
-  }
-
-  void _retry() {
-    setState(() {
-      _initializing = true;
-      _error = null;
+  void _arm() {
+    _timer?.cancel();
+    _timer = Timer(widget.slowAfter, () {
+      if (mounted) setState(() => _slow = true);
     });
-    _initialize();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -63,51 +51,31 @@ class _SplashScreenState extends State<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.book, size: 80, color: DesignTokens.primaryDarkGreen),
+              const Icon(Icons.menu_book,
+                  size: 80, color: DesignTokens.primaryDarkGreen),
               const SizedBox(height: DesignTokens.space24),
-              Text(
-                l10n.s('appNameAr'),
-                style: const TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: DesignTokens.mainText,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: DesignTokens.space8),
-              Text(
-                l10n.s('appName'),
-                style: TextStyle(
-                  fontSize: 16,
-                  color: DesignTokens.secondaryText,
-                ),
-                textAlign: TextAlign.center,
-              ),
+              const Text('دار تحفيظ قرآن',
+                  style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: DesignTokens.mainText)),
               const SizedBox(height: DesignTokens.space40),
-              if (_error != null) ...[
-                Text(
-                  _error!,
-                  style: const TextStyle(color: DesignTokens.error),
-                  textAlign: TextAlign.center,
-                ),
+              if (!_slow) ...[
+                const CircularProgressIndicator(strokeWidth: 3),
                 const SizedBox(height: DesignTokens.space16),
-                FilledButton.tonal(
-                  onPressed: _retry,
-                  child: Text(l10n.s('splashRetry')),
-                ),
-              ] else if (_initializing) ...[
-                const SizedBox(
-                  height: DesignTokens.touchTarget,
-                  width: DesignTokens.touchTarget,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                    valueColor: AlwaysStoppedAnimation(DesignTokens.primaryDarkGreen),
-                  ),
-                ),
+                const Text('جاري التهيئة…',
+                    style: TextStyle(color: DesignTokens.secondaryText)),
+              ] else ...[
+                const Text('يستغرق التحميل وقتًا أطول من المعتاد.',
+                    style: TextStyle(color: DesignTokens.secondaryText)),
                 const SizedBox(height: DesignTokens.space16),
-                Text(
-                  l10n.s('splashLoading'),
-                  style: TextStyle(color: DesignTokens.secondaryText),
+                FilledButton(
+                  onPressed: () {
+                    setState(() => _slow = false);
+                    _arm();
+                    ref.invalidate(sessionProvider);
+                  },
+                  child: const Text('إعادة المحاولة'),
                 ),
               ],
             ],

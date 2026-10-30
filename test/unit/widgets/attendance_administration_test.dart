@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:quran_center/data/datasources/fake_firestore_datasource.dart';
 import 'package:quran_center/data/models/enums.dart';
+import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/data/providers/repositories.dart';
 import 'package:quran_center/features/director/attendance/attendance_administration_screen.dart';
 

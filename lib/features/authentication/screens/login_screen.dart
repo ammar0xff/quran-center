@@ -1,69 +1,61 @@
 import 'package:flutter/material.dart';
-import 'package:quran_center/app/router.dart';
-import 'package:quran_center/core/localization/app_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:quran_center/core/auth/app_session.dart';
+import 'package:quran_center/core/auth/auth_gateway.dart';
+import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
+import 'package:quran_center/core/utils/account_access_rules.dart';
 
-/// Welcome & Login screen.
+/// Email + password sign-in.
 ///
-/// No public role selector (role is backend-authoritative).
-/// Email trimmed + format validated; password never logged;
-/// submission disabled while in flight; localized errors;
-/// navigates by authoritative role after success.
-class LoginScreen extends StatefulWidget {
+/// There is deliberately no role selector: the role comes from the stored
+/// profile after authentication. On success this screen does not navigate;
+/// the router moves the user to the right area once the session resolves.
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+class _LoginScreenState extends ConsumerState<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _email = TextEditingController();
+  final _password = TextEditingController();
   bool _obscure = true;
   bool _submitting = false;
   String? _error;
-  final _formKey = GlobalKey<FormState>();
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
+    _email.dispose();
+    _password.dispose();
     super.dispose();
   }
 
-  String? _validateEmail(String? value) {
-    final v = (value ?? '').trim();
-    if (v.isEmpty) return AppLocalizations.of(context).s('emailRequired');
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!emailRegex.hasMatch(v)) return AppLocalizations.of(context).s('emailInvalid');
+  String? _validateEmail(String? v) {
+    final value = (v ?? '').trim();
+    if (value.isEmpty) return 'البريد الإلكتروني مطلوب';
+    if (!isPlausibleEmail(value)) return 'أدخل بريدًا إلكترونيًا صحيحًا';
     return null;
   }
 
-  String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) return AppLocalizations.of(context).s('passwordRequired');
-    return null;
-  }
+  String? _validatePassword(String? v) =>
+      (v == null || v.isEmpty) ? 'كلمة المرور مطلوبة' : null;
 
   Future<void> _submit() async {
-    final emailValid = _validateEmail(_emailController.text) == null;
-    final passValid = _validatePassword(_passwordController.text) == null;
-    if (!emailValid || !passValid) {
-      _formKey.currentState?.validate();
-      return;
-    }
-    setState(() { _submitting = true; _error = null; });
+    if (_submitting || !_formKey.currentState!.validate()) return;
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
     try {
-      // TODO: wire Firebase Auth signInWithEmailAndPassword here.
-      // Resolve role from authoritative profile, then navigate to role shell.
-      await Future.delayed(const Duration(seconds: 1));
-      if (!mounted) return;
-      Navigator.of(context).pushReplacementNamed(AppRoute.teacherDashboard);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _submitting = false;
-        _error = AppLocalizations.of(context).s('errorUnknown');
-      });
+      await ref
+          .read(authGatewayProvider)
+          .signIn(email: _email.text.trim(), password: _password.text);
+    } on AuthFailure catch (e) {
+      if (mounted) setState(() => _error = e.message);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -71,7 +63,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -86,49 +77,50 @@ class _LoginScreenState extends State<LoginScreen> {
                   key: _formKey,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Icon(Icons.school, size: 72, color: DesignTokens.primaryDarkGreen),
+                      const Icon(Icons.menu_book,
+                          size: 72, color: DesignTokens.primaryDarkGreen),
                       const SizedBox(height: DesignTokens.space24),
-                      Text(
-                        l10n.s('loginTitle'),
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: DesignTokens.mainText,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+                      const Text('تسجيل الدخول',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: DesignTokens.mainText)),
                       const SizedBox(height: DesignTokens.space8),
-                      Text(
-                        l10n.s('loginDescription'),
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: DesignTokens.secondaryText,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+                      const Text('سجّل الدخول إلى حسابك في دار تحفيظ القرآن.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              fontSize: 15, color: DesignTokens.secondaryText)),
                       const SizedBox(height: DesignTokens.space32),
                       TextFormField(
-                        controller: _emailController,
+                        controller: _email,
                         keyboardType: TextInputType.emailAddress,
+                        textDirection: TextDirection.ltr,
                         textInputAction: TextInputAction.next,
-                        decoration: InputDecoration(
-                          labelText: l10n.s('emailLabel'),
-                          hintText: l10n.s('emailHint'),
-                        ),
+                        autofillHints: const [AutofillHints.username],
+                        decoration:
+                            const InputDecoration(labelText: 'البريد الإلكتروني'),
                         validator: _validateEmail,
                       ),
                       const SizedBox(height: DesignTokens.space16),
                       TextFormField(
-                        controller: _passwordController,
+                        controller: _password,
                         obscureText: _obscure,
+                        textDirection: TextDirection.ltr,
                         textInputAction: TextInputAction.done,
+                        autofillHints: const [AutofillHints.password],
                         onFieldSubmitted: (_) => _submit(),
                         decoration: InputDecoration(
-                          labelText: l10n.s('passwordLabel'),
-                          hintText: l10n.s('passwordHint'),
+                          labelText: 'كلمة المرور',
                           suffixIcon: IconButton(
-                            icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+                            tooltip: _obscure
+                                ? 'إظهار كلمة المرور'
+                                : 'إخفاء كلمة المرور',
+                            icon: Icon(_obscure
+                                ? Icons.visibility_off
+                                : Icons.visibility),
                             onPressed: () => setState(() => _obscure = !_obscure),
                           ),
                         ),
@@ -136,56 +128,44 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       if (_error != null) ...[
                         const SizedBox(height: DesignTokens.space12),
-                        Container(
-                          padding: const EdgeInsets.all(DesignTokens.space12),
-                          decoration: BoxDecoration(
-                            color: DesignTokens.error.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(DesignTokens.radiusSmall),
-                            border: Border.all(
-                              color: DesignTokens.error.withValues(alpha: 0.3),
+                        Semantics(
+                          liveRegion: true,
+                          child: Container(
+                            padding: const EdgeInsets.all(DesignTokens.space12),
+                            decoration: BoxDecoration(
+                              color: DesignTokens.error.withValues(alpha: 0.08),
+                              borderRadius:
+                                  BorderRadius.circular(DesignTokens.radiusSmall),
+                              border: Border.all(
+                                  color: DesignTokens.error.withValues(alpha: 0.3)),
                             ),
-                          ),
-                          child: Text(
-                            _error!,
-                            style: const TextStyle(color: DesignTokens.error, fontSize: 13),
+                            child: Text(_error!,
+                                style: const TextStyle(
+                                    color: DesignTokens.error, fontSize: 13)),
                           ),
                         ),
                       ],
                       const SizedBox(height: DesignTokens.space24),
                       SizedBox(
-                        width: double.infinity,
                         height: DesignTokens.buttonHeight,
                         child: FilledButton(
                           onPressed: _submitting ? null : _submit,
                           child: _submitting
-                              ? SizedBox(
+                              ? const SizedBox(
                                   height: 20,
                                   width: 20,
                                   child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation(Colors.white),
-                                  ),
+                                      strokeWidth: 2, color: Colors.white),
                                 )
-                              : Text(l10n.s('signIn')),
+                              : const Text('تسجيل الدخول'),
                         ),
-                      ),
-                      const SizedBox(height: DesignTokens.space20),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pushNamed(AppRoute.forgotPassword),
-                        child: Text(l10n.s('forgotPassword')),
                       ),
                       const SizedBox(height: DesignTokens.space12),
                       TextButton(
-                        onPressed: null, // help/support action
-                        child: Text(l10n.s('helpSupport')),
-                      ),
-                      const SizedBox(height: DesignTokens.space16),
-                      Text(
-                        l10n.s('privacyTerms'),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: DesignTokens.secondaryText,
-                        ),
+                        onPressed: _submitting
+                            ? null
+                            : () => context.push(Routes.forgotPassword),
+                        child: const Text('نسيت كلمة المرور؟'),
                       ),
                     ],
                   ),

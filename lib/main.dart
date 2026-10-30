@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:quran_center/app/app.dart';
 import 'package:quran_center/bootstrap.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  initializeDateFormatting();
-
-  // Initialize Firebase + provider container + error handling before runApp.
+  await initializeDateFormatting('ar');
   await bootstrap();
-
-  runApp(const App());
+  runApp(const ProviderScope(child: App()));
 }
