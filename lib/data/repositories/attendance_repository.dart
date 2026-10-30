@@ -28,7 +28,7 @@ abstract class AttendanceRepository {
 
   Future<List<Attendance>> getBySession(String sessionId);
 
-  Future<List<Attendance>> getByStudent(String studentId);
+  Future<List<Attendance>> getByStudent(String studentId, {required String centerId});
 
   Future<List<Attendance>> getByCenter(String centerId);
 

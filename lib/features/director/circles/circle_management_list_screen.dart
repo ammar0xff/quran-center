@@ -43,7 +43,7 @@ class _CircleManagementListScreenState
       final counts = <String, int>{};
       for (final c in circles) {
         counts[c.circleId] =
-            (await enrollments.getActiveEnrollmentsForCircle(c.circleId)).length;
+            (await enrollments.getActiveEnrollmentsForCircle(c.circleId, centerId: centerId)).length;
       }
       if (!mounted) return;
       setState(() {

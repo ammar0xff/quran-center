@@ -66,12 +66,14 @@ class EnrollmentService {
     final circle = Circle.fromJson(circleId, firestoreConverter.decodeFromRead(circleRaw));
 
     final studentActive = (await _ds.query(_enrollments, where: [
+      QueryFilter.equal('centerId', centerId),
       QueryFilter.equal('studentId', studentId),
       QueryFilter.equal('status', 'active'),
     ]))
         .map((d) => Enrollment.fromJson(d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
         .toList();
     final circleCount = (await _ds.query(_enrollments, where: [
+      QueryFilter.equal('centerId', centerId),
       QueryFilter.equal('circleId', circleId),
       QueryFilter.equal('status', 'active'),
     ]))

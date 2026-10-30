@@ -15,11 +15,18 @@ abstract class EnrollmentRepository {
   Future<void> updateEnrollment(Enrollment enrollment);
 
   /// Active enrollments for a student.
-  Future<List<Enrollment>> getActiveEnrollmentsForStudent(String studentId);
+  Future<List<Enrollment>> getActiveEnrollmentsForStudent(String studentId,
+      {required String centerId});
 
   /// Active enrollments in a circle.
-  Future<List<Enrollment>> getActiveEnrollmentsForCircle(String circleId);
+  Future<List<Enrollment>> getActiveEnrollmentsForCircle(String circleId,
+      {required String centerId});
+
+  /// Every enrolment of the student, newest first (active and closed).
+  Future<List<Enrollment>> getHistoryForStudent(String studentId,
+      {required String centerId});
 
   /// Stream of enrollments for a student (real-time).
-  Stream<List<Enrollment>> watchEnrollmentsForStudent(String studentId);
+  Stream<List<Enrollment>> watchEnrollmentsForStudent(String studentId,
+      {required String centerId});
 }

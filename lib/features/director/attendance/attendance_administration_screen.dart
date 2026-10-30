@@ -122,7 +122,8 @@ class _AttendanceAdministrationScreenState
   Future<void> _openHistory(Attendance record) async {
     final logs = await ref
         .read(auditRepositoryProvider)
-        .getForEntity('attendance', record.attendanceId);
+        .getForEntity('attendance', record.attendanceId,
+            centerId: record.centerId);
     if (!mounted) return;
     await showModalBottomSheet<void>(
       context: context,

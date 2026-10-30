@@ -68,7 +68,7 @@ void main() {
       await repo.record(_record(session: 's1', student: 'b'));
       await repo.record(_record(session: 's2', student: 'a'));
       expect(await repo.getBySession('s1'), hasLength(2));
-      expect(await repo.getByStudent('a'), hasLength(2));
+      expect(await repo.getByStudent('a', centerId: 'center-1'), hasLength(2));
       expect(await repo.getByCenter('center-1'), hasLength(3));
     });
   });
@@ -93,7 +93,7 @@ void main() {
       expect(updated.correctionMetadata!.correctedBy, 'director1');
       expect(updated.correctionMetadata!.reason, 'medical note');
 
-      final logs = await audit.getForEntity('attendance', 'sess1_stu1');
+      final logs = await audit.getForEntity('attendance', 'sess1_stu1', centerId: 'center-1');
       expect(logs, hasLength(1));
       expect(logs.single.action, 'correct_attendance');
       expect(logs.single.actorUserId, 'director1');
@@ -119,7 +119,7 @@ void main() {
       final rec = (await repo.getBySession('sess1')).single;
       expect(rec.status, AttendanceStatus.present);
       expect(rec.correctionMetadata!.originalStatus, AttendanceStatus.absent);
-      expect(await audit.getForEntity('attendance', 'sess1_stu1'), hasLength(2));
+      expect(await audit.getForEntity('attendance', 'sess1_stu1', centerId: 'center-1'), hasLength(2));
     });
 
     test('rejects a blank reason and changes nothing', () async {
@@ -138,7 +138,7 @@ void main() {
       );
       expect((await repo.getBySession('sess1')).single.status,
           AttendanceStatus.absent);
-      expect(await audit.getForEntity('attendance', 'sess1_stu1'), isEmpty);
+      expect(await audit.getForEntity('attendance', 'sess1_stu1', centerId: 'center-1'), isEmpty);
     });
 
     test('rejects a no-op correction', () async {

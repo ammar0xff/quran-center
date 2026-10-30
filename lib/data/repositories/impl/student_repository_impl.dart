@@ -57,6 +57,69 @@ class StudentRepositoryImpl implements StudentRepository {
       );
 
   @override
+  Future<bool> updateProfile(
+    String studentId, {
+    required String actorId,
+    required String actorRole,
+    required String fullName,
+    String? preferredName,
+    required String educationalLevel,
+    String? adminNotes,
+  }) async {
+    String? clean(String? v) {
+      final t = v?.trim();
+      return (t == null || t.isEmpty) ? null : t;
+    }
+
+    final name = clean(fullName);
+    final level = clean(educationalLevel);
+    if (name == null) throw ArgumentError('fullName is required');
+    if (level == null) throw ArgumentError('educationalLevel is required');
+
+    final path = '$_collectionPath/$studentId';
+    final current = await _ds.getDoc(path);
+    if (current == null) throw StateError('Student not found: $studentId');
+
+    final wanted = <String, String?>{
+      'fullName': name,
+      'preferredName': clean(preferredName),
+      'educationalLevel': level,
+      'adminNotes': clean(adminNotes),
+    };
+    final previous = <String, dynamic>{};
+    final next = <String, dynamic>{};
+    wanted.forEach((key, value) {
+      final before = current[key] as String?;
+      if (before != value) {
+        previous[key] = before;
+        next[key] = value;
+      }
+    });
+    if (next.isEmpty) return false;
+
+    final now = DateTime.now();
+    await _ds.commitBatch([
+      BatchOp.update(path, {
+        ...next,
+        'updatedBy': actorId,
+        'updatedAt': firestoreConverter.serverTimestamp(),
+      }),
+      BatchOp.set('audit_logs/aud_${now.microsecondsSinceEpoch}_$studentId', {
+        'centerId': current['centerId'],
+        'actorUserId': actorId,
+        'actorRole': actorRole,
+        'action': 'update_student',
+        'entityType': 'student',
+        'entityId': studentId,
+        'previousValue': previous,
+        'newValue': next,
+        'createdAt': now.millisecondsSinceEpoch,
+      }),
+    ]);
+    return true;
+  }
+
+  @override
   Future<void> reinstateStudent(
     String studentId, {
     required String actorId,

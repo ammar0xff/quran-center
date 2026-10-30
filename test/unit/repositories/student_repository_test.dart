@@ -113,6 +113,61 @@ void main() {
       expect(audit.single['reason'], 'غادر');
     });
 
+    test('updateProfile saves only what changed and audits previous/new values',
+        () async {
+      await seedStudent(fullName: 'أحمد محمد');
+      final saved = await repo.updateProfile('student-1',
+          actorId: 'director-1',
+          actorRole: 'director',
+          fullName: '  أحمد محمد  ',
+          preferredName: ' أحمودي ',
+          educationalLevel: 'متقدم',
+          adminNotes: '');
+
+      expect(saved, isTrue);
+      final stored = (await fake.getDoc('students/student-1'))!;
+      expect(stored['fullName'], 'أحمد محمد');
+      expect(stored['preferredName'], 'أحمودي');
+      expect(stored['educationalLevel'], 'متقدم');
+      expect(stored['enrollmentStatus'], 'active'); // untouched
+      expect(stored['updatedBy'], 'director-1');
+
+      final audit = (await fake.query('audit_logs', where: [])).single;
+      expect(audit['action'], 'update_student');
+      expect((audit['newValue'] as Map).keys.toSet(),
+          {'preferredName', 'educationalLevel'}); // name unchanged
+      expect((audit['previousValue'] as Map)['educationalLevel'], 'مبتدئ');
+    });
+
+    test('updateProfile with no change writes nothing and no audit', () async {
+      await seedStudent(fullName: 'أحمد محمد');
+      final saved = await repo.updateProfile('student-1',
+          actorId: 'd',
+          actorRole: 'director',
+          fullName: 'أحمد محمد',
+          educationalLevel: 'مبتدئ');
+      expect(saved, isFalse);
+      expect(await fake.query('audit_logs', where: []), isEmpty);
+    });
+
+    test('updateProfile rejects blank required fields and unknown students',
+        () async {
+      await seedStudent();
+      await expectLater(
+          repo.updateProfile('student-1',
+              actorId: 'd', actorRole: 'director', fullName: '  ', educationalLevel: 'x'),
+          throwsArgumentError);
+      await expectLater(
+          repo.updateProfile('student-1',
+              actorId: 'd', actorRole: 'director', fullName: 'x', educationalLevel: ''),
+          throwsArgumentError);
+      await expectLater(
+          repo.updateProfile('ghost',
+              actorId: 'd', actorRole: 'director', fullName: 'x', educationalLevel: 'y'),
+          throwsStateError);
+      expect(await fake.query('audit_logs', where: []), isEmpty);
+    });
+
     test('reinstateStudent restores active status and audits it', () async {
       await seedStudent(status: EnrollmentStatus.archived);
       await repo.reinstateStudent('student-1',

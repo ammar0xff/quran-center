@@ -5,7 +5,7 @@ import {
   assertSucceeds,
   initializeTestEnvironment,
 } from "@firebase/rules-unit-testing";
-import { deleteDoc, doc, getDoc, setDoc, updateDoc, writeBatch } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, updateDoc, where, writeBatch } from "firebase/firestore";
 
 let env;
 
@@ -128,6 +128,33 @@ describe("students: access boundaries", () => {
     await assertFails(getDoc(doc(as("tSusp"), "students/s3")));
     await assertFails(getDoc(doc(as("dirSusp"), "students/s3")));
   });
+});
+
+describe("director queries must be scoped to the center", () => {
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, "enrollments/q1"), { centerId: C1, studentId: "s1", circleId: "cA", status: "active" });
+      await setDoc(doc(db, "attendance/sq_s1"), { centerId: C1, sessionId: "sq", studentId: "s1", status: "present", recordedBy: "tA" });
+      await setDoc(doc(db, "audit_logs/qa1"), { centerId: C1, entityType: "student", entityId: "s1", action: "x" });
+    });
+  });
+  const cases = [
+    ["enrollments", "studentId", "s1"],
+    ["attendance", "studentId", "s1"],
+    ["audit_logs", "entityId", "s1"],
+  ];
+  for (const [col, field, value] of cases) {
+    it(`${col}: a query without centerId is refused, with centerId it works`, async () => {
+      const db = as("dir1");
+      await assertFails(getDocs(query(collection(db, col), where(field, "==", value))));
+      await assertSucceeds(getDocs(query(collection(db, col), where("centerId", "==", C1), where(field, "==", value))));
+    });
+    it(`${col}: another center's director cannot query this center`, async () => {
+      const db = as("dir2");
+      await assertFails(getDocs(query(collection(db, col), where("centerId", "==", C1), where(field, "==", value))));
+    });
+  }
 });
 
 describe("enrollment assignment batch", () => {

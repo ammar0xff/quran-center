@@ -12,8 +12,10 @@ class AuditRepositoryImpl implements AuditRepository {
   static const collectionPath = 'audit_logs';
 
   @override
-  Future<List<AuditLog>> getForEntity(String entityType, String entityId) async {
+  Future<List<AuditLog>> getForEntity(String entityType, String entityId,
+      {required String centerId}) async {
     final docs = await _ds.query(collectionPath, where: [
+      QueryFilter.equal('centerId', centerId),
       QueryFilter.equal('entityType', entityType),
       QueryFilter.equal('entityId', entityId),
     ]);

@@ -46,8 +46,10 @@ class EnrollmentRepositoryImpl implements EnrollmentRepository {
   }
 
   @override
-  Future<List<Enrollment>> getActiveEnrollmentsForStudent(String studentId) async {
+  Future<List<Enrollment>> getActiveEnrollmentsForStudent(String studentId,
+      {required String centerId}) async {
     final where = <QueryFilter>[
+      QueryFilter.equal('centerId', centerId),
       QueryFilter.equal('studentId', studentId),
       QueryFilter.equal('status', 'active'),
     ];
@@ -59,8 +61,10 @@ class EnrollmentRepositoryImpl implements EnrollmentRepository {
   }
 
   @override
-  Future<List<Enrollment>> getActiveEnrollmentsForCircle(String circleId) async {
+  Future<List<Enrollment>> getActiveEnrollmentsForCircle(String circleId,
+      {required String centerId}) async {
     final where = <QueryFilter>[
+      QueryFilter.equal('centerId', centerId),
       QueryFilter.equal('circleId', circleId),
       QueryFilter.equal('status', 'active'),
     ];
@@ -72,8 +76,27 @@ class EnrollmentRepositoryImpl implements EnrollmentRepository {
   }
 
   @override
-  Stream<List<Enrollment>> watchEnrollmentsForStudent(String studentId) {
-    final where = <QueryFilter>[QueryFilter.equal('studentId', studentId)];
+  Future<List<Enrollment>> getHistoryForStudent(String studentId,
+      {required String centerId}) async {
+    final docs = await _ds.query(_collectionPath, where: [
+      QueryFilter.equal('centerId', centerId),
+      QueryFilter.equal('studentId', studentId),
+    ]);
+    final list = docs
+        .map((d) => Enrollment.fromJson(
+            d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
+        .toList();
+    list.sort((a, b) => b.startDate.compareTo(a.startDate));
+    return list;
+  }
+
+  @override
+  Stream<List<Enrollment>> watchEnrollmentsForStudent(String studentId,
+      {required String centerId}) {
+    final where = <QueryFilter>[
+      QueryFilter.equal('centerId', centerId),
+      QueryFilter.equal('studentId', studentId),
+    ];
     return _ds.watchQuery(_collectionPath, where: where).map((docs) => docs
         .map((d) => Enrollment.fromJson(d['id'] ?? '',
             firestoreConverter.decodeFromRead(d)))

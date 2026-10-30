@@ -86,7 +86,7 @@ class _EnrollmentAssignmentScreenState
       final byCircleId = {for (final c in allCircles) c.circleId: c.name};
       final current = <String, String>{};
       for (final c in circles) {
-        final active = await enrollments.getActiveEnrollmentsForCircle(c.circleId);
+        final active = await enrollments.getActiveEnrollmentsForCircle(c.circleId, centerId: centerId);
         counts[c.circleId] = active.length;
         for (final e in active) {
           current[e.studentId] = byCircleId[e.circleId] ?? '';

@@ -50,9 +50,12 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
   }
 
   @override
-  Future<List<Attendance>> getByStudent(String studentId) async {
-    final docs = await _ds.query(_collectionPath,
-        where: [QueryFilter.equal('studentId', studentId)]);
+  Future<List<Attendance>> getByStudent(String studentId,
+      {required String centerId}) async {
+    final docs = await _ds.query(_collectionPath, where: [
+      QueryFilter.equal('centerId', centerId),
+      QueryFilter.equal('studentId', studentId),
+    ]);
     return docs.map(_fromMap).toList();
   }
 

@@ -25,6 +25,22 @@ abstract class StudentRepository {
     String? reason,
   });
 
+  /// Edits the descriptive fields only. Status, login link and center are
+  /// never touched. Writes only fields that actually changed plus an audit
+  /// entry (previous/new values) in one batch, and does nothing - and writes no
+  /// audit - when nothing changed. Returns whether anything was saved.
+  /// Throws [StateError] if the student does not exist, [ArgumentError] if
+  /// the name or level is blank.
+  Future<bool> updateProfile(
+    String studentId, {
+    required String actorId,
+    required String actorRole,
+    required String fullName,
+    String? preferredName,
+    required String educationalLevel,
+    String? adminNotes,
+  });
+
   /// Reverses [archiveStudent] (status back to active), audited the same way.
   Future<void> reinstateStudent(
     String studentId, {
