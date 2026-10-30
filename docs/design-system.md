@@ -24,6 +24,10 @@ Type: **IBM Plex Sans Arabic** for the interface, **Amiri** for surah names and 
 - `GradeChip`, `LevelBadge`, `SectionTitle` (`marks.dart`): mark pill, level rosette, section heading with a gold rule.
 - Chunky buttons: the theme wraps every Filled/Elevated/Outlined button in a flat face on a darker edge that sinks when pressed (`app_theme.dart`).
 
+- `QAppBar`: the app bar of every inner screen (emerald, lattice, rounded lower edge; actions get white buttons).
+- `EmptyState`: outlined rosette, optional heading and action; used for every empty list.
+- `ProfileBanner`: rosette avatar, name and role on the account screens.
+
 ## Not done
 - Dark mode.
-- Restyling of the secondary director/teacher forms beyond the theme (they inherit the theme, not the hero/rosette treatment).
+- Native look on a real device is unchecked (only the web build was viewed, at phone width).
