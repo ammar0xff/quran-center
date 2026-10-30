@@ -5,7 +5,7 @@ import {
   assertSucceeds,
   initializeTestEnvironment,
 } from "@firebase/rules-unit-testing";
-import { deleteDoc, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { deleteDoc, doc, getDoc, setDoc, updateDoc, writeBatch } from "firebase/firestore";
 
 let env;
 
@@ -159,6 +159,30 @@ describe("students: writes", () => {
   });
   it("a student cannot be moved to another center", async () => {
     await assertFails(updateDoc(doc(as("dir1"), "students/s3"), { centerId: C2 }));
+  });
+  it("a director can archive a student together with its audit entry (one batch)", async () => {
+    const db = as("dir1");
+    const batch = writeBatch(db);
+    batch.update(doc(db, "students/s3"), { enrollmentStatus: "archived", updatedBy: "dir1" });
+    batch.set(doc(db, "audit_logs/aud-archive-1"), {
+      centerId: C1, actorUserId: "dir1", actorRole: "director",
+      action: "archive_student", entityType: "student", entityId: "s3",
+    });
+    await assertSucceeds(batch.commit());
+  });
+  it("teachers and students cannot archive, and a director cannot forge another actor in the audit entry", async () => {
+    await assertFails(updateDoc(doc(as("tA"), "students/s3"), { enrollmentStatus: "archived" }));
+    await assertFails(updateDoc(doc(as("uS1"), "students/s1"), { enrollmentStatus: "archived" }));
+    const db = as("dir1");
+    const batch = writeBatch(db);
+    batch.update(doc(db, "students/s3"), { enrollmentStatus: "archived" });
+    batch.set(doc(db, "audit_logs/aud-forged"), {
+      centerId: C1, actorUserId: "dir2", action: "archive_student", entityType: "student", entityId: "s3",
+    });
+    await assertFails(batch.commit());
+  });
+  it("a director from another center cannot archive this center's student", async () => {
+    await assertFails(updateDoc(doc(as("dir2"), "students/s3"), { enrollmentStatus: "archived" }));
   });
   it("students are never deleted", async () => {
     await assertFails(deleteDoc(doc(as("dir1"), "students/s3")));

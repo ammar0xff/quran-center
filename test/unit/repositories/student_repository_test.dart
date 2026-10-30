@@ -87,15 +87,50 @@ void main() {
       expect(stored.containsKey('studentId'), isFalse);
     });
 
-    test('archiveStudent sets archived status and updatedBy', () async {
+    test('archiveStudent archives, keeps the record and admin notes, and audits',
+        () async {
       await seedStudent(status: EnrollmentStatus.active);
-      await repo.archiveStudent('student-1', actorId: 'director-1', reason: 'غادر');
+      await fake.updateDoc('students/student-1', {'adminNotes': 'ملاحظة سابقة'});
 
-      final stored = await fake.getDoc('students/student-1');
-      expect(stored, isNotNull);
-      expect(stored!['enrollmentStatus'], 'archived');
+      await repo.archiveStudent('student-1',
+          actorId: 'director-1', actorRole: 'director', reason: 'غادر');
+
+      final stored = (await fake.getDoc('students/student-1'))!;
+      expect(stored['enrollmentStatus'], 'archived');
       expect(stored['updatedBy'], 'director-1');
-      expect(stored['adminNotes'], 'غادر');
+      expect(stored['fullName'], 'أحمد محمد'); // nothing deleted
+      expect(stored['adminNotes'], 'ملاحظة سابقة'); // not overwritten by the reason
+
+      final audit = await fake.query('audit_logs', where: []);
+      expect(audit, hasLength(1));
+      expect(audit.single['action'], 'archive_student');
+      expect(audit.single['entityId'], 'student-1');
+      expect(audit.single['centerId'], 'center-1');
+      expect(audit.single['actorUserId'], 'director-1');
+      expect(audit.single['actorRole'], 'director');
+      expect(audit.single['previousValue'], {'enrollmentStatus': 'active'});
+      expect(audit.single['newValue'], {'enrollmentStatus': 'archived'});
+      expect(audit.single['reason'], 'غادر');
+    });
+
+    test('reinstateStudent restores active status and audits it', () async {
+      await seedStudent(status: EnrollmentStatus.archived);
+      await repo.reinstateStudent('student-1',
+          actorId: 'director-1', actorRole: 'director');
+
+      expect((await fake.getDoc('students/student-1'))!['enrollmentStatus'], 'active');
+      final audit = await fake.query('audit_logs', where: []);
+      expect(audit.single['action'], 'reinstate_student');
+      expect(audit.single.containsKey('reason'), isFalse); // no blank reason stored
+    });
+
+    test('archiving a student that does not exist fails and writes no audit',
+        () async {
+      await expectLater(
+        repo.archiveStudent('ghost', actorId: 'd', actorRole: 'director'),
+        throwsStateError,
+      );
+      expect(await fake.query('audit_logs', where: []), isEmpty);
     });
 
     test('getStudentsByCenter filters by centerId', () async {

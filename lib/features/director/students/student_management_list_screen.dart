@@ -1,25 +1,161 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
+import 'package:quran_center/core/utils/student_filter.dart';
 import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/data/models/student.dart';
 import 'package:quran_center/data/providers/repositories.dart';
 import 'package:quran_center/features/director/widgets/director_bottom_nav.dart';
 
-/// Director student management list.
-///
-/// Searches by name / student ID, filters by enrollment status, circle,
-/// teacher, account access, and follow-up requirement. Actions include open
-/// profile, edit, assign circle, change teacher, enable/manage access,
-/// archive/reinstate.
-class StudentManagementListScreen extends ConsumerWidget {
+String enrollmentStatusLabel(EnrollmentStatus s) {
+  switch (s) {
+    case EnrollmentStatus.active:
+      return 'منتظم';
+    case EnrollmentStatus.archived:
+      return 'مؤرشف';
+    case EnrollmentStatus.withdrawn:
+      return 'منسحب';
+    case EnrollmentStatus.completed:
+      return 'مكتمل';
+    case EnrollmentStatus.transferred:
+      return 'منقول';
+  }
+}
+
+Color enrollmentStatusColor(EnrollmentStatus s) {
+  switch (s) {
+    case EnrollmentStatus.active:
+      return DesignTokens.success;
+    case EnrollmentStatus.archived:
+    case EnrollmentStatus.withdrawn:
+      return DesignTokens.error;
+    case EnrollmentStatus.completed:
+    case EnrollmentStatus.transferred:
+      return DesignTokens.secondaryText;
+  }
+}
+
+String accessLabel(AccountMode m) {
+  switch (m) {
+    case AccountMode.none:
+      return 'بدون دخول';
+    case AccountMode.loginEnabled:
+      return 'دخول مفعّل';
+    case AccountMode.suspended:
+      return 'الدخول معلّق';
+  }
+}
+
+/// Director student list: search by name or id, status and login filters,
+/// open profile, assign to a circle, archive / reinstate.
+class StudentManagementListScreen extends ConsumerStatefulWidget {
   const StudentManagementListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final studentRepo = ref.watch(studentRepositoryProvider);
-    final students = studentRepo.getStudentsByCenter(ref.read(centerIdProvider));
+  ConsumerState<StudentManagementListScreen> createState() =>
+      _StudentManagementListScreenState();
+}
+
+class _StudentManagementListScreenState
+    extends ConsumerState<StudentManagementListScreen> {
+  List<Student> _students = [];
+  String _query = '';
+  EnrollmentStatus? _status = EnrollmentStatus.active;
+  AccessFilter _access = AccessFilter.any;
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final list = await ref
+          .read(studentRepositoryProvider)
+          .getStudentsByCenter(ref.read(centerIdProvider));
+      if (!mounted) return;
+      setState(() {
+        _students = list;
+        _loading = false;
+        _error = null;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = 'تعذر تحميل الطلاب';
+      });
+    }
+  }
+
+  void _clearFilters() => setState(() {
+        _query = '';
+        _status = null;
+        _access = AccessFilter.any;
+      });
+
+  Future<void> _toggleArchive(Student s) async {
+    final archiving = s.enrollmentStatus == EnrollmentStatus.active;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          title: Text(archiving
+              ? 'أرشفة ${s.displayName}؟'
+              : 'إعادة تفعيل ${s.displayName}؟'),
+          content: Text(archiving
+              ? 'يُنقل الطالب إلى الأرشيف. يبقى سجله الكامل من حضور وتقييمات، '
+                  'ويمكنك إعادة تفعيله لاحقًا.'
+              : 'يعود الطالب إلى قائمة الطلاب المنتظمين.'),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('إلغاء')),
+            FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: Text(archiving ? 'أرشفة' : 'إعادة التفعيل')),
+          ],
+        ),
+      ),
+    );
+    if (ok != true) return;
+    try {
+      final actor = ref.read(actorProvider);
+      final repo = ref.read(studentRepositoryProvider);
+      if (archiving) {
+        await repo.archiveStudent(s.studentId,
+            actorId: actor.id, actorRole: actor.role);
+      } else {
+        await repo.reinstateStudent(s.studentId,
+            actorId: actor.id, actorRole: actor.role);
+      }
+      await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content:
+              Text(archiving ? 'تمت أرشفة الطالب' : 'تمت إعادة تفعيل الطالب'),
+          backgroundColor: DesignTokens.success));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('تعذر تنفيذ الإجراء. حاول مرة أخرى.'),
+          backgroundColor: DesignTokens.error));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final items = filterStudents(_students,
+        query: _query, status: _status, access: _access);
+    final filtering = _query.trim().isNotEmpty ||
+        _status != null ||
+        _access != AccessFilter.any;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -29,204 +165,222 @@ class StudentManagementListScreen extends ConsumerWidget {
           title: const Text('إدارة الطلاب'),
           centerTitle: false,
           actions: [
-            FilledButton(
-              onPressed: () {},
-              style: FilledButton.styleFrom(
-                backgroundColor: DesignTokens.primaryDarkGreen,
-                foregroundColor: Colors.white,
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.person_add, size: 20),
-                  SizedBox(width: 6),
-                  Text('إضافة طالب', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                ],
-              ),
+            FilledButton.icon(
+              onPressed: () => context.push('/director/students/add'),
+              icon: const Icon(Icons.person_add, size: 20),
+              label: const Text('إضافة طالب'),
             ),
+            const SizedBox(width: DesignTokens.space12),
           ],
         ),
-        body: FutureBuilder<List<Student>>(
-          future: students,
-          builder: (context, snap) {
-            if (snap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snap.hasError) {
-              return Center(child: Text('خطأ: ${snap.error}'));
-            }
-            final list = snap.data ?? [];
-            if (list.isEmpty) {
-              return _buildEmptyState(context);
-            }
-            return ListView.builder(
-              itemCount: list.length,
-              itemBuilder: (_, i) => _StudentCard(student: list[i]),
-            );
-          },
-        ),
+        body: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_error!),
+                        const SizedBox(height: DesignTokens.space12),
+                        OutlinedButton(
+                            onPressed: _load,
+                            child: const Text('إعادة المحاولة')),
+                      ],
+                    ),
+                  )
+                : _students.isEmpty
+                    ? _emptyNoStudents()
+                    : Column(
+                        children: [
+                          _filters(),
+                          Expanded(
+                            child: items.isEmpty
+                                ? _emptyNoMatches(filtering)
+                                : ListView.builder(
+                                    itemCount: items.length,
+                                    itemBuilder: (_, i) => _StudentCard(
+                                      student: items[i],
+                                      onOpen: () => context.push(
+                                          '/director/students/${items[i].studentId}'),
+                                      onAssign: () => context
+                                          .push('/director/enrollments/assign'),
+                                      onToggleArchive: () =>
+                                          _toggleArchive(items[i]),
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      ),
         bottomNavigationBar: const DirectorBottomNav(currentIndex: 1),
       ),
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
-    return Center(
+  Widget _filters() {
+    Widget statusChip(String label, EnrollmentStatus? value) => ChoiceChip(
+          label: Text(label),
+          selected: _status == value,
+          onSelected: (_) => setState(() => _status = value),
+        );
+    Widget accessChip(String label, AccessFilter value) => ChoiceChip(
+          label: Text(label),
+          selected: _access == value,
+          onSelected: (_) => setState(() => _access = value),
+        );
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(DesignTokens.space16,
+          DesignTokens.space12, DesignTokens.space16, DesignTokens.space4),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.people_outline, size: 64, color: DesignTokens.secondaryText),
-          const SizedBox(height: DesignTokens.space16),
-          Text(
-            'لا يوجد طلاب',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: DesignTokens.mainText,
+          TextField(
+            onChanged: (v) => setState(() => _query = v),
+            decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.search),
+              hintText: 'ابحث بالاسم أو رقم الطالب',
             ),
           ),
           const SizedBox(height: DesignTokens.space8),
-          Text(
-            'أضف طالبًا جديدًا لبدء إدارة السجل التعليمي.',
-            style: TextStyle(fontSize: 14, color: DesignTokens.secondaryText),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: DesignTokens.space24),
-          FilledButton(
-            onPressed: () {},
-            child: const Text('إضافة طالب'),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Wrap(
+              spacing: DesignTokens.space8,
+              children: [
+                statusChip('الكل', null),
+                statusChip('منتظم', EnrollmentStatus.active),
+                statusChip('مؤرشف', EnrollmentStatus.archived),
+                accessChip('أي دخول', AccessFilter.any),
+                accessChip('بدون دخول', AccessFilter.noLogin),
+                accessChip('لديه دخول', AccessFilter.hasLogin),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
+
+  Widget _emptyNoStudents() => Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.people_outline,
+                size: 64, color: DesignTokens.secondaryText),
+            const SizedBox(height: DesignTokens.space16),
+            const Text('لا يوجد طلاب',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            const SizedBox(height: DesignTokens.space8),
+            const Text('أضف طالبًا جديدًا لبدء إدارة السجل التعليمي.',
+                style: TextStyle(color: DesignTokens.secondaryText)),
+            const SizedBox(height: DesignTokens.space24),
+            FilledButton(
+              onPressed: () => context.push('/director/students/add'),
+              child: const Text('إضافة أول طالب'),
+            ),
+          ],
+        ),
+      );
+
+  Widget _emptyNoMatches(bool filtering) => Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('لا يوجد طلاب مطابقون',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            if (filtering)
+              TextButton(
+                onPressed: _clearFilters,
+                child: const Text('مسح البحث والفلاتر'),
+              ),
+          ],
+        ),
+      );
 }
 
 class _StudentCard extends StatelessWidget {
+  const _StudentCard({
+    required this.student,
+    required this.onOpen,
+    required this.onAssign,
+    required this.onToggleArchive,
+  });
+
   final Student student;
-  const _StudentCard({required this.student});
+  final VoidCallback onOpen;
+  final VoidCallback onAssign;
+  final VoidCallback onToggleArchive;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: DesignTokens.space20,
-        vertical: DesignTokens.space8,
-      ),
-      decoration: BoxDecoration(
+    final color = enrollmentStatusColor(student.enrollmentStatus);
+    final isActive = student.enrollmentStatus == EnrollmentStatus.active;
+    final isArchived = student.enrollmentStatus == EnrollmentStatus.archived;
+    // Material (not a colored DecoratedBox) so the tap ripple is visible.
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: DesignTokens.space20, vertical: DesignTokens.space8),
+      child: Material(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(DesignTokens.radiusMedium),
-        border: Border.all(color: DesignTokens.borders),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: DesignTokens.space16,
-          vertical: DesignTokens.space8,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DesignTokens.radiusMedium),
+          side: const BorderSide(color: DesignTokens.borders),
         ),
-        leading: CircleAvatar(
-          backgroundColor: DesignTokens.softMint,
-          child: Text(
-            student.fullName.isNotEmpty ? student.fullName[0] : 'ط',
-            style: const TextStyle(
-              color: DesignTokens.primaryDarkGreen,
-              fontWeight: FontWeight.bold,
+        child: ListTile(
+          onTap: onOpen,
+          contentPadding: const EdgeInsets.symmetric(
+              horizontal: DesignTokens.space16, vertical: DesignTokens.space8),
+          leading: CircleAvatar(
+            backgroundColor: DesignTokens.softMint,
+            child: Text(
+              student.fullName.isNotEmpty ? student.fullName[0] : 'ط',
+              style: const TextStyle(
+                  color: DesignTokens.primaryDarkGreen,
+                  fontWeight: FontWeight.bold),
             ),
           ),
-        ),
-        title: Text(
-          student.displayName,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: DesignTokens.mainText,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: DesignTokens.space4),
-            Row(
+          title: Text(student.displayName,
+              style:
+                  const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: DesignTokens.space4),
+            child: Wrap(
+              spacing: DesignTokens.space8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: DesignTokens.space8,
-                    vertical: DesignTokens.space4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _statusColor(student.enrollmentStatus).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(DesignTokens.radiusSmall),
-                    border: Border.all(color: _statusColor(student.enrollmentStatus)),
-                  ),
-                  child: Text(
-                    _statusLabel(student.enrollmentStatus),
+                // Status is conveyed by text, never by color alone.
+                Text(enrollmentStatusLabel(student.enrollmentStatus),
                     style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: _statusColor(student.enrollmentStatus),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: DesignTokens.space8),
-                Text(
-                  student.accountMode == AccountMode.loginEnabled
-                      ? 'دخول مفعّل'
-                      : 'بدون دخول',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: DesignTokens.secondaryText,
-                  ),
-                ),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: color)),
+                Text(accessLabel(student.accountMode),
+                    style: const TextStyle(
+                        fontSize: 12, color: DesignTokens.secondaryText)),
               ],
             ),
-          ],
-        ),
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) {},
-          itemBuilder: (_) => [
-            const PopupMenuItem(value: 'open', child: Text('فتح الملف الشخصي')),
-            const PopupMenuItem(value: 'edit', child: Text('تعديل')),
-            const PopupMenuItem(value: 'assign_circle', child: Text('تعيين حلقة')),
-            const PopupMenuItem(value: 'change_teacher', child: Text('تغيير المعلم')),
-            const PopupMenuItem(value: 'access', child: Text('إدارة الدخول')),
-            const PopupMenuItem(value: 'archive', child: Text('أرشفة')),
-          ],
+          ),
+          trailing: PopupMenuButton<String>(
+            tooltip: 'خيارات',
+            onSelected: (v) {
+              if (v == 'open') onOpen();
+              if (v == 'assign') onAssign();
+              if (v == 'toggle') onToggleArchive();
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(
+                  value: 'open', child: Text('فتح الملف الشخصي')),
+              if (isActive)
+                const PopupMenuItem(
+                    value: 'assign', child: Text('تعيين لحلقة')),
+              if (isActive)
+                const PopupMenuItem(value: 'toggle', child: Text('أرشفة')),
+              if (isArchived)
+                const PopupMenuItem(
+                    value: 'toggle', child: Text('إعادة تفعيل')),
+            ],
+          ),
         ),
       ),
     );
-  }
-
-  Color _statusColor(EnrollmentStatus s) {
-    switch (s) {
-      case EnrollmentStatus.active:
-        return DesignTokens.success;
-      case EnrollmentStatus.archived:
-      case EnrollmentStatus.withdrawn:
-        return DesignTokens.error;
-      case EnrollmentStatus.completed:
-      case EnrollmentStatus.transferred:
-        return DesignTokens.secondaryText;
-    }
-  }
-
-  String _statusLabel(EnrollmentStatus s) {
-    switch (s) {
-      case EnrollmentStatus.active:
-        return 'منتظم';
-      case EnrollmentStatus.archived:
-        return 'مؤرشف';
-      case EnrollmentStatus.withdrawn:
-        return 'منسحب';
-      case EnrollmentStatus.completed:
-        return 'مكتمل';
-      case EnrollmentStatus.transferred:
-        return 'منقول';
-    }
   }
 }

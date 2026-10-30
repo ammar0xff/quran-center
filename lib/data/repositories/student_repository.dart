@@ -15,8 +15,23 @@ abstract class StudentRepository {
   /// Update a student profile.
   Future<void> updateStudent(Student student);
 
-  /// Archive (soft-delete) a student — history is preserved.
-  Future<void> archiveStudent(String studentId, {required String actorId, String? reason});
+  /// Archives a student. Nothing is deleted: attendance, assessments and
+  /// enrolment history stay. The status change and its audit entry are written
+  /// atomically. Throws [StateError] if the student does not exist.
+  Future<void> archiveStudent(
+    String studentId, {
+    required String actorId,
+    required String actorRole,
+    String? reason,
+  });
+
+  /// Reverses [archiveStudent] (status back to active), audited the same way.
+  Future<void> reinstateStudent(
+    String studentId, {
+    required String actorId,
+    required String actorRole,
+    String? reason,
+  });
 
   /// Stream of students in a center, optionally filtered by enrollment status.
   Stream<List<Student>> watchStudentsByCenter(

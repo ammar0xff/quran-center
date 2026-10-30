@@ -44,14 +44,69 @@ class StudentRepositoryImpl implements StudentRepository {
   Future<void> archiveStudent(
     String studentId, {
     required String actorId,
+    required String actorRole,
+    String? reason,
+  }) =>
+      _changeEnrollmentStatus(
+        studentId,
+        to: EnrollmentStatus.archived,
+        action: 'archive_student',
+        actorId: actorId,
+        actorRole: actorRole,
+        reason: reason,
+      );
+
+  @override
+  Future<void> reinstateStudent(
+    String studentId, {
+    required String actorId,
+    required String actorRole,
+    String? reason,
+  }) =>
+      _changeEnrollmentStatus(
+        studentId,
+        to: EnrollmentStatus.active,
+        action: 'reinstate_student',
+        actorId: actorId,
+        actorRole: actorRole,
+        reason: reason,
+      );
+
+  /// Changes only the status (existing admin notes are left alone) and writes
+  /// the audit entry in the same atomic batch.
+  Future<void> _changeEnrollmentStatus(
+    String studentId, {
+    required EnrollmentStatus to,
+    required String action,
+    required String actorId,
+    required String actorRole,
     String? reason,
   }) async {
-    await _ds.updateDoc('$_collectionPath/$studentId', {
-      'enrollmentStatus': EnrollmentStatus.archived.toJson(),
-      'updatedBy': actorId,
-      'updatedAt': firestoreConverter.serverTimestamp(),
-      if (reason != null) 'adminNotes': reason,
-    });
+    final path = '$_collectionPath/$studentId';
+    final current = await _ds.getDoc(path);
+    if (current == null) throw StateError('Student not found: $studentId');
+
+    final now = DateTime.now();
+    final trimmed = reason?.trim();
+    await _ds.commitBatch([
+      BatchOp.update(path, {
+        'enrollmentStatus': to.toJson(),
+        'updatedBy': actorId,
+        'updatedAt': firestoreConverter.serverTimestamp(),
+      }),
+      BatchOp.set('audit_logs/aud_${now.microsecondsSinceEpoch}_$studentId', {
+        'centerId': current['centerId'],
+        'actorUserId': actorId,
+        'actorRole': actorRole,
+        'action': action,
+        'entityType': 'student',
+        'entityId': studentId,
+        'previousValue': {'enrollmentStatus': current['enrollmentStatus']},
+        'newValue': {'enrollmentStatus': to.toJson()},
+        if (trimmed != null && trimmed.isNotEmpty) 'reason': trimmed,
+        'createdAt': now.millisecondsSinceEpoch,
+      }),
+    ]);
   }
 
   @override
