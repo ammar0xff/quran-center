@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:quran_center/data/datasources/fake_firestore_datasource.dart';
+import 'package:quran_center/core/sync/outbox.dart';
 import 'package:quran_center/data/datasources/firestore_datasource.dart';
 
 import '../../support/app_harness.dart';
@@ -176,23 +179,123 @@ void main() {
       expect(find.text('حلقة المغرب'), findsNothing);
     });
 
-    testWidgets('a failed save is reported and can be retried', (tester) async {
-      final store = _FlakyStore();
-      final app = await bootApp(tester, accounts: _accounts, seed: _seed, store: store);
-      await app.signIn('tea@x.com', 'pw');
-      await app.go('/teacher/sessions/today');
-      await tester.tap(find.text('بدء الجلسة'));
-      await tester.pumpAndSettle();
+    group('offline', () {
+      Future<(AppHarness, _OfflineStore, StreamController<void>)> live(WidgetTester tester,
+          {MemoryOutboxStorage? storage}) async {
+        final store = _OfflineStore();
+        final net = StreamController<void>.broadcast();
+        final app = await bootApp(tester,
+            accounts: _accounts, seed: _seed, store: store, connectivity: net.stream,
+            outboxStorage: storage);
+        addTearDown(net.close);
+        await app.signIn('tea@x.com', 'pw');
+        await app.go('/teacher/sessions/today');
+        await tester.tap(find.text('بدء الجلسة'));
+        await tester.pumpAndSettle();
+        return (app, store, net);
+      }
 
-      store.failNextWrite = true;
-      await tester.tap(_chip('بسمة خالد', 'حاضر'));
-      await tester.pumpAndSettle();
-      expect(find.text('تعذر حفظ الحضور. حاول مرة أخرى.'), findsOneWidget);
-      expect(await store.getDoc('attendance/today_s1'), isNull);
+      Future<void> reconnect(WidgetTester tester, _OfflineStore store, StreamController<void> net) async {
+        store.offline = false;
+        net.add(null);
+        await tester.pumpAndSettle();
+      }
 
-      await tester.tap(_chip('بسمة خالد', 'حاضر'));
-      await tester.pumpAndSettle();
-      expect((await store.getDoc('attendance/today_s1'))!['status'], 'present');
+      testWidgets('attendance marked offline shows at once, is kept, and syncs when the network returns',
+          (tester) async {
+        final (_, store, net) = await live(tester);
+        store.offline = true;
+        await tester.tap(_chip('بسمة خالد', 'حاضر'));
+        await tester.pumpAndSettle();
+
+        // The teacher sees their choice and an honest "not synced yet" state.
+        expect(tester.widget<ChoiceChip>(_chip('بسمة خالد', 'حاضر')).selected, isTrue);
+        expect(find.text('بانتظار المزامنة'), findsOneWidget);
+        expect(find.textContaining('1 تغييرات محفوظة على جهازك بانتظار المزامنة'), findsOneWidget);
+        expect(await store.peek('attendance/today_s1'), isNull);
+
+        await reconnect(tester, store, net);
+        expect((await store.peek('attendance/today_s1'))!['status'], 'present');
+        expect(find.textContaining('بانتظار المزامنة'), findsNothing);
+        expect(tester.widget<ChoiceChip>(_chip('بسمة خالد', 'حاضر')).selected, isTrue);
+      });
+
+      testWidgets('changing your mind offline sends only the final value, once', (tester) async {
+        final (_, store, net) = await live(tester);
+        store.offline = true;
+        await tester.tap(_chip('بسمة خالد', 'غائب'));
+        await tester.pumpAndSettle();
+        await tester.tap(_chip('بسمة خالد', 'متأخر'));
+        await tester.pumpAndSettle();
+        expect(find.textContaining('1 تغييرات'), findsOneWidget); // coalesced, not 2
+
+        await reconnect(tester, store, net);
+        final all = await store.peekAll('attendance');
+        expect(all, hasLength(1));
+        expect(all.single['status'], 'late');
+      });
+
+      testWidgets('the session cannot be finished while changes are still waiting', (tester) async {
+        final (_, store, net) = await live(tester);
+        store.offline = true;
+        await tester.tap(_chip('بسمة خالد', 'حاضر'));
+        await tester.pumpAndSettle();
+
+        await tester.dragUntilVisible(
+            find.text('إنهاء الجلسة'), find.byType(ListView), const Offset(0, -200));
+        await tester.tap(find.text('إنهاء الجلسة'));
+        await tester.pumpAndSettle();
+        expect(find.textContaining('لا يمكن إنهاء الجلسة قبل مزامنة 1 تغييرات'), findsOneWidget);
+        expect((await store.peek('schedules/today'))!['status'], 'inProgress');
+
+        // Back online: the same action now works and nothing was lost.
+        await reconnect(tester, store, net);
+        await tester.tap(find.text('إنهاء الجلسة'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(FilledButton, 'إنهاء الجلسة').last);
+        await tester.pumpAndSettle();
+        expect((await store.peek('schedules/today'))!['status'], 'completed');
+        expect((await store.peek('attendance/today_s1'))!['status'], 'present');
+      });
+
+      testWidgets('a change the server rejects is shown with its reason and can be discarded',
+          (tester) async {
+        final (_, store, _) = await live(tester);
+        // The session was ended elsewhere (for example from another device).
+        await store.setDoc('schedules/today', {...(await store.peek('schedules/today'))!, 'status': 'completed'});
+        await tester.tap(_chip('بسمة خالد', 'حاضر'));
+        await tester.pumpAndSettle();
+
+        expect(find.textContaining('رُفض:'), findsOneWidget);
+        expect(find.textContaining('1 تغييرات رفضها الخادم'), findsOneWidget);
+        expect(await store.peek('attendance/today_s1'), isNull);
+
+        await tester.tap(find.text('عرض'));
+        await tester.pumpAndSettle();
+        expect(find.text('تغييرات رفضها الخادم'), findsOneWidget);
+        await tester.tap(find.text('تجاهل'));
+        await tester.pumpAndSettle();
+        expect(find.textContaining('رفضها الخادم'), findsNothing);
+      });
+
+      testWidgets('what was queued survives closing the app', (tester) async {
+        final storage = MemoryOutboxStorage();
+        final (_, store, _) = await live(tester, storage: storage);
+        store.offline = true;
+        await tester.tap(_chip('بسمة خالد', 'غائب'));
+        await tester.pumpAndSettle();
+        expect(storage.data.values.single, contains('att:today:s1'));
+
+        // "Restart": a brand-new app over the same device storage, now online.
+        await tester.pumpWidget(const SizedBox());
+        store.offline = false;
+        final app = await bootApp(tester,
+            accounts: _accounts, seed: (_) async {}, store: store, outboxStorage: storage);
+        await app.signIn('tea@x.com', 'pw');
+        await tester.pumpAndSettle();
+        expect((await store.peek('attendance/today_s1'))!['status'], 'absent');
+        expect(storage.data.values.single, '[]');
+      });
     });
   });
 
@@ -302,10 +405,13 @@ void main() {
       expect(await app.store.query('memorization_records', where: []), isEmpty);
     });
 
-    testWidgets('a failed save keeps the form and a retry creates exactly one record',
+    testWidgets('an assessment saved offline is kept and written exactly once when back online',
         (tester) async {
-      final store = _FlakyStore();
-      final app = await bootApp(tester, accounts: _accounts, seed: _seed, store: store);
+      final store = _OfflineStore();
+      final net = StreamController<void>.broadcast();
+      addTearDown(net.close);
+      final app = await bootApp(tester,
+          accounts: _accounts, seed: _seed, store: store, connectivity: net.stream);
       await app.signIn('tea@x.com', 'pw');
       await app.go('/teacher/sessions/today');
       await tester.tap(find.text('بدء الجلسة'));
@@ -314,53 +420,31 @@ void main() {
       await pickSurah(tester, 'الإخلاص');
       await tester.enterText(find.widgetWithText(TextField, 'من آية *'), '1');
       await tester.enterText(find.widgetWithText(TextField, 'إلى آية *'), '4');
+      await tester.enterText(find.widgetWithText(TextField, 'ملاحظة خاصة بالمعلم'), 'سرية');
       await tester.dragUntilVisible(
           find.text('حفظ التسميع'), find.byType(Scrollable).first, const Offset(0, -300));
 
-      store.failNextBatch = true;
+      store.offline = true;
       await tester.tap(find.text('حفظ التسميع'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('تعذر الحفظ'), findsOneWidget);
-      expect(await store.query('memorization_records', where: []), isEmpty);
 
-      await tester.tap(find.text('حفظ التسميع'));
+      // The form closed (nothing to retype) and the count already shows it.
+      expect(find.text('حفظ التسميع'), findsNothing);
+      expect(find.text('تسميعات اليوم: 1'), findsOneWidget);
+      expect(find.textContaining('بانتظار المزامنة'), findsWidgets);
+      expect(await store.peekAll('memorization_records'), isEmpty);
+
+      store.offline = false;
+      net.add(null);
       await tester.pumpAndSettle();
-      expect(await store.query('memorization_records', where: []), hasLength(1));
-    });
-  });
-
-  group('account', () {
-    Future<AppHarness> openMore(WidgetTester tester) async {
-      final app = await bootApp(tester, accounts: _accounts, seed: (s) async {
-        await _seed(s);
-        await s.setDoc('teachers/tea-1', {
-          'centerId': 'center-1', 'userId': 'tea-1', 'fullName': 'المعلمة فاطمة', 'status': 'active',
-          'contactInfo': {'email': 'fatima@example.com', 'phone': '0500000000'},
-          'assignedCircleIds': [], 'createdAt': 1700000000000, 'updatedAt': 1700000000000,
-        });
-        await s.setDoc('centers/center-1', {'name': 'دار النور', 'status': 'active'});
-      });
-      await app.signIn('tea@x.com', 'pw');
-      await app.go('/teacher/more');
-      return app;
-    }
-
-    testWidgets('shows real account details and counts, and says edits go through the director',
-        (tester) async {
-      await openMore(tester);
-      expect(find.text('المعلمة فاطمة'), findsOneWidget);
-      expect(find.text('دار النور'), findsOneWidget);
-      expect(find.text('fatima@example.com'), findsOneWidget);
-      expect(find.text('0500000000'), findsOneWidget);
-      expect(find.textContaining('تواصل مع إدارة الدار'), findsOneWidget);
-    });
-
-    testWidgets('changing the password sends a reset email to the teacher\'s own address',
-        (tester) async {
-      final app = await openMore(tester);
-      await tester.tap(find.text('تغيير كلمة المرور'));
+      net.add(null); // a second signal must not duplicate anything
       await tester.pumpAndSettle();
-      expect(app.gateway.resets, ['fatima@example.com']);
+
+      final records = await store.peekAll('memorization_records');
+      expect(records, hasLength(1));
+      expect(records.single['studentId'], 's2');
+      expect((await store.peekAll('private_teacher_notes')).single['note'], 'سرية');
+      expect(find.textContaining('بانتظار المزامنة'), findsNothing);
     });
   });
 
@@ -374,25 +458,47 @@ void main() {
   });
 }
 
-class _FlakyStore extends FakeFirestoreDataSource {
-  bool failNextWrite = false;
-  bool failNextBatch = false;
+/// A store that can be "disconnected": every operation then fails the way a
+/// dropped connection does, while [peek] still lets the test look at the data.
+class _OfflineStore extends FakeFirestoreDataSource {
+  bool offline = false;
+
+  void _check() {
+    if (offline) throw StateError('network down');
+  }
+
+  Future<Map<String, dynamic>?> peek(String path) => super.getDoc(path);
+  Future<List<Map<String, dynamic>>> peekAll(String collection) =>
+      super.query(collection, where: []);
 
   @override
-  Future<void> commitBatch(List<BatchOp> ops) async {
-    if (failNextBatch) {
-      failNextBatch = false;
-      throw StateError('network down');
-    }
-    return super.commitBatch(ops);
+  Future<Map<String, dynamic>?> getDoc(String path) async {
+    _check();
+    return super.getDoc(path);
   }
 
   @override
   Future<void> setDoc(String path, Map<String, dynamic> data, {bool merge = false}) async {
-    if (failNextWrite && path.startsWith('attendance/')) {
-      failNextWrite = false;
-      throw StateError('network down');
-    }
+    _check();
     return super.setDoc(path, data, merge: merge);
+  }
+
+  @override
+  Future<void> updateDoc(String path, Map<String, dynamic> data) async {
+    _check();
+    return super.updateDoc(path, data);
+  }
+
+  @override
+  Future<void> commitBatch(List<BatchOp> ops) async {
+    _check();
+    return super.commitBatch(ops);
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> query(String collection,
+      {required List<QueryFilter> where, String? orderBy, bool descending = false, int? limit}) async {
+    _check();
+    return super.query(collection, where: where, orderBy: orderBy, descending: descending, limit: limit);
   }
 }

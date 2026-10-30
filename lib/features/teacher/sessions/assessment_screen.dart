@@ -7,7 +7,7 @@ import 'package:quran_center/core/quran/surahs.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/core/utils/assessment_validation.dart';
 import 'package:quran_center/data/models/enums.dart';
-import 'package:quran_center/data/providers/repositories.dart';
+import 'package:quran_center/data/providers/sync_providers.dart';
 import 'package:quran_center/data/services/teacher_session_service.dart';
 
 String assessmentTypeLabel(AssessmentType t) {
@@ -109,7 +109,10 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen> {
 
     setState(() => _saving = true);
     try {
-      await ref.read(teacherSessionServiceProvider).saveAssessment(
+      // Saved on the device first and sent in the background: nothing the
+      // teacher typed is lost if the connection drops.
+      await ref.read(sessionWorkProvider).saveAssessment(
+            label: widget.studentName,
             centerId: ref.read(centerIdProvider),
             teacherId: ref.read(actorProvider).id,
             sessionId: widget.sessionId,
@@ -145,18 +148,11 @@ class _AssessmentScreenState extends ConsumerState<AssessmentScreen> {
         ..showSnackBar(const SnackBar(
             content: Text('تم حفظ التسميع'), backgroundColor: DesignTokens.success));
       context.pop(true);
-    } on SessionException catch (e) {
-      if (mounted) {
-        setState(() {
-          _saving = false;
-          _saveError = e.message;
-        });
-      }
     } catch (_) {
       if (mounted) {
         setState(() {
           _saving = false;
-          _saveError = 'تعذر الحفظ. بياناتك ما زالت في النموذج، حاول مرة أخرى.';
+          _saveError = 'تعذر الحفظ على الجهاز. بياناتك ما زالت في النموذج، حاول مرة أخرى.';
         });
       }
     }

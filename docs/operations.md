@@ -35,3 +35,23 @@ and a center id that already exists.
 ## Still needed before real use
 * `flutterfire configure` (the checked-in `firebase_options.dart` is a placeholder).
 * Deploy rules and functions; enable App Check; set budget alerts.
+
+## Working without a connection (teachers)
+
+Attendance and assessments recorded in a session are saved on the device first
+(a per-user durable queue, `core/sync/outbox.dart`) and sent in the background:
+
+* the teacher sees their choice immediately, marked "بانتظار المزامنة";
+* the queue survives closing the app and is sent when the app starts and
+  whenever the connection changes, oldest first;
+* changing your mind about a student sends only the final value; sends are
+  idempotent (deterministic document ids), so a repeat never duplicates;
+* a change the server refuses (for example the session was ended elsewhere) is
+  shown with the reason and can be retried or discarded, never silently lost;
+* a session cannot be finished while its changes are still waiting, because the
+  server would refuse attendance after completion.
+
+Not available offline: starting or finishing a session, and opening a session
+whose roster was never loaded on this device. The queue is checked with unit
+tests (12) and end-to-end widget tests; it has not been exercised on a real
+device or with a real network drop.

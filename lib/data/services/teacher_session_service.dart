@@ -57,6 +57,48 @@ class AssessmentDraft {
   final String? privateNote;
   final String? recommendedNextAssignment;
   final DateTime? suggestedNextReviewDate;
+
+  Map<String, dynamic> toJson() => {
+        'type': type.toJson(),
+        'surah': surah,
+        'startAyah': startAyah,
+        'endAyah': endAyah,
+        'scores': scores,
+        'mistakesCount': mistakesCount,
+        'mistakeCategory': mistakeCategory,
+        'mistakeReference': mistakeReference,
+        'teacherCorrection': teacherCorrection,
+        'requiresFollowUp': requiresFollowUp,
+        'strengths': strengths,
+        'areasForImprovement': areasForImprovement,
+        'studentVisibleFeedback': studentVisibleFeedback,
+        'privateNote': privateNote,
+        'recommendedNextAssignment': recommendedNextAssignment,
+        'suggestedNextReviewDate': suggestedNextReviewDate?.millisecondsSinceEpoch,
+      };
+
+  factory AssessmentDraft.fromJson(Map<String, dynamic> j) => AssessmentDraft(
+        type: AssessmentTypeJson.fromJson(j['type'] as String?),
+        surah: j['surah'] as int,
+        startAyah: j['startAyah'] as int,
+        endAyah: j['endAyah'] as int,
+        scores: {
+          for (final e in (j['scores'] as Map? ?? const {}).entries) e.key as String: e.value as int
+        },
+        mistakesCount: (j['mistakesCount'] as int?) ?? 0,
+        mistakeCategory: j['mistakeCategory'] as String?,
+        mistakeReference: j['mistakeReference'] as String?,
+        teacherCorrection: j['teacherCorrection'] as String?,
+        requiresFollowUp: (j['requiresFollowUp'] as bool?) ?? false,
+        strengths: j['strengths'] as String?,
+        areasForImprovement: j['areasForImprovement'] as String?,
+        studentVisibleFeedback: j['studentVisibleFeedback'] as String?,
+        privateNote: j['privateNote'] as String?,
+        recommendedNextAssignment: j['recommendedNextAssignment'] as String?,
+        suggestedNextReviewDate: j['suggestedNextReviewDate'] == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(j['suggestedNextReviewDate'] as int),
+      );
 }
 
 class SessionRoster {

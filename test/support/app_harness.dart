@@ -9,7 +9,9 @@ import 'package:quran_center/app/router.dart';
 import 'package:quran_center/core/auth/auth_gateway.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/data/datasources/fake_firestore_datasource.dart';
+import 'package:quran_center/core/sync/outbox.dart';
 import 'package:quran_center/data/providers/repositories.dart';
+import 'package:quran_center/data/providers/sync_providers.dart';
 import 'package:quran_center/data/repositories/user_repository.dart';
 import 'package:quran_center/data/services/account_access_service.dart';
 
@@ -115,6 +117,8 @@ Future<AppHarness> bootApp(
   UserRepository? usersOverride,
   AccountAccessService? accessService,
   FakeFirestoreDataSource? store,
+  OutboxStorage? outboxStorage,
+  Stream<void>? connectivity,
 }) async {
   final db = store ?? FakeFirestoreDataSource();
   if (seed != null) await seed(db);
@@ -128,6 +132,8 @@ Future<AppHarness> bootApp(
     overrides: [
       authGatewayProvider.overrideWithValue(gateway),
       firestoreDataSourceProvider.overrideWithValue(db),
+      outboxStorageProvider.overrideWithValue(outboxStorage ?? MemoryOutboxStorage()),
+      connectivityEventsProvider.overrideWithValue(connectivity ?? const Stream.empty()),
       if (usersOverride != null) userRepositoryProvider.overrideWithValue(usersOverride),
       if (accessService != null) accountAccessServiceProvider.overrideWithValue(accessService),
     ],

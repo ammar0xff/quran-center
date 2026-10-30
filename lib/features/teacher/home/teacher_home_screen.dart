@@ -10,6 +10,7 @@ import 'package:quran_center/design_system/components/kpi_card.dart';
 import 'package:quran_center/features/director/circles/circle_detail_data.dart'
     show circleModeLabel;
 import 'package:quran_center/features/teacher/home/teacher_home_data.dart';
+import 'package:quran_center/features/teacher/widgets/sync_status_bar.dart';
 import 'package:quran_center/features/teacher/widgets/teacher_bottom_nav.dart';
 
 /// Teacher home: today's sessions and a summary of the teacher's own work.
@@ -42,7 +43,9 @@ class TeacherHomeScreen extends ConsumerWidget {
                 Text(DateFormat.yMMMMEEEEd('ar').format(DateTime.now()),
                     style: const TextStyle(
                         fontSize: 14, color: DesignTokens.secondaryText)),
-                const SizedBox(height: DesignTokens.space24),
+                const SizedBox(height: DesignTokens.space16),
+                const SyncStatusBar(),
+                const SizedBox(height: DesignTokens.space8),
                 async.when(
                   loading: () => const Padding(
                     padding: EdgeInsets.all(DesignTokens.space40),

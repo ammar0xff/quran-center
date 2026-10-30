@@ -5,6 +5,10 @@ import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/data/providers/repositories.dart';
+import 'package:quran_center/data/providers/sync_providers.dart';
+import 'package:quran_center/core/sync/outbox.dart';
+import 'package:quran_center/data/services/session_work.dart';
+import 'package:quran_center/features/teacher/widgets/sync_status_bar.dart';
 import 'package:quran_center/data/services/teacher_session_service.dart';
 import 'package:quran_center/features/director/attendance/attendance_administration_screen.dart'
     show attendanceStatusLabel;
@@ -29,7 +33,6 @@ class _TeacherSessionScreenState extends ConsumerState<TeacherSessionScreen> {
   bool _loading = true;
   String? _loadError;
   bool _busy = false;
-  final Set<String> _saving = {};
 
   String get _centerId => ref.read(centerIdProvider);
   String get _teacherId => ref.read(actorProvider).id;
@@ -103,7 +106,27 @@ class _TeacherSessionScreenState extends ConsumerState<TeacherSessionScreen> {
       );
 
   Future<void> _complete() async {
-    final missing = _roster?.missing.length ?? 0;
+    // Attendance still waiting to be sent would be refused once the session
+    // is completed, so finishing waits until everything has reached the server.
+    final work = ref.read(sessionWorkProvider);
+    setState(() => _busy = true);
+    try {
+      await work.outbox.flush();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+    final waiting = work.unsyncedCount(widget.sessionId);
+    if (waiting > 0) {
+      if (mounted) {
+        _toast(
+            'لا يمكن إنهاء الجلسة قبل مزامنة $waiting تغييرات. تأكد من الاتصال أو راجع التغييرات المرفوضة.',
+            error: true);
+      }
+      return;
+    }
+    await _load();
+    if (!mounted) return;
+    final missing = _roster?.missing.length ?? 0; // everything pending was sent above
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => Directionality(
@@ -133,29 +156,31 @@ class _TeacherSessionScreenState extends ConsumerState<TeacherSessionScreen> {
     );
   }
 
-  Future<void> _mark(String studentId, AttendanceStatus status) async {
-    if (_saving.contains(studentId)) return;
-    setState(() => _saving.add(studentId));
+  /// Saved on the device at once and sent in the background, so a dropped
+  /// connection never loses it or makes the teacher wait.
+  Future<void> _mark(String studentId, String name, AttendanceStatus status) async {
     try {
-      await ref.read(teacherSessionServiceProvider).record(
+      await ref.read(sessionWorkProvider).markAttendance(
             centerId: _centerId,
             teacherId: _teacherId,
             sessionId: widget.sessionId,
             studentId: studentId,
+            label: name,
             status: status,
           );
-      await _load();
-    } on SessionException catch (e) {
-      if (mounted) _toast(e.message, error: true);
     } catch (_) {
-      if (mounted) _toast('تعذر حفظ الحضور. حاول مرة أخرى.', error: true);
-    } finally {
-      if (mounted) setState(() => _saving.remove(studentId));
+      if (mounted) _toast('تعذر حفظ الحضور على الجهاز. حاول مرة أخرى.', error: true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(outboxSnapshotProvider); // rebuild as changes are sent or rejected
+    ref.listen<AsyncValue<OutboxSnapshot>>(outboxSnapshotProvider, (prev, next) {
+      final before = prev?.valueOrNull?.inScope(widget.sessionId).length ?? 0;
+      final after = next.valueOrNull?.inScope(widget.sessionId).length ?? 0;
+      if (after < before) _load(); // something was sent: refresh the server's view
+    });
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -199,7 +224,16 @@ class _TeacherSessionScreenState extends ConsumerState<TeacherSessionScreen> {
     final s = r.session;
     final live = s.status == SessionStatus.inProgress;
     final scheduled = s.status == SessionStatus.scheduled;
-    final recorded = r.records.length;
+    final work = ref.read(sessionWorkProvider);
+    final pending = work.pendingAttendance(widget.sessionId);
+    final pendingAssessments = <String, int>{};
+    for (final o in work.outbox.snapshot.inScope(widget.sessionId)) {
+      if (o.type == SessionWork.assessmentType) {
+        final id = o.payload['studentId'] as String;
+        pendingAssessments[id] = (pendingAssessments[id] ?? 0) + 1;
+      }
+    }
+    final recorded = {...r.records.keys, ...pending.keys}.length;
 
     return ListView(
       padding: const EdgeInsets.all(DesignTokens.space20),
@@ -209,6 +243,7 @@ class _TeacherSessionScreenState extends ConsumerState<TeacherSessionScreen> {
         const SizedBox(height: DesignTokens.space4),
         Text('${s.startTime}–${s.endTime} • ${sessionStatusLabel(s.status)}',
             style: const TextStyle(color: DesignTokens.secondaryText)),
+        SyncStatusBar(scope: widget.sessionId),
         const SizedBox(height: DesignTokens.space16),
         if (scheduled)
           FilledButton.icon(
@@ -234,11 +269,20 @@ class _TeacherSessionScreenState extends ConsumerState<TeacherSessionScreen> {
             _StudentRow(
               key: ValueKey(st.studentId),
               name: st.displayName,
-              current: r.records[st.studentId]?.status,
+              current: pending[st.studentId] != null
+                  ? AttendanceStatusJson.fromJson(pending[st.studentId]!.payload['status'] as String?)
+                  : r.records[st.studentId]?.status,
               editable: live,
-              saving: _saving.contains(st.studentId),
-              assessments: r.assessmentCounts[st.studentId] ?? 0,
-              onPick: (status) => _mark(st.studentId, status),
+              saving: false,
+              syncNote: pending[st.studentId] == null
+                  ? null
+                  : (pending[st.studentId]!.failed
+                      ? 'رُفض: ${pending[st.studentId]!.error}'
+                      : 'بانتظار المزامنة'),
+              syncFailed: pending[st.studentId]?.failed ?? false,
+              assessments: (r.assessmentCounts[st.studentId] ?? 0) +
+                  (pendingAssessments[st.studentId] ?? 0),
+              onPick: (status) => _mark(st.studentId, st.displayName, status),
               onAssess: live
                   ? () async {
                       final saved = await context.push<bool>(
@@ -268,6 +312,8 @@ class _StudentRow extends StatelessWidget {
     required this.current,
     required this.editable,
     required this.saving,
+    required this.syncNote,
+    required this.syncFailed,
     required this.assessments,
     required this.onPick,
     required this.onAssess,
@@ -277,6 +323,8 @@ class _StudentRow extends StatelessWidget {
   final AttendanceStatus? current;
   final bool editable;
   final bool saving;
+  final String? syncNote;
+  final bool syncFailed;
   final int assessments;
   final ValueChanged<AttendanceStatus> onPick;
   final VoidCallback? onAssess;
@@ -300,6 +348,11 @@ class _StudentRow extends StatelessWidget {
                       height: 16,
                       width: 16,
                       child: CircularProgressIndicator(strokeWidth: 2))
+                else if (syncNote != null)
+                  Text(syncNote!,
+                      style: TextStyle(
+                          color: syncFailed ? DesignTokens.error : DesignTokens.warning,
+                          fontSize: 12))
                 else if (current == null)
                   const Text('لم يُسجَّل',
                       style: TextStyle(color: DesignTokens.warning, fontSize: 12)),
