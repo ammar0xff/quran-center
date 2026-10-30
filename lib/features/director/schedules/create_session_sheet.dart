@@ -19,12 +19,14 @@ class PickerOption {
 class CreateSessionSheet extends StatefulWidget {
   const CreateSessionSheet({
     super.key,
+    required this.centerId,
     required this.circles,
     required this.teachers,
     required this.existing,
     required this.onSave,
   });
 
+  final String centerId;
   final List<PickerOption> circles;
   final List<PickerOption> teachers;
   final List<Schedule> existing;
@@ -61,7 +63,7 @@ class _CreateSessionSheetState extends State<CreateSessionSheet> {
     final now = DateTime.now();
     final candidate = Schedule(
       scheduleId: 'sch_${now.millisecondsSinceEpoch}',
-      centerId: 'center-1',
+      centerId: widget.centerId,
       circleId: _circleId!,
       teacherId: _teacherId!,
       date: DateTime(_date.year, _date.month, _date.day),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/data/datasources/fake_firestore_datasource.dart';
 import 'package:quran_center/data/providers/repositories.dart';
 import 'package:quran_center/data/repositories/impl/circle_repository_impl.dart';
@@ -44,6 +45,7 @@ Future<void> _seed(FakeFirestoreDataSource fake) async {
 
 Widget _app(FakeFirestoreDataSource fake) => ProviderScope(
       overrides: [
+        centerIdProvider.overrideWithValue('center-1'),
         scheduleRepositoryProvider
             .overrideWithValue(ScheduleRepositoryImpl(fake)),
         circleRepositoryProvider.overrideWithValue(CircleRepositoryImpl(fake)),

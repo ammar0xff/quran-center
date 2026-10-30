@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/data/models/app_model.dart';
 import 'package:quran_center/data/models/enums.dart';
@@ -75,11 +76,11 @@ class _ScheduleManagementScreenState
   Future<void> _load() async {
     try {
       final schedules =
-          await ref.read(scheduleRepositoryProvider).getSchedulesByCenter('center-1');
+          await ref.read(scheduleRepositoryProvider).getSchedulesByCenter(ref.read(centerIdProvider));
       final circles =
-          await ref.read(circleRepositoryProvider).getCirclesByCenter('center-1');
+          await ref.read(circleRepositoryProvider).getCirclesByCenter(ref.read(centerIdProvider));
       final teachers =
-          await ref.read(teacherRepositoryProvider).getTeachersByCenter('center-1');
+          await ref.read(teacherRepositoryProvider).getTeachersByCenter(ref.read(centerIdProvider));
       if (!mounted) return;
       setState(() {
         _schedules = schedules;
@@ -127,6 +128,7 @@ class _ScheduleManagementScreenState
       context: context,
       isScrollControlled: true,
       builder: (_) => CreateSessionSheet(
+        centerId: ref.read(centerIdProvider),
         circles: _circleNames.entries
             .map((e) => PickerOption(e.key, e.value))
             .toList(),

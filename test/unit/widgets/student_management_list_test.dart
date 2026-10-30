@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/data/datasources/fake_firestore_datasource.dart';
 import 'package:quran_center/data/providers/repositories.dart';
 import 'package:quran_center/data/repositories/impl/student_repository_impl.dart';
@@ -24,6 +25,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+        centerIdProvider.overrideWithValue('center-1'),
             studentRepositoryProvider.overrideWithValue(
               StudentRepositoryImpl(fake),
             ),
@@ -47,6 +49,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+        centerIdProvider.overrideWithValue('center-1'),
             studentRepositoryProvider.overrideWithValue(
               StudentRepositoryImpl(fake),
             ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/data/models/circle.dart';
 import 'package:quran_center/data/models/enums.dart';
@@ -16,7 +17,7 @@ class CircleManagementListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final circles = ref.watch(circleRepositoryProvider).getCirclesByCenter('center-1');
+    final circles = ref.watch(circleRepositoryProvider).getCirclesByCenter(ref.read(centerIdProvider));
 
     return Directionality(
       textDirection: TextDirection.rtl,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/data/models/enrollment.dart';
 import 'package:quran_center/data/models/enums.dart';
@@ -42,8 +43,8 @@ class _EnrollmentAssignmentScreenState extends ConsumerState<EnrollmentAssignmen
   Future<void> _loadReferenceData() async {
     final studentRepo = ref.read(studentRepositoryProvider);
     final circleRepo = ref.read(circleRepositoryProvider);
-    final students = await studentRepo.getStudentsByCenter('center-1');
-    final circles = await circleRepo.getCirclesByCenter('center-1');
+    final students = await studentRepo.getStudentsByCenter(ref.read(centerIdProvider));
+    final circles = await circleRepo.getCirclesByCenter(ref.read(centerIdProvider));
     if (!mounted) return;
     setState(() {
       _students = students.map((s) => {'id': s.studentId, 'name': s.displayName}).toList();
@@ -60,7 +61,7 @@ class _EnrollmentAssignmentScreenState extends ConsumerState<EnrollmentAssignmen
       final repo = ref.read(enrollmentRepositoryProvider);
       await repo.createEnrollment(Enrollment(
         enrollmentId: 'e_${DateTime.now().millisecondsSinceEpoch}',
-        centerId: 'center-1',
+        centerId: ref.read(centerIdProvider),
         studentId: _selectedStudentId!,
         circleId: _selectedCircleId!,
         teacherId: _selectedTeacherId,

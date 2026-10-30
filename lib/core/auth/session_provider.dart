@@ -56,3 +56,13 @@ final actorProvider = Provider<Actor>((ref) {
   }
   return Actor(profile.uid, profile.role.toJson());
 });
+
+/// The signed-in user's center. Every query and write is scoped to this value;
+/// it is never taken from screen input. Throws when nobody is signed in.
+final centerIdProvider = Provider<String>((ref) {
+  final profile = ref.watch(currentSessionProvider).profile;
+  if (profile == null) {
+    throw StateError('No signed-in user, so there is no center to scope to.');
+  }
+  return profile.centerId;
+});

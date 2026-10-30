@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/data/datasources/fake_firestore_datasource.dart';
 import 'package:quran_center/data/providers/repositories.dart';
 import 'package:quran_center/data/services/account_access_service.dart';
@@ -51,6 +52,7 @@ Future<void> _pump(
   addTearDown(tester.view.reset);
   await tester.pumpWidget(ProviderScope(
     overrides: [
+        centerIdProvider.overrideWithValue('center-1'),
       firestoreDataSourceProvider.overrideWithValue(store),
       accountAccessServiceProvider.overrideWithValue(access),
     ],

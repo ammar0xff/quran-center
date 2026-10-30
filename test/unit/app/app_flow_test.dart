@@ -89,9 +89,34 @@ Future<(FakeAuthGateway, FakeFirestoreDataSource)> _boot(
   await _seedUser(store, 'dir-1', 'director');
   await _seedUser(store, 'tea-1', 'teacher');
   await _seedUser(store, 'sus-1', 'director', status: 'suspended');
+  await store.setDoc('users/dir-2', {
+    'centerId': 'center-2',
+    'fullName': 'مديرة المركز الثاني',
+    'role': 'director',
+    'status': 'active',
+    'authProvider': 'password',
+    'createdAt': 1700000000000,
+    'updatedAt': 1700000000000,
+  });
+  for (final (id, center, name) in [
+    ('s-1', 'center-1', 'طالب المركز الأول'),
+    ('s-2', 'center-2', 'طالب المركز الثاني'),
+  ]) {
+    await store.setDoc('students/$id', {
+      'centerId': center,
+      'fullName': name,
+      'accountMode': 'none',
+      'enrollmentStatus': 'active',
+      'assignedTeacherIds': [],
+      'educationalLevel': 'مبتدئ',
+      'createdAt': 1700000000000,
+      'updatedAt': 1700000000000,
+    });
+  }
   // 'ghost' authenticates but has no profile document.
   final gateway = FakeAuthGateway({
     'dir@x.com': ('pw-dir', 'dir-1'),
+    'dir2@x.com': ('pw-dir2', 'dir-2'),
     'tea@x.com': ('pw-tea', 'tea-1'),
     'sus@x.com': ('pw-sus', 'sus-1'),
     'ghost@x.com': ('pw-ghost', 'ghost-1'),
@@ -229,6 +254,27 @@ void main() {
     await _signIn(tester, 'dir@x.com', 'pw-dir');
     expect(find.text('أهلاً بك، مديرة الدار'), findsOneWidget);
     expect(find.text('واجهة المعلم'), findsNothing);
+  });
+
+  testWidgets('each director sees only their own center\'s students', (tester) async {
+    await _boot(tester);
+
+    await _signIn(tester, 'dir@x.com', 'pw-dir');
+    _router(tester).go('/director/students');
+    await tester.pumpAndSettle();
+    expect(find.text('طالب المركز الأول'), findsOneWidget);
+    expect(find.text('طالب المركز الثاني'), findsNothing);
+
+    // Different center, same device, same store.
+    await ProviderScope.containerOf(tester.element(find.byType(MaterialApp)))
+        .read(authGatewayProvider)
+        .signOut();
+    await tester.pumpAndSettle();
+    await _signIn(tester, 'dir2@x.com', 'pw-dir2');
+    _router(tester).go('/director/students');
+    await tester.pumpAndSettle();
+    expect(find.text('طالب المركز الثاني'), findsOneWidget);
+    expect(find.text('طالب المركز الأول'), findsNothing);
   });
 
   testWidgets('password reset gives the same confirmation for any address', (tester) async {

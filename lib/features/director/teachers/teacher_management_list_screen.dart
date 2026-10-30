@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/data/models/teacher.dart';
@@ -16,7 +17,7 @@ class TeacherManagementListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final teachers = ref.watch(teacherRepositoryProvider).getTeachersByCenter('center-1');
+    final teachers = ref.watch(teacherRepositoryProvider).getTeachersByCenter(ref.read(centerIdProvider));
 
     return Directionality(
       textDirection: TextDirection.rtl,

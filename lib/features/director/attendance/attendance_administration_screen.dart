@@ -77,9 +77,9 @@ class _AttendanceAdministrationScreenState
   Future<void> _load() async {
     try {
       final records =
-          await ref.read(attendanceRepositoryProvider).getByCenter('center-1');
+          await ref.read(attendanceRepositoryProvider).getByCenter(ref.read(centerIdProvider));
       final students =
-          await ref.read(studentRepositoryProvider).getStudentsByCenter('center-1');
+          await ref.read(studentRepositoryProvider).getStudentsByCenter(ref.read(centerIdProvider));
       if (!mounted) return;
       setState(() {
         _records = records;

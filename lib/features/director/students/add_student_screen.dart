@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/core/utils/account_access_rules.dart';
 import 'package:quran_center/data/models/enums.dart';
@@ -98,7 +99,7 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
       final now = DateTime.now();
       await ref.read(studentRepositoryProvider).createStudent(Student(
             studentId: _studentId,
-            centerId: 'center-1',
+            centerId: ref.read(centerIdProvider),
             fullName: _fullNameController.text.trim(),
             preferredName: _preferredNameController.text.trim().isEmpty
                 ? null

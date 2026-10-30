@@ -36,6 +36,7 @@ Future<void> _seed(FakeFirestoreDataSource fake) async {
 
 Widget _app(FakeFirestoreDataSource fake) => ProviderScope(
       overrides: [
+        centerIdProvider.overrideWithValue('center-1'),
         firestoreDataSourceProvider.overrideWithValue(fake),
         actorProvider.overrideWithValue(const Actor('director-9', 'director')),
       ],
