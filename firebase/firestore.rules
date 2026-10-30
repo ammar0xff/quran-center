@@ -84,6 +84,12 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/schedules/$(sessionId)).data;
     }
 
+    // A student-role account whose profile says it currently attends [circleId].
+    function studentInCircle(centerId, circleId) {
+      return hasRole(centerId, 'student')
+        && studentOf(profile().studentId).currentCircleId == circleId;
+    }
+
     // ---------- users (backend-written only) ----------
     match /users/{uid} {
       // A user may always read their own profile so the app can show
@@ -138,7 +144,8 @@ service cloud.firestore {
     match /circles/{circleId} {
       allow read: if isDirector(resource.data.centerId)
         || (isTeacher(resource.data.centerId)
-            && resource.data.assignedTeacherId == request.auth.uid);
+            && resource.data.assignedTeacherId == request.auth.uid)
+        || studentInCircle(resource.data.centerId, circleId);
       allow create: if isDirector(request.resource.data.centerId);
       allow update: if isDirector(resource.data.centerId) && unchanged(['centerId']);
       allow delete: if false;
@@ -160,7 +167,8 @@ service cloud.firestore {
     match /schedules/{scheduleId} {
       allow read: if isDirector(resource.data.centerId)
         || (isTeacher(resource.data.centerId)
-            && resource.data.teacherId == request.auth.uid);
+            && resource.data.teacherId == request.auth.uid)
+        || studentInCircle(resource.data.centerId, resource.data.circleId);
       allow create: if isDirector(request.resource.data.centerId);
       allow update: if (isDirector(resource.data.centerId) && unchanged(['centerId']))
         || teacherMaySetSessionStatus();
@@ -300,6 +308,42 @@ service cloud.firestore {
       return status in ['upcoming', 'inProgress', 'practiceReported', 'submittedForReview', 'needsReview'];
     }
 
+    // Staff-only notes about a student. Kept out of the student document
+    // because a student may read that document and rules cannot hide fields.
+    match /student_admin_notes/{studentId} {
+      allow read: if isDirector(resource.data.centerId);
+      allow create: if isDirector(request.resource.data.centerId)
+        && studentId == request.resource.data.studentId
+        && studentOf(studentId).centerId == request.resource.data.centerId;
+      allow update: if isDirector(resource.data.centerId)
+        && unchanged(['centerId', 'studentId']);
+      allow delete: if false;
+    }
+
+    // The student moves their own task along, claims practice, and nothing
+    // else. Completing, cancelling or marking it "needs review" is the
+    // teacher's alone, and a claim is stored as a claim (selfReportedPractice).
+    function studentMayReportProgress() {
+      return ownsStudent(resource.data.centerId, resource.data.studentId)
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status', 'selfReportedPractice', 'updatedAt'])
+        && (
+          (resource.data.status == 'upcoming'
+            && request.resource.data.status in ['inProgress', 'practiceReported'])
+          || (resource.data.status == 'inProgress'
+            && request.resource.data.status == 'practiceReported')
+          || (resource.data.status == 'practiceReported'
+            && request.resource.data.status == 'submittedForReview')
+          || (resource.data.status == 'needsReview'
+            && request.resource.data.status in ['inProgress', 'practiceReported'])
+        )
+        && (request.resource.data.status != 'practiceReported'
+            || (request.resource.data.get('selfReportedPractice', null) != null
+                && request.resource.data.selfReportedPractice.reportedAt != null))
+        && (request.resource.data.status in ['practiceReported'] 
+            || !changed(['selfReportedPractice']));
+    }
+
     match /learning_tasks/{taskId} {
       allow read: if isDirector(resource.data.centerId)
         || (isTeacher(resource.data.centerId)
@@ -344,7 +388,8 @@ service cloud.firestore {
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['status', 'completionMetadata', 'updatedAt'])
             && request.resource.data.completionMetadata.reason is string)
-        );
+        )
+        || studentMayReportProgress();
       allow delete: if false;
     }
 

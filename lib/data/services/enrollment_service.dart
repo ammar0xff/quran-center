@@ -137,6 +137,7 @@ class EnrollmentService {
       ),
       BatchOp.update('students/$studentId', {
         'assignedTeacherIds': plan.studentTeacherIds,
+        'currentCircleId': circleId,
         'updatedBy': actorId,
         'updatedAt': firestoreConverter.serverTimestamp(),
       }),

@@ -16,7 +16,6 @@ void main() {
       'authUserId': null,
       'educationalLevel': 'مبتدئ',
       'accessibilityPreferences': null,
-      'adminNotes': null,
       'createdBy': 'director-1',
       'updatedBy': 'director-1',
       'createdAt': 1700000000000,

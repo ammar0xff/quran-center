@@ -68,7 +68,6 @@ class Circle extends AppModel {
     required this.weeklySchedule,
     required this.sessionDurationMinutes,
     required this.status,
-    this.adminNotes,
     this.createdBy,
     this.updatedBy,
     required this.createdAt,
@@ -86,7 +85,6 @@ class Circle extends AppModel {
   final List<CircleWeeklySchedule> weeklySchedule;
   final int sessionDurationMinutes;
   final CircleStatus status;
-  final String? adminNotes;
   final String? createdBy;
   final String? updatedBy;
   final DateTime createdAt;
@@ -105,7 +103,6 @@ class Circle extends AppModel {
     List<CircleWeeklySchedule>? weeklySchedule,
     int? sessionDurationMinutes,
     CircleStatus? status,
-    String? adminNotes,
     String? updatedBy,
     DateTime? updatedAt,
   }) {
@@ -121,7 +118,6 @@ class Circle extends AppModel {
       weeklySchedule: weeklySchedule ?? this.weeklySchedule,
       sessionDurationMinutes: sessionDurationMinutes ?? this.sessionDurationMinutes,
       status: status ?? this.status,
-      adminNotes: adminNotes ?? this.adminNotes,
       createdBy: createdBy,
       updatedBy: updatedBy ?? this.updatedBy,
       createdAt: createdAt,
@@ -145,7 +141,6 @@ class Circle extends AppModel {
           [],
       sessionDurationMinutes: json['sessionDurationMinutes'] as int? ?? 60,
       status: CircleStatusJson.fromJson(json['status'] as String?),
-      adminNotes: json['adminNotes'] as String?,
       createdBy: json['createdBy'] as String?,
       updatedBy: json['updatedBy'] as String?,
       createdAt: AppModel.parseDateTime(json['createdAt']) ?? DateTime.now(),
@@ -166,7 +161,6 @@ class Circle extends AppModel {
       'weeklySchedule': weeklySchedule.map((e) => e.toJson()).toList(),
       'sessionDurationMinutes': sessionDurationMinutes,
       'status': status.toJson(),
-      if (adminNotes != null) 'adminNotes': adminNotes,
       if (createdBy != null) 'createdBy': createdBy,
       if (updatedBy != null) 'updatedBy': updatedBy,
       'createdAt': AppModel.encodeDateTime(createdAt),

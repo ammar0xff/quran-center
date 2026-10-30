@@ -29,6 +29,10 @@ class FirestoreConverter {
     return result;
   }
 
+  /// A [Timestamp] for [value].
+  Timestamp timestampOf(DateTime value) =>
+      Timestamp.fromMillisecondsSinceEpoch(value.millisecondsSinceEpoch);
+
   /// Server timestamp sentinel for createdAt/updatedAt on write.
   FieldValue serverTimestamp() => FieldValue.serverTimestamp();
 

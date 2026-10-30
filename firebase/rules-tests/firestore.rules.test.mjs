@@ -63,7 +63,7 @@ async function seed() {
     const db = ctx.firestore();
     for (const [uid, p] of Object.entries(users)) await setDoc(doc(db, "users", uid), p);
     // s1 / s2 have logins; s3 is accountless; sx is in another center.
-    await setDoc(doc(db, "students/s1"), student({ accountMode: "loginEnabled", authUserId: "uS1", assignedTeacherIds: ["tA"] }));
+    await setDoc(doc(db, "students/s1"), student({ accountMode: "loginEnabled", authUserId: "uS1", assignedTeacherIds: ["tA"], currentCircleId: "circle1" }));
     await setDoc(doc(db, "students/s2"), student({ accountMode: "loginEnabled", authUserId: "uS2", assignedTeacherIds: ["tB"] }));
     await setDoc(doc(db, "students/s3"), student({ assignedTeacherIds: ["tA"] }));
     await setDoc(doc(db, "students/sx"), student({ centerId: C2, assignedTeacherIds: ["tA"] }));
@@ -397,8 +397,10 @@ describe("circles", () => {
     await assertSucceeds(getDoc(doc(as("tA"), "circles/circle1")));
     await assertFails(getDoc(doc(as("tA"), "circles/circle2")));
   });
-  it("students cannot read circles; directors can create them", async () => {
-    await assertFails(getDoc(doc(as("uS1"), "circles/circle1")));
+  it("a student reads only the circle they attend; directors can create circles", async () => {
+    await assertSucceeds(getDoc(doc(as("uS1"), "circles/circle1")));
+    await assertFails(getDoc(doc(as("uS1"), "circles/circle2")));   // not theirs
+    await assertFails(getDoc(doc(as("uS2"), "circles/circle1")));   // s2 has no circle
     await assertSucceeds(setDoc(doc(as("dir1"), "circles/new"), { centerId: C1, name: "N" }));
     await assertFails(setDoc(doc(as("tA"), "circles/new2"), { centerId: C1, name: "N" }));
   });
@@ -554,6 +556,75 @@ describe("memorization assessments and private notes", () => {
     await assertSucceeds(updateDoc(doc(as("tA"), "private_teacher_notes/m1"), { note: "محدّثة" }));
     await assertFails(updateDoc(doc(as("tA"), "private_teacher_notes/m1"), { studentId: "s3" }));
     await assertFails(updateDoc(doc(as("tB"), "private_teacher_notes/m1"), { note: "x" }));
+  });
+});
+
+describe("student reads (schedule) and staff-only notes", () => {
+  it("a student reads the sessions of their own circle and no other", async () => {
+    await assertSucceeds(getDoc(doc(as("uS1"), "schedules/sess9")));      // circle1
+    const q = (uid, circle) => getDocs(query(collection(as(uid), "schedules"), where("centerId", "==", C1), where("circleId", "==", circle)));
+    await assertSucceeds(q("uS1", "circle1"));
+    await assertFails(q("uS1", "circle2"));
+    await assertFails(q("uS2", "circle1"));
+  });
+  it("a student cannot change a session", async () => {
+    await assertFails(updateDoc(doc(as("uS1"), "schedules/sessSched"), { status: "inProgress" }));
+  });
+  it("the staff note is readable and writable by the director only", async () => {
+    const note = (over = {}) => ({ centerId: C1, studentId: "s1", note: "سري", ...over });
+    await assertSucceeds(setDoc(doc(as("dir1"), "student_admin_notes/s1"), note()));
+    await assertSucceeds(getDoc(doc(as("dir1"), "student_admin_notes/s1")));
+    await assertFails(getDoc(doc(as("uS1"), "student_admin_notes/s1")));       // the student it is about
+    await assertFails(getDoc(doc(as("tA"), "student_admin_notes/s1")));        // their teacher
+    await assertFails(getDoc(doc(as("dir2"), "student_admin_notes/s1")));
+    await assertFails(setDoc(doc(as("tA"), "student_admin_notes/s3"), note({ studentId: "s3" })));
+    await assertFails(setDoc(doc(as("uS1"), "student_admin_notes/s1"), note({ note: "x" })));
+    await assertFails(setDoc(doc(as("dir1"), "student_admin_notes/s3"), note({ studentId: "s1" }))); // id must match
+    await assertFails(setDoc(doc(as("dir1"), "student_admin_notes/sx"), note({ studentId: "sx" }))); // other center's student
+    await assertFails(deleteDoc(doc(as("dir1"), "student_admin_notes/s1")));
+  });
+});
+
+describe("student progress on tasks", () => {
+  const claim = () => ({ reportedAt: new Date(), reflection: "تدربت" });
+  it("a student can start a task and report practice, which is only a claim", async () => {
+    await assertSucceeds(updateDoc(doc(as("uS1"), "learning_tasks/t1"), { status: "inProgress" }));
+    await assertSucceeds(updateDoc(doc(as("uS1"), "learning_tasks/t1"), { status: "practiceReported", selfReportedPractice: claim() }));
+    await assertSucceeds(updateDoc(doc(as("uS1"), "learning_tasks/t1"), { status: "submittedForReview" }));
+  });
+  it("reporting practice requires the claim to be recorded", async () => {
+    await assertFails(updateDoc(doc(as("uS1"), "learning_tasks/t1"), { status: "practiceReported" }));
+    await assertFails(updateDoc(doc(as("uS1"), "learning_tasks/t1"), { status: "practiceReported", selfReportedPractice: {} }));
+  });
+  it("a student can never complete, cancel or mark a task for review", async () => {
+    for (const status of ["completed", "cancelled", "needsReview", "overdue"]) {
+      await assertFails(updateDoc(doc(as("uS1"), "learning_tasks/t1"), { status, selfReportedPractice: claim() }));
+    }
+    await assertFails(updateDoc(doc(as("uS1"), "learning_tasks/t1"), { status: "completed", teacherVerification: { verifiedBy: "uS1", result: "passed" } }));
+    await assertFails(updateDoc(doc(as("uS1"), "learning_tasks/tReported"), { status: "completed" }));
+  });
+  it("no skipping or going back, and a finished task is frozen", async () => {
+    await assertFails(updateDoc(doc(as("uS1"), "learning_tasks/t1"), { status: "submittedForReview" }));      // skip
+    await assertFails(updateDoc(doc(as("uS1"), "learning_tasks/tReported"), { status: "inProgress" }));       // back
+    await assertFails(updateDoc(doc(as("uS1"), "learning_tasks/tDone"), { status: "practiceReported", selfReportedPractice: claim() }));
+  });
+  it("a student cannot change anything else about the task, or touch someone else's", async () => {
+    await assertFails(updateDoc(doc(as("uS1"), "learning_tasks/t1"), { status: "inProgress", dueDate: new Date("2030-01-01") }));
+    await assertFails(updateDoc(doc(as("uS1"), "learning_tasks/t1"), { status: "inProgress", teacherInstructions: "x" }));
+    await assertFails(updateDoc(doc(as("uS2"), "learning_tasks/t1"), { status: "inProgress" }));
+    await assertFails(updateDoc(doc(as("tB"), "learning_tasks/t1"), { status: "inProgress" }));
+  });
+  it("a returned task can be redone", async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "learning_tasks/tReturned"), task({ status: "needsReview" }));
+    });
+    await assertSucceeds(updateDoc(doc(as("uS1"), "learning_tasks/tReturned"), { status: "inProgress" }));
+  });
+  it("a suspended student account can change nothing", async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "users/uSusp"), { role: "student", centerId: C1, status: "suspended", studentId: "s1" });
+    });
+    await assertFails(updateDoc(doc(as("uSusp"), "learning_tasks/t1"), { status: "inProgress" }));
   });
 });
 

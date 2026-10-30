@@ -49,7 +49,6 @@ class CircleRepositoryImpl implements CircleRepository {
       'status': 'archived',
       'updatedBy': actorId,
       'updatedAt': firestoreConverter.serverTimestamp(),
-      if (reason != null) 'adminNotes': reason,
     });
   }
 

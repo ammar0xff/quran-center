@@ -250,11 +250,11 @@ class _OverviewTab extends StatelessWidget {
             ),
           ]),
         ),
-        if (s.adminNotes != null) ...[
+        if (data.adminNote != null) ...[
           const SizedBox(height: DesignTokens.space16),
           Card(
             child: Column(children: [
-              _row('ملاحظات إدارية', s.adminNotes!),
+              _row('ملاحظات إدارية', data.adminNote!),
             ]),
           ),
         ],

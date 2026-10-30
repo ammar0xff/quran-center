@@ -17,11 +17,13 @@ Future<void> _seed(FakeFirestoreDataSource s) async {
         'enrollmentStatus': 'active',
         'assignedTeacherIds': <String>[],
         'educationalLevel': 'مبتدئ',
-        if (notes != null) 'adminNotes': notes,
         'createdAt': 1700000000000,
         'updatedAt': 1700000000000,
       });
-  await student('s1', 'أحمد علي', 'center-1', notes: 'يحتاج متابعة');
+  await student('s1', 'أحمد علي', 'center-1');
+  await s.setDoc('student_admin_notes/s1', {
+    'centerId': 'center-1', 'studentId': 's1', 'note': 'يحتاج متابعة',
+  });
   await student('s2', 'طالب مركز آخر', 'center-2');
   await student('s3', 'طالب آخر', 'center-1');
   await student('s5', 'بدون سجلات', 'center-1');

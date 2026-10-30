@@ -18,7 +18,6 @@ void main() {
       ],
       'sessionDurationMinutes': 120,
       'status': 'active',
-      'adminNotes': null,
       'createdBy': 'director-1',
       'updatedBy': 'director-1',
       'createdAt': 1700000000000,

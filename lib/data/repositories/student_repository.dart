@@ -25,7 +25,13 @@ abstract class StudentRepository {
     String? reason,
   });
 
-  /// Edits the descriptive fields only. Status, login link and center are
+  /// The staff-only note about a student, or null. Kept outside the student
+  /// document (in `student_admin_notes`) so a student who may read their own
+  /// profile can never read it.
+  Future<String?> getAdminNote(String studentId, {required String centerId});
+
+  /// Edits the descriptive fields only. [adminNotes] null leaves the staff note
+  /// untouched; a blank string clears it. Status, login link and center are
   /// never touched. Writes only fields that actually changed plus an audit
   /// entry (previous/new values) in one batch, and does nothing - and writes no
   /// audit - when nothing changed. Returns whether anything was saved.
@@ -59,5 +65,6 @@ abstract class StudentRepository {
   Future<List<Student>> getStudentsByCenter(String centerId);
 
   /// Students assigned to a teacher (within teacher's authorized circles).
-  Future<List<Student>> getStudentsByTeacher(String teacherId);
+  Future<List<Student>> getStudentsByTeacher(String teacherId,
+      {required String centerId});
 }

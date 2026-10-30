@@ -47,7 +47,7 @@ Authorization enforced by the backend (Firestore Security Rules + Cloud Function
 ## Enforced and tested
 
 Firestore Security Rules (`firebase/firestore.rules`) are tested against the
-real Firestore emulator (`firebase/rules-tests`, 89 tests) and cover:
+real Firestore emulator (`firebase/rules-tests`, 99 tests) and cover:
 users, centers, students, teachers, circles, enrollments, schedules,
 attendance and audit_logs, including the enrollment-assignment batch and the
 rule that director list queries must filter by `centerId`. Everything else is **default deny**.
@@ -82,6 +82,16 @@ verification can complete a task, and it must carry `verifiedBy == auth.uid`
 and a truthful result; `completed` and `cancelled` are final; cancelling needs
 a reason. `overdue` is derived from the due date and never stored. The
 student's own transitions (report practice) are added with the student app.
+
+Student-facing data (Phase 6 groundwork):
+* A student may read their own `students/{id}` document, so it holds nothing
+  staff-only. The director's note about a student lives in
+  `student_admin_notes/{studentId}` (director only); circles no longer carry
+  admin notes.
+* A student reads the circle and sessions of the circle named in their own
+  profile (`currentCircleId`, maintained by enrolment changes) and nothing else.
+* A student may start a task and report practice (stored as a *claim*), never
+  complete, cancel or return it.
 
 Key design points:
 * `users/{uid}` is written only by the Admin SDK. Role and status are read from

@@ -29,6 +29,7 @@ class _EditStudentScreenState extends ConsumerState<EditStudentScreen> {
   bool _loading = true;
   bool _missing = false;
   bool _saving = false;
+  bool _noteLoaded = false;
   String? _error;
 
   @override
@@ -69,7 +70,15 @@ class _EditStudentScreenState extends ConsumerState<EditStudentScreen> {
     _name.text = s.fullName;
     _preferred.text = s.preferredName ?? '';
     _level.text = s.educationalLevel;
-    _notes.text = s.adminNotes ?? '';
+    try {
+      _notes.text = await ref
+              .read(studentRepositoryProvider)
+              .getAdminNote(widget.studentId, centerId: s.centerId) ??
+          '';
+      _noteLoaded = true;
+    } catch (_) {
+      // The note is optional; the rest of the form stays usable.
+    }
     setState(() => _loading = false);
   }
 
@@ -88,7 +97,8 @@ class _EditStudentScreenState extends ConsumerState<EditStudentScreen> {
             fullName: _name.text,
             preferredName: _preferred.text,
             educationalLevel: _level.text,
-            adminNotes: _notes.text,
+            // If the note could not be loaded, leave it untouched.
+            adminNotes: _noteLoaded ? _notes.text : null,
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -146,6 +156,7 @@ class _EditStudentScreenState extends ConsumerState<EditStudentScreen> {
                         TextFormField(
                           controller: _notes,
                           maxLines: 3,
+                          enabled: _noteLoaded,
                           decoration: const InputDecoration(
                               labelText: 'ملاحظات إدارية (للإدارة فقط)'),
                         ),

@@ -19,6 +19,7 @@ class StudentProfileData {
     required this.sessionDates,
     required this.audit,
     required this.userNames,
+    this.adminNote,
   });
 
   final Student student;
@@ -35,6 +36,9 @@ class StudentProfileData {
 
   /// Display names of the center's users, to show who made each change.
   final Map<String, String> userNames;
+
+  /// Staff-only note (separate document; never visible to the student).
+  final String? adminNote;
 
   Enrollment? get currentEnrollment {
     for (final e in enrollments) {
@@ -57,7 +61,7 @@ final studentProfileProvider = FutureProvider.autoDispose
   final student = await ref.read(studentRepositoryProvider).getStudent(studentId);
   if (student == null || student.centerId != centerId) return null;
 
-  final (enrollments, circles, teachers, records, schedules, audit, users) = await (
+  final (enrollments, circles, teachers, records, schedules, audit, users, note) = await (
     ref.read(enrollmentRepositoryProvider).getHistoryForStudent(studentId, centerId: centerId),
     ref.read(circleRepositoryProvider).getCirclesByCenter(centerId),
     ref.read(teacherRepositoryProvider).getTeachersByCenter(centerId),
@@ -65,6 +69,7 @@ final studentProfileProvider = FutureProvider.autoDispose
     ref.read(scheduleRepositoryProvider).getSchedulesByCenter(centerId),
     ref.read(auditRepositoryProvider).getForEntity('student', studentId, centerId: centerId),
     ref.read(userRepositoryProvider).getUsersByCenter(centerId),
+    ref.read(studentRepositoryProvider).getAdminNote(studentId, centerId: centerId),
   ).wait;
 
   final sessionDates = {for (final s in schedules) s.scheduleId: s.date};
@@ -83,6 +88,7 @@ final studentProfileProvider = FutureProvider.autoDispose
     sessionDates: sessionDates,
     audit: audit,
     userNames: {for (final u in users) u.uid: u.fullName},
+    adminNote: note,
   );
 });
 

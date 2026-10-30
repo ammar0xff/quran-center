@@ -84,6 +84,7 @@ void main() {
 
     final student = (await store.getDoc('students/s1'))!;
     expect(student['assignedTeacherIds'], ['tA']);
+    expect(student['currentCircleId'], 'A');
     expect(student['updatedBy'], 'dir-1');
 
     final audit = await store.query('audit_logs', where: []);
@@ -106,6 +107,7 @@ void main() {
 
     expect((await store.getDoc('enrollments/enr_s1_B_20261102'))!['status'], 'active');
     expect((await store.getDoc('students/s1'))!['assignedTeacherIds'], ['tB']);
+    expect((await store.getDoc('students/s1'))!['currentCircleId'], 'B');
 
     final actives = (await store.query('enrollments', where: []))
         .where((e) => e['studentId'] == 's1' && e['status'] == 'active');

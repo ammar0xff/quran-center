@@ -20,7 +20,7 @@ class Student extends AppModel {
     this.authUserId,
     required this.educationalLevel,
     this.accessibilityPreferences,
-    this.adminNotes,
+    this.currentCircleId,
     this.createdBy,
     this.updatedBy,
     required this.createdAt,
@@ -39,7 +39,7 @@ class Student extends AppModel {
   final String? authUserId; // links to users/{uid} when login enabled
   final String educationalLevel;
   final String? accessibilityPreferences;
-  final String? adminNotes; // staff only
+  final String? currentCircleId; // maintained by enrolment changes
   final String? createdBy;
   final String? updatedBy;
   final DateTime createdAt;
@@ -59,7 +59,7 @@ class Student extends AppModel {
     String? authUserId,
     String? educationalLevel,
     String? accessibilityPreferences,
-    String? adminNotes,
+    String? currentCircleId,
     String? updatedBy,
     DateTime? updatedAt,
   }) {
@@ -76,7 +76,7 @@ class Student extends AppModel {
       authUserId: authUserId ?? this.authUserId,
       educationalLevel: educationalLevel ?? this.educationalLevel,
       accessibilityPreferences: accessibilityPreferences ?? this.accessibilityPreferences,
-      adminNotes: adminNotes ?? this.adminNotes,
+      currentCircleId: currentCircleId ?? this.currentCircleId,
       createdBy: createdBy,
       updatedBy: updatedBy ?? this.updatedBy,
       createdAt: createdAt,
@@ -99,7 +99,7 @@ class Student extends AppModel {
       authUserId: json['authUserId'] as String?,
       educationalLevel: json['educationalLevel'] as String? ?? '',
       accessibilityPreferences: json['accessibilityPreferences'] as String?,
-      adminNotes: json['adminNotes'] as String?,
+      currentCircleId: json['currentCircleId'] as String?,
       createdBy: json['createdBy'] as String?,
       updatedBy: json['updatedBy'] as String?,
       createdAt: AppModel.parseDateTime(json['createdAt']) ?? DateTime.now(),
@@ -122,7 +122,7 @@ class Student extends AppModel {
       'educationalLevel': educationalLevel,
       if (accessibilityPreferences != null)
         'accessibilityPreferences': accessibilityPreferences,
-      if (adminNotes != null) 'adminNotes': adminNotes,
+      if (currentCircleId != null) 'currentCircleId': currentCircleId,
       if (createdBy != null) 'createdBy': createdBy,
       if (updatedBy != null) 'updatedBy': updatedBy,
       'createdAt': AppModel.encodeDateTime(createdAt),

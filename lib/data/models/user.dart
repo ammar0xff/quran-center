@@ -16,6 +16,7 @@ class User extends AppModel {
     this.phone,
     this.profileImageUrl,
     this.assignedCenterIds = const [],
+    this.studentId,
     this.lastSignInAt,
     required this.createdAt,
     required this.updatedAt,
@@ -30,6 +31,9 @@ class User extends AppModel {
   final String? phone;
   final String? profileImageUrl;
   final List<String> assignedCenterIds;
+
+  /// For student accounts: the student profile this login belongs to.
+  final String? studentId;
   final DateTime? lastSignInAt;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -61,6 +65,7 @@ class User extends AppModel {
       phone: phone ?? this.phone,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       assignedCenterIds: assignedCenterIds ?? this.assignedCenterIds,
+      studentId: studentId,
       lastSignInAt: lastSignInAt ?? this.lastSignInAt,
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
@@ -82,6 +87,7 @@ class User extends AppModel {
               ?.map((e) => e as String)
               .toList() ??
           [],
+      studentId: json['studentId'] as String?,
       lastSignInAt: AppModel.parseDateTime(json['lastSignInAt']),
       createdAt: AppModel.parseDateTime(json['createdAt']) ?? DateTime.now(),
       updatedAt: AppModel.parseDateTime(json['updatedAt']) ?? DateTime.now(),
@@ -99,6 +105,7 @@ class User extends AppModel {
       if (phone != null) 'phone': phone,
       if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
       'assignedCenterIds': assignedCenterIds,
+      if (studentId != null) 'studentId': studentId,
       if (lastSignInAt != null) 'lastSignInAt': AppModel.encodeDateTime(lastSignInAt),
       'createdAt': AppModel.encodeDateTime(createdAt),
       'updatedAt': AppModel.encodeDateTime(updatedAt),
@@ -118,6 +125,7 @@ class User extends AppModel {
           authProvider == other.authProvider &&
           phone == other.phone &&
           profileImageUrl == other.profileImageUrl &&
+          studentId == other.studentId &&
           assignedCenterIds.length == other.assignedCenterIds.length &&
           assignedCenterIds.asMap().entries.every(
             (entry) => entry.value == other.assignedCenterIds[entry.key],
@@ -137,6 +145,7 @@ class User extends AppModel {
     phone,
     profileImageUrl,
     Object.hashAll(assignedCenterIds),
+    studentId,
     lastSignInAt,
     createdAt,
     updatedAt,
