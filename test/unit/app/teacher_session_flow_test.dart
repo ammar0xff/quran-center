@@ -329,6 +329,41 @@ void main() {
     });
   });
 
+  group('account', () {
+    Future<AppHarness> openMore(WidgetTester tester) async {
+      final app = await bootApp(tester, accounts: _accounts, seed: (s) async {
+        await _seed(s);
+        await s.setDoc('teachers/tea-1', {
+          'centerId': 'center-1', 'userId': 'tea-1', 'fullName': 'المعلمة فاطمة', 'status': 'active',
+          'contactInfo': {'email': 'fatima@example.com', 'phone': '0500000000'},
+          'assignedCircleIds': [], 'createdAt': 1700000000000, 'updatedAt': 1700000000000,
+        });
+        await s.setDoc('centers/center-1', {'name': 'دار النور', 'status': 'active'});
+      });
+      await app.signIn('tea@x.com', 'pw');
+      await app.go('/teacher/more');
+      return app;
+    }
+
+    testWidgets('shows real account details and counts, and says edits go through the director',
+        (tester) async {
+      await openMore(tester);
+      expect(find.text('المعلمة فاطمة'), findsOneWidget);
+      expect(find.text('دار النور'), findsOneWidget);
+      expect(find.text('fatima@example.com'), findsOneWidget);
+      expect(find.text('0500000000'), findsOneWidget);
+      expect(find.textContaining('تواصل مع إدارة الدار'), findsOneWidget);
+    });
+
+    testWidgets('changing the password sends a reset email to the teacher\'s own address',
+        (tester) async {
+      final app = await openMore(tester);
+      await tester.tap(find.text('تغيير كلمة المرور'));
+      await tester.pumpAndSettle();
+      expect(app.gateway.resets, ['fatima@example.com']);
+    });
+  });
+
   group('circles', () {
     testWidgets('lists only my circles with my student counts', (tester) async {
       await open(tester, path: '/teacher/circles');

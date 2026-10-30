@@ -19,4 +19,7 @@ abstract class UserRepository {
 
   /// Future list of active users in a center.
   Future<List<User>> getUsersByCenter(String centerId);
+
+  /// Every account of the center, whatever its status (for administration).
+  Future<List<User>> getAllUsersByCenter(String centerId);
 }

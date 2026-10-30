@@ -112,8 +112,8 @@ describe("createTeacher / setTeacherSuspended", () => {
   });
 
   it("refuses an email that already has an account (no takeover)", async () => {
-    await assert.rejects(call("createTeacher", { fullName: "معلمة ثانية", email: T_EMAIL }), (e) => code(e) === "functions/already-exists" || /already/i.test(e.message));
-    await assert.rejects(call("createTeacher", { fullName: "مديرة", email: DIR_EMAIL }), (e) => /already/i.test(e.message) || code(e) === "functions/already-exists");
+    await assert.rejects(call("createTeacher", { fullName: "معلمة ثانية", email: T_EMAIL }), (e) => code(e) === "functions/already-exists");
+    await assert.rejects(call("createTeacher", { fullName: "مديرة", email: DIR_EMAIL }), (e) => code(e) === "functions/already-exists");
     const profile = (await adb.doc(`users/${directorUid}`).get()).data();
     assert.equal(profile.role, "director"); // untouched
   });

@@ -8,6 +8,7 @@ import 'package:quran_center/features/authentication/screens/account_status_scre
 import 'package:quran_center/features/authentication/screens/forgot_password_screen.dart';
 import 'package:quran_center/features/authentication/screens/login_screen.dart';
 import 'package:quran_center/features/authentication/screens/splash_screen.dart';
+import 'package:quran_center/features/director/accounts/accounts_screen.dart';
 import 'package:quran_center/features/director/attendance/attendance_administration_screen.dart';
 import 'package:quran_center/features/director/circles/circle_management_list_screen.dart';
 import 'package:quran_center/features/director/circles/circle_detail_screen.dart';
@@ -128,6 +129,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/director/attendance',
         builder: (_, __) => const AttendanceAdministrationScreen(),
+      ),
+      GoRoute(
+        path: '/director/accounts',
+        builder: (_, __) => const AccountsScreen(),
       ),
       GoRoute(
         path: '/director/more',

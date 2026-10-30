@@ -47,7 +47,7 @@ Authorization enforced by the backend (Firestore Security Rules + Cloud Function
 ## Enforced and tested
 
 Firestore Security Rules (`firebase/firestore.rules`) are tested against the
-real Firestore emulator (`firebase/rules-tests`, 99 tests) and cover:
+real Firestore emulator (`firebase/rules-tests`, 103 tests) and cover:
 users, centers, students, teachers, circles, enrollments, schedules,
 attendance and audit_logs, including the enrollment-assignment batch and the
 rule that director list queries must filter by `centerId`. Everything else is **default deny**.
@@ -93,6 +93,12 @@ Student-facing data (Phase 6 groundwork):
 * A student may start a task and report practice (stored as a *claim*), never
   complete, cancel or return it.
 
+Capacity: each circle carries `activeCount`; assigning, transferring and
+archiving update it inside a transaction that re-checks the capacity, and the
+rules refuse any write that would push it past `maxCapacity` (proved with two
+concurrent real SDK transactions: exactly one commits). An in-progress session
+keeps its teacher when a circle's teacher changes, so no hand-over race exists.
+
 Key design points:
 * `users/{uid}` is written only by the Admin SDK. Role and status are read from
   it (not from client data or stale tokens), so suspension is immediate.
@@ -111,41 +117,26 @@ Key design points:
 
 ## Known gaps — do not treat as production-ready
 
-1. ~~Private teacher notes~~ **Resolved.** The note lives in
-   `private_teacher_notes/{recordId}`, readable only by the author and the
-   director; `memorization_records` holds nothing a student may not see. Rules
-   tests prove students (and other teachers/centers) cannot read a note and
-   that a note cannot be smuggled into the readable record.
-2. **Audit atomicity is by convention.** The attendance correction writes the
-   update and its audit entry in one atomic batch, but rules cannot force the
-   audit write. A modified client could skip it. Moving corrections into a
-   Cloud Function would close this.
-3. **Cloud Functions are tested end to end against the Auth, Firestore and
-   Functions emulators** (`npm run test:functions`), but have not been deployed.
-4. **Director provisioning** is an operator CLI (`docs/operations.md`); there is
+1. **Audit atomicity is by convention.** Client-side batches (attendance
+   correction, archive, edit, assign) write the change and its audit entry
+   together, but rules cannot force the audit write; a modified client could
+   skip it. Moving these into Cloud Functions would close this.
+2. **Nothing is deployed.** The Cloud Functions are tested end to end on the
+   emulators, the rules on the Firestore emulator, but there is no Firebase
+   project configured (`firebase_options.dart` is a placeholder).
+3. **Director provisioning** is an operator CLI (`docs/operations.md`); there is
    no in-app way to create a director, by design.
-5. **App Check, rate limiting, Storage rules** are not configured.
-6. `assertFails` in rules tests also passes when a rule *errors*. The emulator
-   evaluates both `create` and `update` for a `set()` on a new document, and the
-   `update` branch errors (null `resource`) and fails closed. Each rule's allow
-   path has a positive test, so no legitimate access is being masked.
-7. **Query scoping.** Firestore rejects a list query unless the query itself
-   proves the rule (`resource.data.centerId == ...`). Every director query on
-   enrollments, attendance and audit_logs therefore carries a `centerId` filter
-   (rules tests demonstrate that an unscoped query is refused). Teacher-side
-   queries (`recordedBy`, `teacherId`) will need the same treatment in Phase 5.
-8. **Atomic batch size.** Changing a circle's teacher updates the circle, its
+4. **App Check, rate limiting and Storage rules** are not configured.
+5. **Atomic batch size.** Changing a circle's teacher updates the circle, its
    enrolments, students and upcoming sessions in one batch (Firestore limit 500
    writes). Circles too large for that are refused, not split.
-9. **Enrollment capacity** is checked by reading, not in a transaction; two
-   directors taking the last seat simultaneously could both succeed.
-10. **Student creation** is not written to the audit log (archive, reinstate,
-   edit, assign/transfer and access changes are).
-11. **Session start date** is checked by the rules (`date <= request.time`);
-    the "same day only" restriction is enforced by the app, not the rules.
-12. If a circle's teacher changes mid-session, the new teacher cannot read the
-    previous teacher's attendance rows for that session and so cannot overwrite
-    them (the write is denied). The director can correct them.
-13. Teachers/students cannot yet read what they need for several planned
-   screens (e.g. a student reading their circle/schedule). Add rules together
-   with those features, each with tests.
+6. **Session start date** is checked by the rules (`date <= request.time`); the
+   "same day only" restriction is enforced by the app, not the rules.
+7. `assertFails` in rules tests also passes when a rule *errors* (the emulator
+   evaluates both `create` and `update` for a `set()` on a new document, and
+   the `update` branch fails closed). Every allow path has a positive test, so
+   no legitimate access is being masked.
+8. **Query scoping.** Firestore rejects a list query unless the query itself
+   proves the rule, so every director, teacher and student query carries the
+   center and the owning id (rules tests show unscoped queries are refused).
+   New queries must follow the same pattern.

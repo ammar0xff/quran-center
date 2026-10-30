@@ -46,6 +46,8 @@ class _StudentTasksScreenState extends ConsumerState<StudentTasksScreen> {
         return ListView(
           padding: const EdgeInsets.all(DesignTokens.space16),
           children: [
+            _Progress(done: d.completedTasks.length, total: d.tasks.where((t) => t.status != TaskStatus.cancelled).length),
+            const SizedBox(height: DesignTokens.space12),
             Wrap(
               spacing: DesignTokens.space8,
               children: [
@@ -94,6 +96,33 @@ class _StudentTasksScreenState extends ConsumerState<StudentTasksScreen> {
           ],
         );
       },
+    );
+  }
+}
+
+/// How many of the (non-cancelled) tasks the teacher has verified. Only
+/// teacher-verified tasks count: a student's own report is not progress yet.
+class _Progress extends StatelessWidget {
+  const _Progress({required this.done, required this.total});
+  final int done;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    if (total == 0) return const SizedBox.shrink();
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(DesignTokens.space16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('اعتمد المعلم $done من $total مهمة',
+                style: const TextStyle(fontWeight: FontWeight.w700)),
+            const SizedBox(height: DesignTokens.space8),
+            LinearProgressIndicator(value: done / total, minHeight: 8),
+          ],
+        ),
+      ),
     );
   }
 }

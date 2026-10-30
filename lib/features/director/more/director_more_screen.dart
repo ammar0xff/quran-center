@@ -42,6 +42,7 @@ class DirectorMoreScreen extends ConsumerWidget {
             tile(Icons.fact_check, 'إدارة الحضور', '/director/attendance'),
             tile(Icons.assignment_ind, 'تعيين طالب لحلقة',
                 '/director/enrollments/assign'),
+            tile(Icons.manage_accounts, 'الحسابات', '/director/accounts'),
             const SizedBox(height: DesignTokens.space12),
             OutlinedButton.icon(
               onPressed: () => ref.read(authGatewayProvider).signOut(),

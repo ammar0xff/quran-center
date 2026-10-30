@@ -142,16 +142,18 @@ void main() {
   group('tasks', () {
     testWidgets('open tasks by default; only mine; filters switch the view', (tester) async {
       await open(tester, path: '/student/tasks');
-      expect(find.byType(Card), findsNWidgets(4));
+      // 1 of 5 tasks is teacher-verified; the progress card is not a task card.
+      expect(find.text('اعتمد المعلم 1 من 5 مهمة'), findsOneWidget);
+      expect(find.byType(Card), findsNWidgets(5)); // progress card + 4 open tasks
       await tester.tap(find.widgetWithText(ChoiceChip, 'المكتملة'));
       await tester.pumpAndSettle();
-      expect(find.byType(Card), findsOneWidget);
+      expect(find.byType(Card), findsNWidgets(2));
       await tester.tap(find.widgetWithText(ChoiceChip, 'تحتاج إعادة'));
       await tester.pumpAndSettle();
-      expect(find.byType(Card), findsOneWidget);
+      expect(find.byType(Card), findsNWidgets(2));
       await tester.tap(find.widgetWithText(ChoiceChip, 'الكل'));
       await tester.pumpAndSettle();
-      expect(find.byType(Card), findsNWidgets(5)); // never the classmate's task
+      expect(find.byType(Card), findsNWidgets(6)); // never the classmate's task
     });
 
     testWidgets('starting a task, then reporting practice, records a claim and does not complete it',

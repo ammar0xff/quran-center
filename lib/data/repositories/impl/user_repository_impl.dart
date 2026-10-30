@@ -63,4 +63,13 @@ class UserRepositoryImpl implements UserRepository {
             firestoreConverter.decodeFromRead(d)))
         .toList();
   }
+
+  @override
+  Future<List<User>> getAllUsersByCenter(String centerId) async {
+    final docs = await _ds.query(_collectionPath,
+        where: [QueryFilter.equal('centerId', centerId)]);
+    return docs
+        .map((d) => User.fromJson(d['id'] ?? '', firestoreConverter.decodeFromRead(d)))
+        .toList();
+  }
 }

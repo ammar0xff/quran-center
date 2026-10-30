@@ -18,6 +18,8 @@ class _ThrowingUsers implements UserRepository {
   Stream<List<User>> watchUsersByCenter(String centerId) => const Stream.empty();
   @override
   Future<List<User>> getUsersByCenter(String centerId) async => [];
+  @override
+  Future<List<User>> getAllUsersByCenter(String centerId) async => [];
 }
 
 const _accounts = {
