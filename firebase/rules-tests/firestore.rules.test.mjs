@@ -130,6 +130,51 @@ describe("students: access boundaries", () => {
   });
 });
 
+describe("enrollment assignment batch", () => {
+  const enrollment = (o = {}) => ({
+    centerId: C1, studentId: "s3", circleId: "cA", teacherId: "tB", status: "active", ...o,
+  });
+  it("a director can assign: new enrolment + student teacher + audit, then that teacher can read the student", async () => {
+    await assertFails(getDoc(doc(as("tB"), "students/s3")));
+    const db = as("dir1");
+    const batch = writeBatch(db);
+    batch.set(doc(db, "enrollments/enr1"), enrollment());
+    batch.update(doc(db, "students/s3"), { assignedTeacherIds: ["tB"], updatedBy: "dir1" });
+    batch.set(doc(db, "audit_logs/aud-assign-1"), {
+      centerId: C1, actorUserId: "dir1", actorRole: "director",
+      action: "assign_student", entityType: "student", entityId: "s3",
+    });
+    await assertSucceeds(batch.commit());
+    await assertSucceeds(getDoc(doc(as("tB"), "students/s3")));
+  });
+  it("a director can close an old enrolment as transferred", async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "enrollments/enrOld"), enrollment({ circleId: "cOld" }));
+    });
+    await assertSucceeds(updateDoc(doc(as("dir1"), "enrollments/enrOld"), { status: "transferred", changeReason: "نقل" }));
+  });
+  it("nobody can re-point an enrolment at another student or center", async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "enrollments/enrOld"), enrollment());
+    });
+    await assertFails(updateDoc(doc(as("dir1"), "enrollments/enrOld"), { studentId: "s1" }));
+    await assertFails(updateDoc(doc(as("dir1"), "enrollments/enrOld"), { centerId: C2 }));
+  });
+  it("teachers, students and other-center directors cannot assign", async () => {
+    await assertFails(setDoc(doc(as("tA"), "enrollments/e2"), enrollment()));
+    await assertFails(setDoc(doc(as("uS1"), "enrollments/e3"), enrollment({ studentId: "s1" })));
+    await assertFails(setDoc(doc(as("dir2"), "enrollments/e4"), enrollment()));
+    await assertFails(updateDoc(doc(as("tA"), "students/s3"), { assignedTeacherIds: ["tA"] }));
+    await assertFails(updateDoc(doc(as("uS1"), "students/s1"), { assignedTeacherIds: ["tB"] }));
+  });
+  it("enrolments are never deleted", async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "enrollments/enrOld"), enrollment());
+    });
+    await assertFails(deleteDoc(doc(as("dir1"), "enrollments/enrOld")));
+  });
+});
+
 describe("students: writes", () => {
   it("a director can create an accountless student", async () => {
     await assertSucceeds(setDoc(doc(as("dir1"), "students/new1"), student()));

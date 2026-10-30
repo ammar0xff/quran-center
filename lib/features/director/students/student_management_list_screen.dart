@@ -202,8 +202,8 @@ class _StudentManagementListScreenState
                                       student: items[i],
                                       onOpen: () => context.push(
                                           '/director/students/${items[i].studentId}'),
-                                      onAssign: () => context
-                                          .push('/director/enrollments/assign'),
+                                      onAssign: () => context.push(
+                                          '/director/enrollments/assign?student=${items[i].studentId}'),
                                       onToggleArchive: () =>
                                           _toggleArchive(items[i]),
                                     ),

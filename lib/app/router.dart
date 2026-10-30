@@ -85,7 +85,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/director/enrollments/assign',
-        builder: (_, __) => const EnrollmentAssignmentScreen(),
+        builder: (_, state) => EnrollmentAssignmentScreen(
+          initialStudentId: state.uri.queryParameters['student'],
+        ),
       ),
       GoRoute(
         path: '/director/schedules',
