@@ -5,7 +5,7 @@
   "engines": { "node": "20" },
   "scripts": {
     "build": "tsc",
-    "test": "tsc && node --test lib/",
+    "test": "tsc && node --test lib/*.test.js",
     "deploy": "npm run build && firebase deploy --only functions"
   },
   "dependencies": {

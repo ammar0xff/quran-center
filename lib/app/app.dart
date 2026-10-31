@@ -5,6 +5,8 @@ import 'package:quran_center/app/router.dart';
 import 'package:quran_center/core/localization/app_localizations.dart';
 import 'package:quran_center/core/theme/app_theme.dart';
 
+import 'package:quran_center/features/demo/widgets/demo_overlay.dart';
+
 /// Root widget: theme, Arabic localization, and the session-guarded router.
 /// Must be placed under a [ProviderScope].
 class App extends ConsumerWidget {
@@ -13,11 +15,13 @@ class App extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp.router(
-      title: 'دار تحفيظ قرآن',
+      title: 'مشكاة — دار تحفيظ قرآن',
       debugShowCheckedModeBanner: false,
       theme: appLightTheme,
       darkTheme: appDarkTheme,
       themeMode: ThemeMode.light,
+      builder: (context, child) =>
+          DemoOverlayWrapper(child: child ?? const SizedBox.shrink()),
       localizationsDelegates: const [
         AppLocalizationsDelegate(),
         GlobalMaterialLocalizations.delegate,

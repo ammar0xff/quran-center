@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quran_center/design_system/components/q_app_bar.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
-import 'package:quran_center/core/utils/account_access_rules.dart';
 import 'package:quran_center/data/providers/repositories.dart';
 import 'package:quran_center/data/services/account_access_service.dart';
+import 'package:quran_center/features/director/widgets/meshkah_identity_input.dart';
 
 /// Director form that creates a teacher account.
 ///
@@ -25,6 +25,7 @@ class _AddTeacherScreenState extends ConsumerState<AddTeacherScreen> {
   final _email = TextEditingController();
   final _phone = TextEditingController();
   final _notes = TextEditingController();
+  String? _temporaryPassword;
   bool _submitting = false;
   bool _done = false;
   String? _error;
@@ -41,12 +42,6 @@ class _AddTeacherScreenState extends ConsumerState<AddTeacherScreen> {
     final value = (v ?? '').trim();
     if (value.isEmpty) return 'الاسم مطلوب';
     return value.length < 2 ? 'الاسم قصير جدًا' : null;
-  }
-
-  String? _validateEmail(String? v) {
-    final value = (v ?? '').trim();
-    if (value.isEmpty) return 'البريد الإلكتروني مطلوب';
-    return isPlausibleEmail(value) ? null : 'أدخل بريدًا إلكترونيًا صحيحًا';
   }
 
   void _finish(String message, {bool warning = false}) {
@@ -69,6 +64,7 @@ class _AddTeacherScreenState extends ConsumerState<AddTeacherScreen> {
             email: _email.text,
             phone: _phone.text,
             professionalNotes: _notes.text,
+            temporaryPassword: _temporaryPassword,
           );
       if (!mounted) return;
       setState(() => _done = true);
@@ -105,16 +101,11 @@ class _AddTeacherScreenState extends ConsumerState<AddTeacherScreen> {
                 validator: _validateName,
               ),
               const SizedBox(height: DesignTokens.space16),
-              TextFormField(
-                controller: _email,
-                keyboardType: TextInputType.emailAddress,
-                textDirection: TextDirection.ltr,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'البريد الإلكتروني *',
-                  helperText: 'سيُرسل إليه رابط لتعيين كلمة المرور',
-                ),
-                validator: _validateEmail,
+              MeshkahIdentityInput(
+                onChanged: (email, tempPassword) {
+                  _email.text = email;
+                  _temporaryPassword = tempPassword;
+                },
               ),
               const SizedBox(height: DesignTokens.space16),
               TextFormField(

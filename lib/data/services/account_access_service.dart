@@ -42,22 +42,24 @@ String accessErrorMessage(String code) {
 /// student↔account link itself.
 abstract class AccountAccessService {
   /// Creates a login for an existing accountless student, links it, and sends
-  /// activation instructions to [email].
+  /// activation instructions to [email] (or sets initial temporary password).
   Future<void> enableStudentAccess({
     required String studentId,
     required String email,
+    String? temporaryPassword,
   });
 
   /// Suspends ([suspend] = true) or reactivates a student's login.
   Future<void> setSuspended({required String studentId, required bool suspend});
 
   /// Creates a teacher (login, role, profile and record together) and sends
-  /// activation instructions to [email].
+  /// activation instructions to [email] (or sets initial temporary password).
   Future<void> createTeacher({
     required String fullName,
     required String email,
     String? phone,
     String? professionalNotes,
+    String? temporaryPassword,
   });
 
   /// Suspends ([suspend] = true) or reactivates a teacher's login.
@@ -97,15 +99,21 @@ class CloudFunctionsAccountAccessService implements AccountAccessService {
   Future<void> enableStudentAccess({
     required String studentId,
     required String email,
+    String? temporaryPassword,
   }) async {
     final normalized = email.trim().toLowerCase();
-    await _call(() => _fn
-        .httpsCallable('enableStudentAccess')
-        .call<dynamic>({'studentId': studentId, 'email': normalized}));
-    try {
-      await _firebaseAuth.sendPasswordResetEmail(email: normalized);
-    } catch (_) {
-      throw ActivationEmailException();
+    await _call(() => _fn.httpsCallable('enableStudentAccess').call<dynamic>({
+          'studentId': studentId,
+          'email': normalized,
+          if (temporaryPassword != null && temporaryPassword.isNotEmpty)
+            'temporaryPassword': temporaryPassword,
+        }));
+    if (temporaryPassword == null || temporaryPassword.isEmpty) {
+      try {
+        await _firebaseAuth.sendPasswordResetEmail(email: normalized);
+      } catch (_) {
+        throw ActivationEmailException();
+      }
     }
   }
 
@@ -125,6 +133,7 @@ class CloudFunctionsAccountAccessService implements AccountAccessService {
     required String email,
     String? phone,
     String? professionalNotes,
+    String? temporaryPassword,
   }) async {
     final normalized = email.trim().toLowerCase();
     await _call(() => _fn.httpsCallable('createTeacher').call<dynamic>({
@@ -133,11 +142,15 @@ class CloudFunctionsAccountAccessService implements AccountAccessService {
           if (phone != null && phone.trim().isNotEmpty) 'phone': phone.trim(),
           if (professionalNotes != null && professionalNotes.trim().isNotEmpty)
             'professionalNotes': professionalNotes.trim(),
+          if (temporaryPassword != null && temporaryPassword.isNotEmpty)
+            'temporaryPassword': temporaryPassword,
         }));
-    try {
-      await _firebaseAuth.sendPasswordResetEmail(email: normalized);
-    } catch (_) {
-      throw ActivationEmailException();
+    if (temporaryPassword == null || temporaryPassword.isEmpty) {
+      try {
+        await _firebaseAuth.sendPasswordResetEmail(email: normalized);
+      } catch (_) {
+        throw ActivationEmailException();
+      }
     }
   }
 

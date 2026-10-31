@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/core/auth/app_session.dart';
 import 'package:quran_center/core/auth/auth_gateway.dart';
+import 'package:quran_center/core/demo/demo_controller.dart';
+import 'package:quran_center/data/datasources/demo_center_seed.dart';
+import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/data/providers/repositories.dart';
 
 final authGatewayProvider =
@@ -33,7 +35,26 @@ final sessionProvider = StreamProvider<AppSession>((ref) async* {
 });
 
 /// Synchronous view of the session for the router: `loading` until known.
+/// In demo mode, it immediately reflects the selected demo role (director/teacher/student).
 final currentSessionProvider = Provider<AppSession>((ref) {
+  final isDemo = ref.watch(isDemoModeProvider);
+  if (isDemo) {
+    final demoRole = ref.watch(demoActiveRoleProvider);
+    final user = switch (demoRole) {
+      UserRole.director => DemoCenterSeed.directorUser,
+      UserRole.teacher => DemoCenterSeed.teacherUser,
+      UserRole.student => DemoCenterSeed.studentUser,
+      UserRole.guardian => DemoCenterSeed.studentUser,
+    };
+    final kind = switch (demoRole) {
+      UserRole.director => SessionKind.director,
+      UserRole.teacher => SessionKind.teacher,
+      UserRole.student => SessionKind.student,
+      UserRole.guardian => SessionKind.student,
+    };
+    return AppSession.signedIn(kind, user);
+  }
+
   return ref.watch(sessionProvider).maybeWhen(
         data: (s) => s,
         orElse: () => const AppSession.loading(),

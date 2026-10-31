@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 class DesignTokens {
   // ---- Brand ----
   static const Color primaryDarkGreen = Color(0xFF0E5A47); // emerald
+  static const Color emerald = primaryDarkGreen;
   static const Color deepGreen = Color(0xFF0A3A30); // night
   static const Color leaf = Color(0xFF168A57); // button face
   static const Color leafEdge = Color(0xFF0F6A41); // button pressed edge
@@ -21,6 +22,7 @@ class DesignTokens {
   static const Color mainText = Color(0xFF14211C);
   static const Color secondaryText = Color(0xFF5F6F66);
   static const Color borders = Color(0xFFDDE6DF);
+  static const Color border = borders;
   static const Color bordersStrong = Color(0xFFC9D6CC);
 
   // ---- Status ----

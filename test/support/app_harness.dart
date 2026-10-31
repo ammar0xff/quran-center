@@ -154,9 +154,12 @@ class RecordingAccessService implements AccountAccessService {
   }
 
   @override
-  Future<void> enableStudentAccess(
-          {required String studentId, required String email}) async =>
-      _record('enableStudent:$studentId:$email');
+  Future<void> enableStudentAccess({
+    required String studentId,
+    required String email,
+    String? temporaryPassword,
+  }) async =>
+      _record('enableStudent:$studentId:$email:${temporaryPassword ?? ''}');
 
   @override
   Future<void> setSuspended(
@@ -169,8 +172,9 @@ class RecordingAccessService implements AccountAccessService {
     required String email,
     String? phone,
     String? professionalNotes,
+    String? temporaryPassword,
   }) async =>
-      _record('createTeacher:$fullName:$email:${phone ?? ''}:${professionalNotes ?? ''}');
+      _record('createTeacher:$fullName:$email:${phone ?? ''}:${professionalNotes ?? ''}:${temporaryPassword ?? ''}');
 
   @override
   Future<void> setTeacherSuspended(

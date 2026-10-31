@@ -43,6 +43,12 @@ class AccountStatusScreen extends ConsumerWidget {
           title: 'تعذر التحقق من حسابك',
           body: 'تحقق من اتصالك بالإنترنت ثم أعد المحاولة.',
         );
+      case BlockReason.subscriptionExpired:
+        return (
+          icon: Icons.access_time_filled,
+          title: 'انتهت فترة الاشتراك',
+          body: 'انتهت صلاحية اشتراك الدار. يرجى تجديد الاشتراك لمواصلة استخدام النظام.',
+        );
       case BlockReason.noProfile:
       case null:
         return (

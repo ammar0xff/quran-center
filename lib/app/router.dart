@@ -5,9 +5,13 @@ import 'package:go_router/go_router.dart';
 import 'package:quran_center/core/auth/app_session.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/features/authentication/screens/account_status_screen.dart';
+import 'package:quran_center/features/authentication/screens/change_password_first_time_screen.dart';
 import 'package:quran_center/features/authentication/screens/forgot_password_screen.dart';
 import 'package:quran_center/features/authentication/screens/login_screen.dart';
+import 'package:quran_center/features/authentication/screens/register_screen.dart';
 import 'package:quran_center/features/authentication/screens/splash_screen.dart';
+import 'package:quran_center/features/spiritual/screens/tasbeeh_and_azkar_screen.dart';
+import 'package:quran_center/features/subscription/screens/pricing_screen.dart';
 import 'package:quran_center/features/director/accounts/accounts_screen.dart';
 import 'package:quran_center/features/director/announcements/announcements_screen.dart';
 import 'package:quran_center/features/director/finance/finance_screen.dart';
@@ -66,6 +70,13 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: Routes.splash, builder: (_, __) => const SplashScreen()),
       GoRoute(path: Routes.login, builder: (_, __) => const LoginScreen()),
+      GoRoute(path: Routes.register, builder: (_, __) => const RegisterScreen()),
+      GoRoute(path: Routes.pricing, builder: (_, __) => const PricingScreen()),
+      GoRoute(path: Routes.tasbeeh, builder: (_, __) => const TasbeehAndAzkarScreen()),
+      GoRoute(
+        path: Routes.changePasswordFirstTime,
+        builder: (_, __) => const ChangePasswordFirstTimeScreen(),
+      ),
       GoRoute(
         path: Routes.forgotPassword,
         builder: (_, __) => const ForgotPasswordScreen(),

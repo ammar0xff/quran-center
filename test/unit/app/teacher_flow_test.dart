@@ -59,7 +59,9 @@ void main() {
   group('add teacher', () {
     testWidgets('blank or malformed input is rejected before any request', (tester) async {
       final (_, access) = await open(tester, '/director/teachers/add');
-      await tester.enterText(find.widgetWithText(TextFormField, 'البريد الإلكتروني *'), 'nope');
+      await tester.tap(find.text('بريد إلكتروني تقليدي'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.widgetWithText(TextFormField, 'البريد الإلكتروني الشخصي *'), 'nope');
       await tester.tap(find.text('إنشاء حساب المعلم'));
       await tester.pumpAndSettle();
 
@@ -71,7 +73,9 @@ void main() {
     testWidgets('a valid teacher is sent to the backend, then listed', (tester) async {
       final (_, access) = await open(tester, '/director/teachers/add');
       await tester.enterText(find.widgetWithText(TextFormField, 'الاسم الكامل *'), '  مريم   أحمد ');
-      await tester.enterText(find.widgetWithText(TextFormField, 'البريد الإلكتروني *'), 'maryam@example.com');
+      await tester.tap(find.text('بريد إلكتروني تقليدي'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.widgetWithText(TextFormField, 'البريد الإلكتروني الشخصي *'), 'maryam@example.com');
       await tester.enterText(find.widgetWithText(TextFormField, 'الجوال (اختياري)'), '0500000000');
       await tester.tap(find.text('إنشاء حساب المعلم'));
       await tester.pumpAndSettle();
@@ -85,13 +89,28 @@ void main() {
       expect(find.text('إدارة المعلمين'), findsOneWidget); // landed on the list
     });
 
+    testWidgets('creating a teacher with meshkah direct identity sends username@center.meshkah', (tester) async {
+      final (_, access) = await open(tester, '/director/teachers/add');
+      await tester.enterText(find.widgetWithText(TextFormField, 'الاسم الكامل *'), 'فاطمة محمد');
+      await tester.enterText(find.widgetWithText(TextFormField, 'اسم المستخدم بالإنجليزية *'), 'fatima');
+      await tester.tap(find.text('إنشاء حساب المعلم'));
+      await tester.pumpAndSettle();
+
+      expect(access.calls, hasLength(1));
+      expect(access.calls.single, startsWith('createTeacher:'));
+      expect(access.calls.single, contains('fatima@center-1.meshkah'));
+      expect(find.text('تم إنشاء حساب المعلم وإرسال رسالة التفعيل'), findsOneWidget);
+    });
+
     testWidgets('a backend refusal is shown, the form is kept, and retry is possible',
         (tester) async {
       final (_, access) = await open(tester, '/director/teachers/add');
       access.failWith =
           AccountAccessException('هذا البريد الإلكتروني مستخدم بالفعل لحساب آخر.');
       await tester.enterText(find.widgetWithText(TextFormField, 'الاسم الكامل *'), 'مريم أحمد');
-      await tester.enterText(find.widgetWithText(TextFormField, 'البريد الإلكتروني *'), 'taken@example.com');
+      await tester.tap(find.text('بريد إلكتروني تقليدي'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.widgetWithText(TextFormField, 'البريد الإلكتروني الشخصي *'), 'taken@example.com');
       await tester.tap(find.text('إنشاء حساب المعلم'));
       await tester.pumpAndSettle();
 
@@ -106,7 +125,9 @@ void main() {
       final (_, access) = await open(tester, '/director/teachers/add');
       access.failWith = ActivationEmailException();
       await tester.enterText(find.widgetWithText(TextFormField, 'الاسم الكامل *'), 'مريم أحمد');
-      await tester.enterText(find.widgetWithText(TextFormField, 'البريد الإلكتروني *'), 'm@example.com');
+      await tester.tap(find.text('بريد إلكتروني تقليدي'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.widgetWithText(TextFormField, 'البريد الإلكتروني الشخصي *'), 'm@example.com');
       await tester.tap(find.text('إنشاء حساب المعلم'));
       await tester.pumpAndSettle();
 

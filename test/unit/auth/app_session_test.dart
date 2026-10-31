@@ -78,6 +78,16 @@ void main() {
       }
     });
 
+    test('active profile with expired subscription resolves to subscriptionExpired', () {
+      final s = resolveSession(
+        uid: 'u1',
+        profile: _user(role: UserRole.director, status: AccountStatus.active),
+        isSubscriptionExpired: true,
+      );
+      expect(s.kind, SessionKind.blocked);
+      expect(s.blockReason, BlockReason.subscriptionExpired);
+    });
+
     test('a suspended director gets no privileged access', () {
       final s = resolveSession(
           uid: 'u1',
@@ -148,11 +158,24 @@ void main() {
       expect(redirectFor(student, '/teacherX'), Routes.studentHome);
     });
 
+    test('subscriptionExpired directs to tasbeeh and allows pricing renewal', () {
+      final expired = AppSession.blocked(BlockReason.subscriptionExpired,
+          profile: _user(role: UserRole.director));
+      expect(expired.homeRoute, Routes.tasbeeh);
+      expect(redirectFor(expired, Routes.tasbeeh), isNull);
+      expect(redirectFor(expired, Routes.pricing), isNull);
+      expect(redirectFor(expired, Routes.directorHome), Routes.tasbeeh);
+      expect(redirectFor(expired, Routes.login), Routes.tasbeeh);
+    });
+
     test('homeRoute is always allowed by the guard', () {
-      for (final s in [director, teacher, student, blocked, anon]) {
+      final expired = AppSession.blocked(BlockReason.subscriptionExpired,
+          profile: _user(role: UserRole.director));
+      for (final s in [director, teacher, student, blocked, anon, expired]) {
         expect(redirectFor(s, s.homeRoute!), isNull, reason: '${s.kind}');
       }
       expect(loading.homeRoute, isNull);
     });
   });
 }
+

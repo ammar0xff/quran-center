@@ -1,0 +1,67 @@
+name: Release APK & Deploy
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    name: Build Android Release APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Release APK
+        run: flutter build apk --release
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: meshkah-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Create or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+        with:
+          name: Meshkah Release v1.0.0
+          tag_name: ${{ github.ref_name || 'v1.0.0' }}
+          draft: false
+          prerelease: false
+          body: |
+            ## منصة مشكاة (Meshkah) — الإصدار التجاري v1.0.0
+            
+            ### ✨ أهم الميزات في هذا الإصدار:
+            - **التسجيل الذاتي لمدراء الدور**: إنشاء حساب المركز ورمز الدار بالإنجليزية.
+            - **وضع المعاينة التفاعلي (3-in-1 Guided Demo)**: استكشاف واجهات المديرة، المحفظ، والطالب ببيانات دار النور النموذجية.
+            - **شريط الاشتراك الدائم وشاشة الباقات**: باقات الكتّاب، المنارة، والصرح بالجنيه والريال والدولار.
+            - **تكامل الدفع الإلكتروني عبر Paymob**.
+            - **الهوية الرقمية الموحدة**: بصيغة `<user>@<center>.meshkah` مع كلمات مرور مؤقتة وتعيين إلزامي عند أول دخول.
+            - **السبحة الإلكترونية والأذكار**: كواحة تطمينية عند انتهاء الاشتراك مع الحفاظ الكامل على البيانات.
+            
+            ### 📱 التحميل المباشر:
+            - قم بتحميل ملف **`app-release.apk`** وتثبيته على أجهزة أندرويد.
+          files: build/app/outputs/flutter-apk/app-release.apk

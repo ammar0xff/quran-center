@@ -17,6 +17,7 @@ class User extends AppModel {
     this.profileImageUrl,
     this.assignedCenterIds = const [],
     this.studentId,
+    this.mustChangePassword = false,
     this.lastSignInAt,
     required this.createdAt,
     required this.updatedAt,
@@ -34,6 +35,9 @@ class User extends AppModel {
 
   /// For student accounts: the student profile this login belongs to.
   final String? studentId;
+
+  /// Whether the user was provisioned with a temporary password and must set their own.
+  final bool mustChangePassword;
   final DateTime? lastSignInAt;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -66,6 +70,7 @@ class User extends AppModel {
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       assignedCenterIds: assignedCenterIds ?? this.assignedCenterIds,
       studentId: studentId,
+      mustChangePassword: mustChangePassword ?? this.mustChangePassword,
       lastSignInAt: lastSignInAt ?? this.lastSignInAt,
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
@@ -87,6 +92,7 @@ class User extends AppModel {
               .toList() ??
           [],
       studentId: json['studentId'] as String?,
+      mustChangePassword: json['mustChangePassword'] as bool? ?? false,
       lastSignInAt: AppModel.parseDateTime(json['lastSignInAt']),
       createdAt: AppModel.parseDateTime(json['createdAt']) ?? DateTime.now(),
       updatedAt: AppModel.parseDateTime(json['updatedAt']) ?? DateTime.now(),
@@ -105,6 +111,7 @@ class User extends AppModel {
       if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
       'assignedCenterIds': assignedCenterIds,
       if (studentId != null) 'studentId': studentId,
+      if (mustChangePassword) 'mustChangePassword': true,
       if (lastSignInAt != null)
         'lastSignInAt': AppModel.encodeDateTime(lastSignInAt),
       'createdAt': AppModel.encodeDateTime(createdAt),

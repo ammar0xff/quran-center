@@ -13,7 +13,9 @@ class FakeAccessService implements AccountAccessService {
 
   @override
   Future<void> enableStudentAccess(
-      {required String studentId, required String email}) async {
+      {required String studentId,
+      required String email,
+      String? temporaryPassword}) async {
     calls.add('enable:$studentId:$email');
     if (failWith != null) throw failWith!;
   }
@@ -31,6 +33,7 @@ class FakeAccessService implements AccountAccessService {
     required String email,
     String? phone,
     String? professionalNotes,
+    String? temporaryPassword,
   }) async {}
 
   @override

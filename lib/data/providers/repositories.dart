@@ -27,11 +27,18 @@ import 'package:quran_center/data/services/account_access_service.dart';
 import 'package:quran_center/data/repositories/student_repository.dart';
 import 'package:quran_center/data/repositories/teacher_repository.dart';
 
-/// The one data source every repository and service reads and writes: the real
-/// Firestore. Tests override this single provider with the in-memory fake.
-final firestoreDataSourceProvider = Provider<FirestoreDataSource>(
-  (ref) => FirebaseFirestoreDataSource(FirebaseFirestore.instance),
-);
+import 'package:quran_center/core/demo/demo_controller.dart';
+
+/// The data source every repository and service reads and writes:
+/// In demo mode, it uses the pre-seeded in-memory fake.
+/// In production/real mode, it connects to real Firestore.
+final firestoreDataSourceProvider = Provider<FirestoreDataSource>((ref) {
+  final isDemo = ref.watch(isDemoModeProvider);
+  if (isDemo) {
+    return ref.watch(demoDataSourceProvider);
+  }
+  return FirebaseFirestoreDataSource(FirebaseFirestore.instance);
+});
 
 final studentRepositoryProvider = Provider<StudentRepository>(
   (ref) => StudentRepositoryImpl(ref.watch(firestoreDataSourceProvider)),

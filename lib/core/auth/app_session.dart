@@ -22,6 +22,10 @@ enum BlockReason {
   /// The profile could not be fetched (offline, backend error). Not a verdict
   /// about the account: the UI offers a retry.
   loadFailed,
+
+  /// The center's subscription has ended or is pending payment.
+  /// Directs the user to the Tasbeeh & Azkar screen with renewal option.
+  subscriptionExpired,
 }
 
 class AppSession {
@@ -48,7 +52,9 @@ class AppSession {
         SessionKind.director => Routes.directorHome,
         SessionKind.teacher => Routes.teacherHome,
         SessionKind.student => Routes.studentHome,
-        SessionKind.blocked => Routes.accountStatus,
+        SessionKind.blocked => blockReason == BlockReason.subscriptionExpired
+            ? Routes.tasbeeh
+            : Routes.accountStatus,
         SessionKind.unauthenticated => Routes.login,
         SessionKind.loading => null,
       };
@@ -58,6 +64,10 @@ class AppSession {
 abstract class Routes {
   static const splash = '/';
   static const login = '/login';
+  static const register = '/register';
+  static const pricing = '/pricing';
+  static const tasbeeh = '/tasbeeh';
+  static const changePasswordFirstTime = '/change-password-first-time';
   static const forgotPassword = '/forgot-password';
   static const accountStatus = '/account-status';
   static const directorHome = '/director/dashboard';
@@ -71,7 +81,11 @@ abstract class Routes {
 ///
 /// A user with no profile, an inactive profile, or an unsupported role is
 /// blocked: they reach no protected screen.
-AppSession resolveSession({required String? uid, required User? profile}) {
+AppSession resolveSession({
+  required String? uid,
+  required User? profile,
+  bool isSubscriptionExpired = false,
+}) {
   if (uid == null) return const AppSession.unauthenticated();
   if (profile == null || profile.uid != uid) {
     return const AppSession.blocked(BlockReason.noProfile);
@@ -85,6 +99,9 @@ AppSession resolveSession({required String? uid, required User? profile}) {
       return AppSession.blocked(BlockReason.incomplete, profile: profile);
     case AccountStatus.active:
       break;
+  }
+  if (isSubscriptionExpired) {
+    return AppSession.blocked(BlockReason.subscriptionExpired, profile: profile);
   }
   switch (profile.role) {
     case UserRole.director:
@@ -109,19 +126,32 @@ AppSession resolveSession({required String? uid, required User? profile}) {
 ///
 /// * loading           -> splash only
 /// * unauthenticated   -> login / forgot-password only
-/// * blocked           -> account-status only
+/// * blocked           -> account-status or tasbeeh only
 /// * director/teacher/student -> only their own area; anything else (auth
 ///   screens, another role's area, unknown paths) goes to their home.
 String? redirectFor(AppSession session, String location) {
+  if (location == Routes.pricing || location == Routes.tasbeeh) return null;
+
+  if (session.profile?.mustChangePassword == true) {
+    return location == Routes.changePasswordFirstTime
+        ? null
+        : Routes.changePasswordFirstTime;
+  }
+
   switch (session.kind) {
     case SessionKind.loading:
       return location == Routes.splash ? null : Routes.splash;
     case SessionKind.unauthenticated:
-      return (location == Routes.login || location == Routes.forgotPassword)
+      return (location == Routes.login ||
+              location == Routes.register ||
+              location == Routes.forgotPassword)
           ? null
           : Routes.login;
     case SessionKind.blocked:
-      return location == Routes.accountStatus ? null : Routes.accountStatus;
+      final target = session.blockReason == BlockReason.subscriptionExpired
+          ? Routes.tasbeeh
+          : Routes.accountStatus;
+      return location == target ? null : target;
     case SessionKind.director:
       return _inArea(location, '/director') ? null : Routes.directorHome;
     case SessionKind.teacher:

@@ -4,12 +4,12 @@ import 'package:quran_center/design_system/components/marks.dart';
 import 'package:quran_center/design_system/components/q_app_bar.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
-import 'package:quran_center/core/utils/account_access_rules.dart';
 import 'package:quran_center/data/models/enums.dart';
 import 'package:quran_center/data/models/student.dart';
 import 'package:quran_center/data/providers/repositories.dart';
 import 'package:quran_center/data/services/account_access_service.dart';
 import 'package:quran_center/features/director/widgets/director_bottom_nav.dart';
+import 'package:quran_center/features/director/widgets/meshkah_identity_input.dart';
 
 /// Director "Add Student" form.
 ///
@@ -35,6 +35,7 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
   final _educationalLevelController = TextEditingController();
 
   final _emailController = TextEditingController();
+  String? _temporaryPassword;
 
   /// What the director *wants*. The profile is always created accountless;
   /// a login is requested from the backend afterwards (see [_save]).
@@ -54,11 +55,6 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
       return 'هذا الحقل مطلوب';
     }
     return null;
-  }
-
-  String? _validateEmail(String? value) {
-    if (value == null || value.trim().isEmpty) return 'هذا الحقل مطلوب';
-    return isPlausibleEmail(value) ? null : 'أدخل بريدًا إلكترونيًا صحيحًا';
   }
 
   @override
@@ -133,6 +129,7 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
         await ref.read(accountAccessServiceProvider).enableStudentAccess(
               studentId: _studentId,
               email: _emailController.text,
+              temporaryPassword: _temporaryPassword,
             );
       } on AccountAccessException catch (e) {
         loginProblem = e.message;
@@ -271,15 +268,11 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
               ),
               if (_accountMode == AccountMode.loginEnabled) ...[
                 const SizedBox(height: DesignTokens.space16),
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  textDirection: TextDirection.ltr,
-                  decoration: const InputDecoration(
-                    labelText: 'بريد إلكتروني (مطلوب إذا تم تفعيل الدخول)',
-                    helperText: 'سيُرسل إليه رابط لتعيين كلمة المرور بعد الحفظ',
-                  ),
-                  validator: _validateEmail,
+                MeshkahIdentityInput(
+                  onChanged: (email, tempPassword) {
+                    _emailController.text = email;
+                    _temporaryPassword = tempPassword;
+                  },
                 ),
                 const SizedBox(height: DesignTokens.space16),
               ],

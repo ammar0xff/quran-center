@@ -6,6 +6,7 @@ import 'package:quran_center/core/auth/auth_gateway.dart';
 import 'package:quran_center/core/auth/session_provider.dart';
 import 'package:quran_center/core/theme/design_tokens.dart';
 import 'package:quran_center/core/utils/account_access_rules.dart';
+import 'package:quran_center/core/demo/demo_controller.dart';
 import 'package:quran_center/design_system/components/app_hero.dart';
 import 'package:quran_center/design_system/components/rosette.dart';
 
@@ -195,6 +196,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ? null
                               : () => context.push(Routes.forgotPassword),
                           child: const Text('نسيت كلمة المرور؟'),
+                        ),
+                        const Divider(height: 32),
+                        OutlinedButton.icon(
+                          onPressed: _submitting
+                              ? null
+                              : () => context.push(Routes.register),
+                          icon: const Icon(Icons.add_business_rounded, size: 18),
+                          label: const Text('تسجيل دار جديدة (مدير الدار)'),
+                        ),
+                        const SizedBox(height: DesignTokens.space8),
+                        TextButton.icon(
+                          onPressed: _submitting
+                              ? null
+                              : () => enterDemoMode(ref, context),
+                          icon: const Icon(Icons.play_circle_outline_rounded,
+                              size: 16),
+                          label: const Text('معاينة النظام التفاعلي فوراً'),
                         ),
                       ],
                     ),

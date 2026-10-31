@@ -14,7 +14,9 @@ class _FakeAccess implements AccountAccessService {
 
   @override
   Future<void> enableStudentAccess(
-      {required String studentId, required String email}) async {
+      {required String studentId,
+      required String email,
+      String? temporaryPassword}) async {
     calls.add('$studentId|$email');
     if (failWith != null) throw failWith!;
   }
@@ -29,6 +31,7 @@ class _FakeAccess implements AccountAccessService {
     required String email,
     String? phone,
     String? professionalNotes,
+    String? temporaryPassword,
   }) async {}
 
   @override
@@ -131,7 +134,7 @@ void main() {
     expect(await _students(store), hasLength(1));
   });
 
-  testWidgets('choosing a login saves an ACCOUNTLESS profile, then requests the login',
+  testWidgets('choosing a login with traditional email saves an ACCOUNTLESS profile, then requests the login',
       (tester) async {
     final store = FakeFirestoreDataSource();
     final access = _FakeAccess();
@@ -140,7 +143,9 @@ void main() {
     await tester.enterText(find.widgetWithText(TextFormField, 'الاسم الكامل *'), 'خالد');
     await tester.tap(find.text('إنشاء دخول للطالب'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField).last, 'khaled@example.com');
+    await tester.tap(find.text('بريد إلكتروني تقليدي'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextFormField, 'البريد الإلكتروني الشخصي *'), 'khaled@example.com');
     await tester.tap(find.text('حفظ الطالب'));
     await tester.pumpAndSettle();
 
@@ -152,6 +157,25 @@ void main() {
     expect(find.text('تم إضافة الطالب وتفعيل دخوله'), findsOneWidget);
   });
 
+  testWidgets('choosing meshkah direct identity requests login with @center.meshkah',
+      (tester) async {
+    final store = FakeFirestoreDataSource();
+    final access = _FakeAccess();
+    await _pump(tester, store, access);
+
+    await tester.enterText(find.widgetWithText(TextFormField, 'الاسم الكامل *'), 'عمر');
+    await tester.tap(find.text('إنشاء دخول للطالب'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextFormField, 'اسم المستخدم بالإنجليزية *'), 'omar');
+    await tester.tap(find.text('حفظ الطالب'));
+    await tester.pumpAndSettle();
+
+    final saved = (await _students(store)).single;
+    expect(saved['accountMode'], 'none');
+    expect(access.calls, ['${saved['id']}|omar@center-1.meshkah']);
+    expect(find.text('تم إضافة الطالب وتفعيل دخوله'), findsOneWidget);
+  });
+
   testWidgets('an invalid login email blocks the whole save', (tester) async {
     final store = FakeFirestoreDataSource();
     final access = _FakeAccess();
@@ -160,7 +184,9 @@ void main() {
     await tester.enterText(find.widgetWithText(TextFormField, 'الاسم الكامل *'), 'خالد');
     await tester.tap(find.text('إنشاء دخول للطالب'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField).last, 'nope');
+    await tester.tap(find.text('بريد إلكتروني تقليدي'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextFormField, 'البريد الإلكتروني الشخصي *'), 'nope');
     await tester.tap(find.text('حفظ الطالب'));
     await tester.pumpAndSettle();
 
@@ -179,7 +205,9 @@ void main() {
     await tester.enterText(find.widgetWithText(TextFormField, 'الاسم الكامل *'), 'خالد');
     await tester.tap(find.text('إنشاء دخول للطالب'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField).last, 'taken@example.com');
+    await tester.tap(find.text('بريد إلكتروني تقليدي'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextFormField, 'البريد الإلكتروني الشخصي *'), 'taken@example.com');
     await tester.tap(find.text('حفظ الطالب'));
     await tester.pumpAndSettle();
 
